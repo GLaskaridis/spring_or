@@ -1,0 +1,131 @@
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Login Page</title>
+        <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel="stylesheet" th:href="@{/css/mycss.css}" />
+                <!-- Add Poppins font -->
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+                    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+                    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+                    </head>
+                    <body>
+                        <div class="screen-1">
+                            <svg class="logo" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="300" height="300" viewbox="0 0 640 480" xml:space="preserve">
+                                <g transform="matrix(3.31 0 0 3.31 320.4 240.4)">
+                                    <circle style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(61,71,133); fill-rule: nonzero; opacity: 1;" cx="0" cy="0" r="40"></circle>
+                                </g>
+                                <g transform="matrix(0.98 0 0 0.98 268.7 213.7)">
+                                    <circle style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" cx="0" cy="0" r="40"></circle>
+                                </g>
+                                <g transform="matrix(1.01 0 0 1.01 362.9 210.9)">
+                                    <circle style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" cx="0" cy="0" r="40"></circle>
+                                </g>
+                                <g transform="matrix(0.92 0 0 0.92 318.5 286.5)">
+                                    <circle style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" cx="0" cy="0" r="40"></circle>
+                                </g>
+                                <g transform="matrix(0.16 -0.12 0.49 0.66 290.57 243.57)">
+                                    <polygon style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" points="-50,-50 -50,50 50,50 50,-50 "></polygon>
+                                </g>
+                                <g transform="matrix(0.16 0.1 -0.44 0.69 342.03 248.34)">
+                                    <polygon style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke" points="-50,-50 -50,50 50,50 50,-50 "></polygon>
+                                </g>
+                            </svg>
+                            <form id="loginForm" onsubmit="handleSubmit(event)">
+                                <div class="username">
+                                    <label for="username">Username</label>
+                                    <div class="sec-2">
+                                        <ion-icon name="person-outline"></ion-icon>
+                                        <input type="text" name="username" id="username" placeholder="Enter your username" required/>
+                                    </div>
+                                </div>
+
+                                <div class="password">
+                                    <label for="password">Password</label>
+                                    <div class="sec-2">
+                                        <ion-icon name="lock-closed-outline"></ion-icon>
+                                        <input class="pas" type="password" name="password" id="password" placeholder="············" required/>
+                                        <ion-icon class="show-hide" name="eye-outline"></ion-icon>
+                                    </div>
+                                </div>
+                                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                                <button type="submit" class="login">Login</button>
+                                <div class="footer"><span onclick="window.location.href = 'register'">Sign up</span><span>Forgot Password?</span></div>
+                            </form>
+                        </div>
+                        <script>
+                            document.querySelector('.show-hide').addEventListener('click', function () {
+                                const passwordInput = document.querySelector('.pas');
+                                if (passwordInput.type === 'password') {
+                                    passwordInput.type = 'text';
+                                    this.setAttribute('name', 'eye-off-outline');
+                                } else {
+                                    passwordInput.type = 'password';
+                                    this.setAttribute('name', 'eye-outline');
+                                }
+                            });
+
+                            async function handleSubmit(event) {
+                                event.preventDefault();
+                                const errorMessage = document.getElementById('errorMessage');
+                                errorMessage.style.display = 'none';
+
+                                const formData = {
+                                    username: document.getElementById('username').value,
+                                    password: document.getElementById('password').value
+                                };
+
+                                try {
+                                    const response = await fetch('/users/login', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json'
+                                        },
+                                        body: JSON.stringify(formData)
+                                    });
+
+                                    if (response.status === 403) {
+                                        console.error("CSRF protection error", response);
+                                        errorMessage.textContent = 'Security validation error. Please refresh the page.';
+                                        errorMessage.style.display = 'block';
+                                        return;
+                                    }
+
+                                    let data;
+                                    try {
+                                        data = await response.json();
+                                    } catch (e) {
+                                        console.error("Error parsing response:", e);
+                                        errorMessage.textContent = 'Error processing server response';
+                                        errorMessage.style.display = 'block';
+                                        return;
+                                    }
+
+                                    if (response.ok) {
+                                        console.log("Login successful:", data);
+
+                                        // Store token in localStorage
+                                        if (data.token) {
+                                            localStorage.setItem('token', data.token);
+                                        }
+                                        if (data.username) {
+                                            localStorage.setItem('username', data.username);
+                                        }
+
+                                        // Redirect to dashboard
+                                        window.location.href = '/users/dashboard';
+                                    } else {
+                                        console.error("Login failed:", data);
+                                        errorMessage.textContent = data.message || 'Login failed. Please try again.';
+                                        errorMessage.style.display = 'block';
+                                    }
+                                } catch (error) {
+                                    console.error('Error during login:', error);
+                                    errorMessage.textContent = 'Network error. Please try again later.';
+                                    errorMessage.style.display = 'block';
+                                }
+                            }
+                        </script>
+                    </body>
+                    </html>

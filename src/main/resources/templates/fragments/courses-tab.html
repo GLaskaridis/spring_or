@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <body>
+        <div th:fragment="courses-tab" class="tab-pane fade" id="courses-tab">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Μαθήματα</h1>
+                <button class="btn btn-primary" id="add-course-btn">
+                    <i class="bi bi-plus"></i> Προσθήκη Μαθήματος
+                </button>
+            </div>
+
+            <!-- Loading indicator -->
+            <div id="courses-loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Φόρτωση δεδομένων...</p>
+            </div>
+
+            <!-- Error message -->
+            <div id="courses-error" class="alert alert-danger" style="display: none;">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span id="courses-error-message">Σφάλμα κατά τη φόρτωση των δεδομένων.</span>
+            </div>
+
+            <!-- Empty state -->
+            <div id="courses-empty" class="empty-state" style="display: none;">
+                <i class="bi bi-book-slash"></i>
+                <h4>Δεν βρέθηκαν μαθήματα</h4>
+                <p>Δεν υπάρχουν καταχωρημένα μαθήματα στο σύστημα.</p>
+                <button class="btn btn-primary mt-2" id="add-first-course-btn">
+                    <i class="bi bi-plus"></i> Προσθήκη Πρώτου Μαθήματος
+                </button>
+            </div>
+
+            <!-- Courses Table -->
+            <div id="courses-table-container" class="table-container" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">Εμφάνιση</span>
+                        <select class="form-select form-select-sm" id="courses-page-size" style="width: auto;">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span class="ms-2">εγγραφών</span>
+                    </div>
+                    <div class="input-group" style="width: 250px;">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="courses-search" placeholder="Αναζήτηση...">
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Κωδικός</th>
+                                <th scope="col">Όνομα Μαθήματος</th>
+                                <th scope="col">Τύπος</th>
+                                <th scope="col">Έτος</th>
+                                <th scope="col">Εξάμηνο</th>
+                                <th scope="col">Χωρητικότητα</th>
+                                <th scope="col">Κατάσταση</th>
+                                <th scope="col">Ενέργειες</th>
+                            </tr>
+                        </thead>
+                        <tbody id="courses-table-body">
+                            <!-- Table rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Courses pagination">
+                    <ul class="pagination justify-content-center" id="courses-pagination">
+                        <!-- Pagination will be populated dynamically -->
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Edit Course Modal -->
+            <div class="modal fade" id="edit-course-modal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editCourseModalLabel">Επεξεργασία Μαθήματος</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="edit-course-form">
+                                <input type="hidden" id="edit-course-id">
+                                
+                                <div class="mb-3">
+                                    <label for="edit-course-name" class="form-label">Όνομα Μαθήματος</label>
+                                    <input type="text" class="form-control" id="edit-course-name" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="edit-course-code" class="form-label">Κωδικός Μαθήματος</label>
+                                    <input type="text" class="form-control" id="edit-course-code" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="edit-course-type" class="form-label">Τύπος Μαθήματος</label>
+                                    <select class="form-select" id="edit-course-type" required>
+                                        <option value="">Επιλέξτε τύπο</option>
+                                        <option value="BASIC">Βασικό</option>
+                                        <option value="ELECTIVE">Επιλογής</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="edit-course-year" class="form-label">Έτος</label>
+                                    <select class="form-select" id="edit-course-year" required>
+                                        <option value="">Επιλέξτε έτος</option>
+                                        <option value="1">1ο</option>
+                                        <option value="2">2ο</option>
+                                        <option value="3">3ο</option>
+                                        <option value="4">4ο</option>
+                                        <option value="5">5ο</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="edit-course-semester" class="form-label">Εξάμηνο</label>
+                                    <select class="form-select" id="edit-course-semester" required>
+                                        <option value="">Επιλέξτε εξάμηνο</option>
+                                        <option value="1">1ο</option>
+                                        <option value="2">2ο</option>
+                                        <option value="3">3ο</option>
+                                        <option value="4">4ο</option>
+                                        <option value="5">5ο</option>
+                                        <option value="6">6ο</option>
+                                        <option value="7">7ο</option>
+                                        <option value="8">8ο</option>
+                                        <option value="9">9ο</option>
+                                        <option value="10">10ο</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="edit-course-capacity" class="form-label">Χωρητικότητα</label>
+                                    <input type="number" class="form-control" id="edit-course-capacity" min="1" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Ώρες Διδασκαλίας</label>
+                                    <div id="edit-teaching-hours-container">
+                                        <!-- Teaching hours will be dynamically added here -->
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="add-teaching-hour-btn">
+                                        <i class="bi bi-plus"></i> Προσθήκη Ωρών Διδασκαλίας
+                                    </button>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="edit-course-active">
+                                    <label class="form-check-label" for="edit-course-active">
+                                        Ενεργό
+                                    </label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Άκυρο</button>
+                            <button type="button" class="btn btn-primary" id="save-edit-course-btn">Αποθήκευση</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="delete-course-modal" tabindex="-1" aria-labelledby="deleteCourseModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteCourseModalLabel">Διαγραφή Μαθήματος</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="delete-course-id">
+                            <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε το μάθημα <strong id="delete-course-name">αυτό</strong>;</p>
+                            <p class="text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Η ενέργεια αυτή δεν μπορεί να αναιρεθεί.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Άκυρο</button>
+                            <button type="button" class="btn btn-danger" id="confirm-delete-course-btn">Διαγραφή</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Course Modal -->
+            <div class="modal fade" id="add-course-modal" tabindex="-1" aria-labelledby="addCourseModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addCourseModalLabel">Προσθήκη Νέου Μαθήματος</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add-course-form">
+                                <div class="mb-3">
+                                    <label for="add-course-name" class="form-label">Όνομα Μαθήματος</label>
+                                    <input type="text" class="form-control" id="add-course-name" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="add-course-code" class="form-label">Κωδικός Μαθήματος</label>
+                                    <input type="text" class="form-control" id="add-course-code" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="add-course-type" class="form-label">Τύπος Μαθήματος</label>
+                                    <select class="form-select" id="add-course-type" required>
+                                        <option value="">Επιλέξτε τύπο</option>
+                                        <option value="BASIC">Βασικό</option>
+                                        <option value="ELECTIVE">Επιλογής</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="add-course-year" class="form-label">Έτος</label>
+                                    <select class="form-select" id="add-course-year" required>
+                                        <option value="">Επιλέξτε έτος</option>
+                                        <option value="1">1ο</option>
+                                        <option value="2">2ο</option>
+                                        <option value="3">3ο</option>
+                                        <option value="4">4ο</option>
+                                        <option value="5">5ο</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="add-course-semester" class="form-label">Εξάμηνο</label>
+                                    <select class="form-select" id="add-course-semester" required>
+                                        <option value="">Επιλέξτε εξάμηνο</option>
+                                        <option value="1">1ο</option>
+                                        <option value="2">2ο</option>
+                                        <option value="3">3ο</option>
+                                        <option value="4">4ο</option>
+                                        <option value="5">5ο</option>
+                                        <option value="6">6ο</option>
+                                        <option value="7">7ο</option>
+                                        <option value="8">8ο</option>
+                                        <option value="9">9ο</option>
+                                        <option value="10">10ο</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="add-course-capacity" class="form-label">Χωρητικότητα</label>
+                                    <input type="number" class="form-control" id="add-course-capacity" min="1" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Ώρες Διδασκαλίας</label>
+                                    <div id="add-teaching-hours-container">
+                                        <div class="teaching-hour-row mb-2">
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <select class="form-select teaching-hour-component">
+                                                        <option value="THEORY">Θεωρία</option>
+                                                        <option value="LABORATORY">Εργαστήριο</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-5">
+                                                    <input type="number" class="form-control teaching-hour-hours" placeholder="Ώρες" min="1" required>
+                                                </div>
+                                                <div class="col-1">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger remove-teaching-hour-btn">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="add-teaching-hour-btn-new">
+                                        <i class="bi bi-plus"></i> Προσθήκη Ωρών Διδασκαλίας
+                                    </button>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="add-course-active" checked>
+                                    <label class="form-check-label" for="add-course-active">
+                                        Ενεργό
+                                    </label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Άκυρο</button>
+                            <button type="button" class="btn btn-primary" id="save-add-course-btn">Αποθήκευση</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

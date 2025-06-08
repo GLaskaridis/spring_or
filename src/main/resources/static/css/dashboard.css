@@ -1,0 +1,23 @@
+:root {
+    --primary-color: #3d4785;
+    --secondary-color: #f1f7fe;
+    --accent-color: #4e5db2;
+    --text-color: #333;
+    --light-text: #6c757d;
+    --sidebar-width: 280px;
+    --header-height: 60px;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+    color: var(--text-color);
+}
+
+.sidebar {
+    /* Sidebar styles */
+}
+
+/* ... rest of CSS ... */

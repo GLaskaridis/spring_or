@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html xmlns:th="http:            // Send delete request
+            fetch(`/users/api/teachers/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to delete teacher');
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteTeacherModal'));
+                modal.hide();
+                
+                // Reload teacher data
+                loadTeachersData(token);
+                
+                // Show success message
+                showAlert('teachers-alert', 'Ο διδάσκων διαγράφηκε επιτυχώς.', 'success');
+            })
+            .catch(error => {
+                console.error('Error deleting teacher:', error);
+                showAlert('teachers-alert', 'Σφάλμα κατά τη διαγραφή του διδάσκοντα.', 'danger');
+            });
+        }
+        
+        function saveTeacher(event) {
+            event.preventDefault();
+            
+            const teacherId = document.getElementById('teacherId').value;
+            const isNewTeacher = !teacherId;
+            const token = localStorage.getItem('token');
+            
+            // Collect form data
+            const teacherData = {
+                id: teacherId,
+                fullName: document.getElementById('teacherFullName').value,
+                username: document.getElementById('teacherUsername').value,
+                email: document.getElementById('teacherEmail').value,
+                teacherType: document.getElementById('teacherType').value,
+                teacherRank: document.getElementById('teacherRank').value,
+                active: document.getElementById('teacherActive').checked
+            };
+            
+            // Add password field only if it's not empty
+            const password = document.getElementById('teacherPassword').value;
+            if (password) {
+                teacherData.password = password;
+            }
+            
+            // Send request
+            fetch(`/users/api/teachers${isNewTeacher ? '' : '/' + teacherId}`, {
+                method: isNewTeacher ? 'POST' : 'PUT',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(teacherData)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to save teacher');
+                return response.json();
+            })
+            .then(data => {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('teacherModal'));
+                modal.hide();
+                
+                // Reload teacher data
+                loadTeachersData(token);
+                
+                // Show success message
+                showAlert('teachers-alert', `Ο διδάσκων ${isNewTeacher ? 'προστέθηκε' : 'ενημερώθηκε'} επιτυχώς.`, 'success');
+            })
+            .catch(error => {
+                console.error('Error saving teacher:', error);
+                showAlert('teachers-alert', `Σφάλμα κατά την ${isNewTeacher ? 'προσθήκη' : 'ενημέρωση'} του διδάσκοντα.`, 'danger');
+            });
+        }
+        
+        function showAlert(containerId, message, type) {
+            const alertContainer = document.getElementById(containerId);
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            alertContainer.scrollIntoView({ behavior: 'smooth' });
+            
+            // Auto-close after 5 seconds
+            setTimeout(() => {
+                const alert = alertContainer.querySelector('.alert');
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+        
+        function logout() {
+            // Clear the token
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            // Redirect to login page
+            window.location.href = '/login?logout=success';
+        }www.thymeleaf.org">
+<head>
+    <title>Διαχείριση Διδασκόντων</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #3d4785;
+            --secondary-color: #f1f7fe;
+            --accent-color: #4e5db2;
+            --text-color: #333;
+            --light-text: #6c757d;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+        }
+        
+        .sidebar {
+            position: fixed;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background-color: var(--primary-color);
+            color: white;
+            padding-top: var(--header-height);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-collapsed {
+            width: 70px;
+        }
+        
+        .sidebar-brand {
+            padding: 1.5rem 1.5rem 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        
+        .sidebar-brand-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .sidebar-heading {
+            padding: 0.875rem 1.25rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .nav-item {
+            position: relative;
+            margin-bottom: 0.25rem;
+        }
+        
+        .nav-link {
+            padding: 0.8rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .nav-link:hover {
+            color: white;
+            background-color: var(--accent-color);
+        }
+        
+        .nav-link.active {
+            color: white;
+            background-color: var(--accent-color);
+        }
+        
+        .nav-link i {
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+        
+        .content {
+            margin-left: var(--sidebar-width);
+            padding: calc(var(--header-height) + 1.5rem) 1.5rem 1.5rem;
+            transition: margin-left 0.3s;
+        }
+        
+        .content-collapsed {
+            margin-left: 70px;
+        }
+        
+        .topbar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: var(--header-height);
+            background-color: white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem 0 calc(var(--sidebar-width) + 1.5rem);
+            z-index: 998;
+            transition: padding-left 0.3s;
+        }
+        
+        .topbar-collapsed {
+            padding-left: calc(70px + 1.5rem);
+        }
+        
+        .toggle-sidebar {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        
+        .user-profile {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .user-profile img {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .table-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        .loading {
+            position: relative;
+            min-height: 200px;
+        }
+        
+        .loading:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7) url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDQiIGhlaWdodD0iNDQiIHZpZXdCb3g9IjAgMCA0NCA0NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBzdHJva2U9IiMzZDQ3ODUiPgogICAgPGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2Utd2lkdGg9IjIiPgogICAgICAgIDxjaXJjbGUgY3g9IjIyIiBjeT0iMjIiIHI9IjEiPgogICAgICAgICAgICA8YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJyIgogICAgICAgICAgICAgICAgIGJlZ2luPSIwcyIgZHVyPSIxLjhzIgogICAgICAgICAgICAgICAgIHZhbHVlcz0iMTsgMjAiCiAgICAgICAgICAgICAgICAgY2FsY01vZGU9InNwbGluZSIKICAgICAgICAgICAgICAgICBrZXlUaW1lcz0iMDsgMSIKICAgICAgICAgICAgICAgICBrZXlTcGxpbmVzPSIwLjE2NSwgMC44NCwgMC40NCwgMSIKICAgICAgICAgICAgICAgICByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgLz4KICAgICAgICAgICAgPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0ic3Ryb2tlLW9wYWNpdHkiCiAgICAgICAgICAgICAgICAgYmVnaW49IjBzIiBkdXI9IjEuOHMiCiAgICAgICAgICAgICAgICAgdmFsdWVzPSIxOyAwIgogICAgICAgICAgICAgICAgIGNhbGNNb2RlPSJzcGxpbmUiCiAgICAgICAgICAgICAgICAga2V5VGltZXM9IjA7IDEiCiAgICAgICAgICAgICAgICAga2V5U3BsaW5lcz0iMC4zLCAwLjYxLCAwLjM1NSwgMSIKICAgICAgICAgICAgICAgICByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgLz4KICAgICAgICA8L2NpcmNsZT4KICAgICAgICA8Y2lyY2xlIGN4PSIyMiIgY3k9IjIyIiByPSIxIj4KICAgICAgICAgICAgPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0iciIKICAgICAgICAgICAgICAgICBiZWdpbj0iLTAuOXMiIGR1cj0iMS44cyIKICAgICAgICAgICAgICAgICB2YWx1ZXM9IjE7IDIwIgogICAgICAgICAgICAgICAgIGNhbGNNb2RlPSJzcGxpbmUiCiAgICAgICAgICAgICAgICAga2V5VGltZXM9IjA7IDEiCiAgICAgICAgICAgICAgICAga2V5U3BsaW5lcz0iMC4xNjUsIDAuODQsIDAuNDQsIDEiCiAgICAgICAgICAgICAgICAgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIC8+CiAgICAgICAgICAgIDxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9InN0cm9rZS1vcGFjaXR5IgogICAgICAgICAgICAgICAgIGJlZ2luPSItMC45cyIgZHVyPSIxLjhzIgogICAgICAgICAgICAgICAgIHZhbHVlcz0iMTsgMCIKICAgICAgICAgICAgICAgICBjYWxjTW9kZT0ic3BsaW5lIgogICAgICAgICAgICAgICAgIGtleVRpbWVzPSIwOyAxIgogICAgICAgICAgICAgICAgIGtleVNwbGluZXM9IjAuMywgMC42MSwgMC4zNTUsIDEiCiAgICAgICAgICAgICAgICAgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIC8+CiAgICAgICAgPC9jaXJjbGU+CiAgICA8L2c+Cjwvc3ZnPg==') center no-repeat;
+            z-index: 3;
+            border-radius: 10px;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .content {
+                margin-left: 70px;
+            }
+            
+            .topbar {
+                padding-left: calc(70px + 1.5rem);
+            }
+            
+            .sidebar-brand-text,
+            .nav-text {
+                display: none;
+            }
+            
+            .sidebar.expanded {
+                width: var(--sidebar-width);
+            }
+            
+            .sidebar.expanded .sidebar-brand-text,
+            .sidebar.expanded .nav-text {
+                display: inline;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <img src="/images/logo.png" alt="Logo">
+            <span class="sidebar-brand-text">Σύστημα Διαχείρισης</span>
+        </div>
+        
+        <hr class="sidebar-divider">
+        
+        <div class="sidebar-heading">Διαχείριση</div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="/users/dashboard">
+                    <i class="bi bi-speedometer2"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/users/teachers">
+                    <i class="bi bi-person"></i>
+                    <span class="nav-text">Διδάσκοντες</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/users/rooms">
+                    <i class="bi bi-building"></i>
+                    <span class="nav-text">Δωμάτια</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/users/courses">
+                    <i class="bi bi-book"></i>
+                    <span class="nav-text">Μαθήματα</span>
+                </a>
+            </li>
+        </ul>
+        
+        <hr class="sidebar-divider">
+        
+        <div class="sidebar-heading">Ρυθμίσεις</div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="/users/profile">
+                    <i class="bi bi-person-circle"></i>
+                    <span class="nav-text">Προφίλ</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="nav-text">Αποσύνδεση</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+    <!-- Top Bar -->
+    <div class="topbar" id="topbar">
+        <button class="toggle-sidebar" id="toggle-sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="user-profile">
+            <span id="username-display">Καλωσήρθατε!</span>
+            <img src="https://via.placeholder.com/38" alt="User">
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="content" id="content">
+        <!-- Teachers Management Content -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">Διαχείριση Διδασκόντων</h1>
+            <button class="btn btn-primary" id="addTeacherBtn">
+                <i class="bi bi-plus"></i> Προσθήκη Διδάσκοντα
+            </button>
+        </div>
+        
+        <!-- Alerts Container -->
+        <div id="teachers-alert" class="mb-4"></div>
+        
+        <!-- Teachers Table -->
+        <div class="table-container" id="teachersTableContainer">
+            <table id="teachersTable" class="table table-hover w-100">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Ονοματεπώνυμο</th>
+                        <th scope="col">Τύπος</th>
+                        <th scope="col">Βαθμίδα</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Κατάσταση</th>
+                        <th scope="col">Ενέργειες</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Teacher Modal -->
+    <div class="modal fade" id="teacherModal" tabindex="-1" aria-labelledby="teacherModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="teacherModalTitle">Προσθήκη/Επεξεργασία Διδάσκοντα</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="teacherForm" onsubmit="saveTeacher(event)">
+                        <input type="hidden" id="teacherId">
+                        
+                        <div class="mb-3">
+                            <label for="teacherFullName" class="form-label">Ονοματεπώνυμο</label>
+                            <input type="text" class="form-control" id="teacherFullName" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="teacherUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="teacherUsername" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="teacherEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="teacherEmail" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="teacherType" class="form-label">Τύπος Διδάσκοντα</label>
+                            <select class="form-select" id="teacherType" required>
+                                <option value="">Επιλέξτε τύπο</option>
+                                <option value="DEP">DEP</option>
+                                <option value="EDIP">EDIP</option>
+                                <option value="ETEP">ETEP</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="teacherRank" class="form-label">Βαθμίδα</label>
+                            <input type="text" class="form-control" id="teacherRank" required>
+                        </div>
+                        
+                        <div id="passwordField" class="mb-3">
+                            <label for="teacherPassword" class="form-label">Κωδικός Πρόσβασης</label>
+                            <input type="password" class="form-control" id="teacherPassword">
+                            <div class="form-text">Αφήστε κενό για να διατηρήσετε τον υπάρχοντα κωδικό.</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="teacherActive">
+                            <label class="form-check-label" for="teacherActive">Ενεργός</label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Ακύρωση</button>
+                            <button type="submit" class="btn btn-primary">Αποθήκευση</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Teacher Confirmation Modal -->
+    <div class="modal fade" id="deleteTeacherModal" tabindex="-1" aria-labelledby="deleteTeacherModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteTeacherModalTitle">Επιβεβαίωση Διαγραφής</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε τον διδάσκοντα <strong id="deleteTeacherName"></strong>;</p>
+                    <p class="text-danger">Η ενέργεια αυτή δεν μπορεί να αναιρεθεί.</p>
+                    <input type="hidden" id="deleteTeacherId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteTeacher()">Διαγραφή</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Required Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        let teachersDataTable;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if token exists
+            const token = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+            
+            if (!token) {
+                // Redirect to login page if no token
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Display username
+            if (username) {
+                document.getElementById('username-display').textContent = username;
+            }
+            
+            // Toggle sidebar functionality
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            const topbar = document.getElementById('topbar');
+            const toggleBtn = document.getElementById('toggle-sidebar');
+            
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('sidebar-collapsed');
+                content.classList.toggle('content-collapsed');
+                topbar.classList.toggle('topbar-collapsed');
+            });
+            
+            // Add event listener for add teacher button
+            document.getElementById('addTeacherBtn').addEventListener('click', showAddTeacherModal);
+            
+            // Initialize DataTable
+            teachersDataTable = new DataTable('#teachersTable', {
+                responsive: true,
+                language: {
+                    "emptyTable": "Δεν βρέθηκαν διδάσκοντες",
+                    "info": "Εμφάνιση _START_ έως _END_ από _TOTAL_ διδάσκοντες",
+                    "infoEmpty": "Εμφάνιση 0 έως 0 από 0 διδάσκοντες",
+                    "infoFiltered": "(φιλτραρισμένοι από _MAX_ συνολικά διδάσκοντες)",
+                    "lengthMenu": "Εμφάνιση _MENU_ διδασκόντων",
+                    "loadingRecords": "Φόρτωση...",
+                    "processing": "Επεξεργασία...",
+                    "search": "Αναζήτηση:",
+                    "zeroRecords": "Δεν βρέθηκαν διδάσκοντες",
+                    "paginate": {
+                        "first": "Πρώτη",
+                        "last": "Τελευταία",
+                        "next": "Επόμενη",
+                        "previous": "Προηγούμενη"
+                    }
+                }
+            });
+            
+            // Load teachers data
+            loadTeachersData(token);
+        });
+        
+        async function loadTeachersData(token) {
+            try {
+                // Show loading state
+                document.getElementById('teachersTableContainer').classList.add('loading');
+                
+                const response = await fetch('/users/api/teachers', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (response.ok) {
+                    const teachers = await response.json();
+                    renderTeachersTable(teachers);
+                } else if (response.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    window.location.href = '/login?session=expired';
+                } else {
+                    showAlert('teachers-alert', 'Σφάλμα κατά τη φόρτωση των διδασκόντων.', 'danger');
+                }
+            } catch (error) {
+                console.error('Error fetching teachers:', error);
+                showAlert('teachers-alert', 'Σφάλμα σύνδεσης με τον server.', 'danger');
+            } finally {
+                // Hide loading state
+                document.getElementById('teachersTableContainer').classList.remove('loading');
+            }
+        }
+        
+        function renderTeachersTable(teachers) {
+            // Clear existing data
+            teachersDataTable.clear();
+            
+            // Add new data
+            teachers.forEach(teacher => {
+                teachersDataTable.row.add([
+                    teacher.id,
+                    teacher.fullName || teacher.full_name || '',
+                    teacher.teacherType || teacher.teacher_type || '',
+                    teacher.teacherRank || teacher.teacher_rank || '',
+                    teacher.email || '',
+                    teacher.active ? '<span class="badge bg-success">Ενεργός</span>' : '<span class="badge bg-danger">Ανενεργός</span>',
+                    `<div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="editTeacher(${teacher.id})">
+                            <i class="bi bi-pencil"></i> Επεξεργασία
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteTeacher(${teacher.id}, '${teacher.fullName || teacher.full_name || 'Άγνωστο'}')">
+                            <i class="bi bi-trash"></i> Διαγραφή
+                        </button>
+                    </div>`
+                ]);
+            });
+            
+            // Redraw the table
+            teachersDataTable.draw();
+        }
+        
+        function showAddTeacherModal() {
+            // Reset form
+            document.getElementById('teacherForm').reset();
+            document.getElementById('teacherId').value = '';
+            document.getElementById('teacherModalTitle').textContent = 'Προσθήκη Διδάσκοντα';
+            
+            // Show password field
+            document.getElementById('passwordField').style.display = 'block';
+            document.getElementById('teacherPassword').required = true;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('teacherModal'));
+            modal.show();
+        }
+        
+        function editTeacher(id) {
+            const token = localStorage.getItem('token');
+            
+            // Fetch teacher data
+            fetch(`/users/api/teachers/${id}`, {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch teacher data');
+                return response.json();
+            })
+            .then(teacher => {
+                // Populate form
+                document.getElementById('teacherId').value = teacher.id;
+                document.getElementById('teacherFullName').value = teacher.fullName || teacher.full_name || '';
+                document.getElementById('teacherUsername').value = teacher.username || '';
+                document.getElementById('teacherEmail').value = teacher.email || '';
+                document.getElementById('teacherType').value = teacher.teacherType || teacher.teacher_type || '';
+                document.getElementById('teacherRank').value = teacher.teacherRank || teacher.teacher_rank || '';
+                document.getElementById('teacherActive').checked = teacher.active;
+                
+                // Password is optional when editing
+                document.getElementById('teacherPassword').required = false;
+                
+                // Update modal title
+                document.getElementById('teacherModalTitle').textContent = 'Επεξεργασία Διδάσκοντα';
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('teacherModal'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error fetching teacher:', error);
+                showAlert('teachers-alert', 'Σφάλμα κατά τη φόρτωση των στοιχείων του διδάσκοντα.', 'danger');
+            });
+        }
+        
+        function confirmDeleteTeacher(id, name) {
+            // Set teacher name and ID in the modal
+            document.getElementById('deleteTeacherName').textContent = name;
+            document.getElementById('deleteTeacherId').value = id;
+            
+            // Show the confirmation modal
+            const modal = new bootstrap.Modal(document.getElementById('deleteTeacherModal'));
+            modal.show();
+        }
+        
+        function deleteTeacher() {
+            const id = document.getElementById('deleteTeacherId').value;
+            const token = localStorage.getItem('token');
+            
+            //
+        }
+    </script>
+</html>

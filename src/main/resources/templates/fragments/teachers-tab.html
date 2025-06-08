@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <body>
+        <div th:fragment="teachers-tab" class="tab-pane fade" id="teachers-tab">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Διδάσκοντες</h1>
+                <button class="btn btn-primary" id="add-teacher-btn">
+                    <i class="bi bi-plus"></i> Προσθήκη Διδάσκοντα
+                </button>
+            </div>
+
+             <!--Loading indicator--> 
+            <div id="teachers-loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Φόρτωση δεδομένων...</p>
+            </div>
+
+             <!--Error message--> 
+            <div id="teachers-error" class="alert alert-danger" style="display: none;">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span id="teachers-error-message">Σφάλμα κατά τη φόρτωση των δεδομένων.</span>
+            </div>
+
+             <!--Empty state--> 
+            <div id="teachers-empty" class="empty-state" style="display: none;">
+                <i class="bi bi-person-slash"></i>
+                <h4>Δεν βρέθηκαν διδάσκοντες</h4>
+                <p>Δεν υπάρχουν καταχωρημένοι διδάσκοντες στο σύστημα.</p>
+                <button class="btn btn-primary mt-2" id="add-first-teacher-btn">
+                    <i class="bi bi-plus"></i> Προσθήκη Πρώτου Διδάσκοντα
+                </button>
+            </div>
+
+             <!--Teachers Table--> 
+            <div id="teachers-table-container" class="table-container" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">Εμφάνιση</span>
+                        <select class="form-select form-select-sm" id="teachers-page-size" style="width: auto;">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span class="ms-2">εγγραφών</span>
+                    </div>
+                    <div class="input-group" style="width: 250px;">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="teachers-search" placeholder="Αναζήτηση...">
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Ονοματεπώνυμο</th>
+                                <th scope="col">Username</th>
+                                <th scope="col">Τύπος</th>
+                                <th scope="col">Βαθμίδα</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Κατάσταση</th>
+                                <th scope="col">Ενέργειες</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teachers-table-body">
+                             Table rows will be populated dynamically 
+                        </tbody>
+                    </table>
+                </div>
+
+                 Pagination 
+                <nav aria-label="Teachers pagination">
+                    <ul class="pagination justify-content-center" id="teachers-pagination">
+                         Pagination will be populated dynamically 
+                    </ul>
+                </nav>
+            </div>
+
+             <!-- Edit Teacher Modal -->
+            <div class="modal fade" id="edit-teacher-modal" tabindex="-1" aria-labelledby="editTeacherModalLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="editTeacherModalLabel">Επεξεργασία Διδάσκοντα</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <form id="edit-teacher-form">
+                      <input type="hidden" id="edit-teacher-id">
+
+                      <div class="mb-3">
+                        <label for="edit-full-name" class="form-label">Ονοματεπώνυμο</label>
+                        <input type="text" class="form-control" id="edit-full-name" required>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="edit-username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="edit-username" required>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="edit-email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="edit-email" required>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="edit-teacher-type" class="form-label">Τύπος Διδάσκοντα</label>
+                        <select class="form-select" id="edit-teacher-type" required>
+                          <option value="">Επιλέξτε τύπο</option>
+                          <option value="ΔΕΠ">ΔΕΠ</option>
+                          <option value="ΕΔΙΠ">ΕΔΙΠ</option>
+                          <option value="Συμβασιούχος">Συμβασιούχος</option>
+                          <option value="Άλλο">Άλλο</option>
+                        </select>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="edit-teacher-rank" class="form-label">Βαθμίδα</label>
+                        <select class="form-select" id="edit-teacher-rank">
+                          <option value="">Επιλέξτε βαθμίδα</option>
+                          <option value="Καθηγητής">Καθηγητής</option>
+                          <option value="Αναπληρωτής Καθηγητής">Αναπληρωτής Καθηγητής</option>
+                          <option value="Επίκουρος Καθηγητής">Επίκουρος Καθηγητής</option>
+                          <option value="Λέκτορας">Λέκτορας</option>
+                          <option value="Μέλος ΕΔΙΠ">Μέλος ΕΔΙΠ</option>
+                          <option value="Διδάσκων">Διδάσκων</option>
+                        </select>
+                      </div>
+
+                      <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="edit-active">
+                        <label class="form-check-label" for="edit-active">
+                          Ενεργός
+                        </label>
+                      </div>
+                    </form>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Άκυρο</button>
+                    <button type="button" class="btn btn-primary" id="save-edit-teacher-btn">Αποθήκευση</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal fade" id="delete-teacher-modal" tabindex="-1" aria-labelledby="deleteTeacherModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteTeacherModalLabel">Διαγραφή Διδάσκοντα</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="delete-teacher-id">
+        <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε τον διδάσκοντα <strong id="delete-teacher-name">αυτό</strong>;</p>
+        <p class="text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Η ενέργεια αυτή δεν μπορεί να αναιρεθεί.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Άκυρο</button>
+        <button type="button" class="btn btn-danger" id="confirm-delete-teacher-btn">Διαγραφή</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+            <!-- Add Teacher Modal -->
+<div class="modal fade" id="add-teacher-modal" tabindex="-1" aria-labelledby="addTeacherModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addTeacherModalLabel">Προσθήκη Νέου Διδάσκοντα</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="add-teacher-form">
+          <div class="mb-3">
+            <label for="add-full-name" class="form-label">Ονοματεπώνυμο</label>
+            <input type="text" class="form-control" id="add-full-name" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="add-username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="add-username" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="add-password" class="form-label">Κωδικός Πρόσβασης</label>
+            <input type="password" class="form-control" id="add-password" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="add-email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="add-email" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="add-teacher-type" class="form-label">Τύπος Διδάσκοντα</label>
+            <select class="form-select" id="add-teacher-type" required>
+              <option value="">Επιλέξτε τύπο</option>
+              <option value="ΔΕΠ">ΔΕΠ</option>
+              <option value="ΕΔΙΠ">ΕΔΙΠ</option>
+              <option value="Συμβασιούχος">Συμβασιούχος</option>
+              <option value="Άλλο">Άλλο</option>
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label for="add-teacher-rank" class="form-label">Βαθμίδα</label>
+            <select class="form-select" id="add-teacher-rank" required>
+              <option value="">Επιλέξτε βαθμίδα</option>
+              <option value="Καθηγητής">Καθηγητής</option>
+              <option value="Αναπληρωτής Καθηγητής">Αναπληρωτής Καθηγητής</option>
+              <option value="Επίκουρος Καθηγητής">Επίκουρος Καθηγητής</option>
+              <option value="Λέκτορας">Λέκτορας</option>
+              <option value="Μέλος ΕΔΙΠ">Μέλος ΕΔΙΠ</option>
+              <option value="Διδάσκων">Διδάσκων</option>
+            </select>
+          </div>
+          
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="add-active" checked>
+            <label class="form-check-label" for="add-active">
+              Ενεργός
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Άκυρο</button>
+        <button type="button" class="btn btn-primary" id="save-add-teacher-btn">Αποθήκευση</button>
+      </div>
+    </div>
+  </div>
+</div>
+        </div>
+    </body>
+</html>

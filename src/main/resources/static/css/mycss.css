@@ -1,0 +1,164 @@
+* {
+  font-family: "Poppins", sans-serif;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #dde5f4;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  overflow-y: auto; /* Allow scrolling */
+}
+
+.screen-1 {
+  background: white;
+  padding: 2em;
+  display: flex;
+  flex-direction: column;
+  border-radius: 30px;
+  box-shadow: 0 0 2em #e6e9f9;
+  gap: 1em;
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+.screen-1 .logo {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  margin: 0 auto;
+  display: block;
+}
+
+.screen-1 form {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  width: 100%;
+}
+
+.screen-1 .email, 
+.screen-1 .password, 
+.screen-1 .name, 
+.screen-1 .surname, 
+.screen-1 .teacher-type, 
+.screen-1 .rank,
+.screen-1 .confirm-password,
+.screen-1 .username {
+  background: white;
+  box-shadow: 0 0 1em #e6e9f9;
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  border-radius: 15px;
+  width: 100%;
+}
+
+.screen-1 .sec-2 {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.screen-1 .email input, 
+.screen-1 .password input, 
+.screen-1 .name input, 
+.screen-1 .surname input,
+.screen-1 .rank input, 
+.screen-1 .confirm-password input,
+.screen-1 .username input,
+.screen-1 .teacher-type select {
+  outline: none;
+  border: none;
+  flex: 1;
+  padding: 8px 0;
+  font-size: 0.9em;
+}
+
+.screen-1 .email ion-icon, 
+.screen-1 .password ion-icon,
+.screen-1 .name ion-icon, 
+.screen-1 .surname ion-icon,
+.screen-1 .teacher-type ion-icon, 
+.screen-1 .rank ion-icon,
+.screen-1 .confirm-password ion-icon,
+.screen-1 .username ion-icon {
+  color: #4d4d4d;
+  margin-right: 0.8em;
+  font-size: 1.2em;
+}
+
+.screen-1 .password-requirements {
+  font-size: 0.8em;
+  color: #4d4d4d;
+  margin-top: 0.5em;
+}
+
+.screen-1 .password-requirements ul {
+  margin: 0.5em 0 0 1.5em;
+  padding: 0;
+  list-style-type: disc;
+}
+
+.screen-1 .password-requirements li {
+  margin-bottom: 0.2em;
+}
+
+.screen-1 .login,
+.screen-1 .register {
+  padding: 0.8em;
+  background: #3d4785;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5em;
+  transition: background-color 0.3s;
+}
+
+.screen-1 .login:hover,
+.screen-1 .register:hover {
+  background: #2a3266;
+}
+
+.screen-1 .footer {
+  display: flex;
+  justify-content: center;
+  font-size: 0.8em;
+  color: #5e5e5e;
+  margin-top: 1em;
+  padding-bottom: 0.5em;
+}
+
+.screen-1 .footer span {
+  cursor: pointer;
+  margin: 0 1em;
+  text-decoration: underline;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.9em;
+  text-align: center;
+  padding: 0.5em 0;
+}
+
+/* For show/hide password icon positioning */
+.screen-1 .password .sec-2,
+.screen-1 .confirm-password .sec-2 {
+  position: relative;
+}
+
+.screen-1 .password .show-hide,
+.screen-1 .confirm-password .show-hide {
+  position: absolute;
+  right: 0;
+  cursor: pointer;
+}
