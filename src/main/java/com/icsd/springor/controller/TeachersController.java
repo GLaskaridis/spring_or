@@ -70,9 +70,9 @@ public class TeachersController {
 //                return "redirect:/teachers/add";
 //            }
             
-            // Convert DTO to entity and save
+            //metatropi tou DTO se xristi kai apothikeusi
             User user = convertToEntity(userDTO);
-            user.setRole("ROLE_TEACHER"); // Set appropriate role
+            user.setRole("TEACHER"); //rolos teacher
             userService.save(user);
             
             redirectAttributes.addFlashAttribute("message", "Ο διδάσκων προστέθηκε επιτυχώς");
@@ -109,7 +109,7 @@ public class TeachersController {
         newUser.setTeacherRank(userCreateDTO.getTeacherRank());
         newUser.setPassword(userCreateDTO.getPassword()); // Will be encoded in service
         newUser.setActive(userCreateDTO.isActive());
-        newUser.setRole("ROLE_USER");
+        newUser.setRole("TEACHER");
         
         User savedUser = userService.registerUser(newUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedUser));

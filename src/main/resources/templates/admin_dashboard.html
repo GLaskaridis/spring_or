@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="el" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Πίνακας Ελέγχου Διαχειριστή</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --secondary-color: #2d3748;
+            --accent-color: #4299e1;
+            --success-color: #38a169;
+            --warning-color: #ed8936;
+            --danger-color: #e53e3e;
+            --light-bg: #f7fafc;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --admin-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: var(--admin-gradient);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.6rem;
+        }
+
+        .sidebar {
+            min-height: calc(100vh - 76px);
+            background: white;
+            box-shadow: var(--card-shadow);
+            border-radius: 0.75rem;
+        }
+
+        .sidebar .nav-link {
+            color: var(--secondary-color);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: var(--admin-gradient);
+            color: white;
+            transform: translateX(8px);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 12px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: var(--admin-gradient);
+            color: white;
+            border-radius: 1rem 1rem 0 0 !important;
+            border: none;
+            font-weight: 600;
+        }
+
+        .admin-stat-card {
+            background: var(--admin-gradient);
+            color: white;
+            border-radius: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .admin-stat-card.users {
+            background: linear-gradient(135deg, var(--success-color) 0%, #48bb78 100%);
+        }
+
+        .admin-stat-card.courses {
+            background: linear-gradient(135deg, var(--accent-color) 0%, #63b3ed 100%);
+        }
+
+        .admin-stat-card.rooms {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #fbb040 100%);
+        }
+
+        .admin-stat-card.schedules {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #fc8181 100%);
+        }
+
+        .quick-action-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-action-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .progress-ring {
+            width: 80px;
+            height: 80px;
+        }
+
+        .progress-ring-circle {
+            stroke-dasharray: 251.32;
+            stroke-dashoffset: 251.32;
+            animation: progress 2s ease-in-out forwards;
+        }
+
+        @keyframes progress {
+            to {
+                stroke-dashoffset: 125.66; /* 50% progress */
+            }
+        }
+
+        .system-status {
+            border-left: 4px solid;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .system-status.success {
+            border-color: var(--success-color);
+            background-color: rgba(56, 161, 105, 0.1);
+        }
+
+        .system-status.warning {
+            border-color: var(--warning-color);
+            background-color: rgba(237, 137, 54, 0.1);
+        }
+
+        .system-status.error {
+            border-color: var(--danger-color);
+            background-color: rgba(229, 62, 62, 0.1);
+        }
+
+        .activity-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 0;
+            transition: background-color 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background-color: #f7fafc;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .btn-admin {
+            background: var(--admin-gradient);
+            border: none;
+            color: white;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .table-responsive {
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        .table thead th {
+            background: var(--admin-gradient);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        .badge-status {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-bottom: 2rem;
+            }
+            
+            .admin-stat-card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                Διαχείριση Συστήματος
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#systemHealthModal">
+                            <i class="fas fa-heartbeat me-1"></i>
+                            Υγεία Συστήματος
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge">5</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">Ειδοποιήσεις Συστήματος</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-plus text-success me-2"></i>Νέος χρήστης εγγράφηκε</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Σφάλμα χρονοπρογραμματισμού</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-calendar text-info me-2"></i>Νέο πρόγραμμα δημιουργήθηκε</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="#">Δες όλες τις ειδοποιήσεις</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-shield me-1"></i>
+                            Διαχειριστής
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cogs me-2"></i>Ρυθμίσεις Συστήματος</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2"></i>Αναφορές</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <div class="sidebar p-3 fade-in">
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="#dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Επισκόπηση
+                        </a>
+                        <a class="nav-link" href="/teachers/list">
+                            <i class="fas fa-users"></i>
+                            Διαχείριση Χρηστών
+                        </a>
+                        <a class="nav-link" href="/courses/list">
+                            <i class="fas fa-book"></i>
+                            Διαχείριση Μαθημάτων
+                        </a>
+                        <a class="nav-link" href="/rooms/list">
+                            <i class="fas fa-door-open"></i>
+                            Διαχείριση Αιθουσών
+                        </a>
+                        <a class="nav-link" href="#schedule-management">
+                            <i class="fas fa-calendar-alt"></i>
+                            Χρονοπρογραμματισμός
+                        </a>
+                        <a class="nav-link" href="#assignments">
+                            <i class="fas fa-tasks"></i>
+                            Αναθέσεις Μαθημάτων
+                        </a>
+                        <a class="nav-link" href="#reports">
+                            <i class="fas fa-chart-bar"></i>
+                            Αναφορές & Στατιστικά
+                        </a>
+                        <a class="nav-link" href="#system-settings">
+                            <i class="fas fa-cogs"></i>
+                            Ρυθμίσεις Συστήματος
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-9 col-md-8">
+                <!-- Welcome Section -->
+                <div class="row mb-4 fade-in">
+                    <div class="col-12">
+                        <div class="card border-0">
+                            <div class="card-body p-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h2 class="card-title mb-1">Πίνακας Ελέγχου Διαχειριστή</h2>
+                                        <p class="text-muted mb-3">Διαχειριστείτε χρήστες, μαθήματα και χρονοπρογραμματισμό από έναν κεντρικό πίνακα</p>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#newScheduleModal">
+                                                <i class="fas fa-plus me-2"></i>Νέος Χρονοπρογραμματισμός
+                                            </button>
+                                            <button class="btn btn-outline-primary">
+                                                <i class="fas fa-users me-2"></i>Διαχείριση Χρηστών
+                                            </button>
+                                            <button class="btn btn-outline-success">
+                                                <i class="fas fa-download me-2"></i>Εξαγωγή Αναφορών
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <div class="progress-ring">
+                                            <svg class="progress-ring" width="80" height="80">
+                                                <circle class="progress-ring-circle" stroke="#4299e1" stroke-width="4" fill="transparent" r="36" cx="40" cy="40"/>
+                                            </svg>
+                                            <div class="position-absolute top-50 start-50 translate-middle">
+                                                <strong>85%</strong><br>
+                                                <small>Απόδοση</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4 fade-in">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card admin-stat-card users">
+                            <div class="card-body text-center position-relative">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="mb-0">25</h3>
+                                        <small>Ενεργοί Χρήστες</small>
+                                        <div class="mt-1">
+                                            <small><i class="fas fa-arrow-up me-1"></i>+3 αυτή την εβδομάδα</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-users fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card admin-stat-card courses">
+                            <div class="card-body text-center position-relative">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="mb-0">42</h3>
+                                        <small>Μαθήματα</small>
+                                        <div class="mt-1">
+                                            <small><i class="fas fa-arrow-up me-1"></i>+2 νέα</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-book fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card admin-stat-card rooms">
+                            <div class="card-body text-center position-relative">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="mb-0">18</h3>
+                                        <small>Αίθουσες</small>
+                                        <div class="mt-1">
+                                            <small><i class="fas fa-check me-1"></i>Όλες διαθέσιμες</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-door-open fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card admin-stat-card schedules">
+                            <div class="card-body text-center position-relative">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="mb-0">3</h3>
+                                        <small>Προγράμματα</small>
+                                        <div class="mt-1">
+                                            <small><i class="fas fa-clock me-1"></i>1 σε εξέλιξη</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-calendar-alt fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Status & Activity -->
+                <div class="row fade-in">
+                    <!-- System Status -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-server me-2"></i>
+                                    Κατάσταση Συστήματος
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="system-status success">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Βάση Δεδομένων</h6>
+                                            <small class="text-muted">Όλες οι συνδέσεις λειτουργούν κανονικά</small>
+                                        </div>
+                                        <span class="badge bg-success">Online</span>
+                                    </div>
+                                </div>
+                                <div class="system-status success">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Web Server</h6>
+                                            <small class="text-muted">Απόκριση: 45ms</small>
+                                        </div>
+                                        <span class="badge bg-success">Optimal</span>
+                                    </div>
+                                </div>
+                                <div class="system-status warning">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Χρονοπρογραμματιστής</h6>
+                                            <small class="text-muted">Υψηλή χρήση CPU</small>
+                                        </div>
+                                        <span class="badge bg-warning">Warning</span>
+                                    </div>
+                                </div>
+                                <div class="system-status success">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">Backup System</h6>
+                                            <small class="text-muted">Τελευταίο backup: 2 ώρες πριν</small>
+                                        </div>
+                                        <span class="badge bg-success">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-history me-2"></i>
+                                    Πρόσφατη Δραστηριότητα
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="activity-item px-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user-plus"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">Νέος χρήστης εγγράφηκε</div>
+                                            <small class="text-muted">Δρ. Μαρία Παπαδοπούλου - Πριν από 10 λεπτά</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="activity-item px-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-calendar"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">Πρόγραμμα ενημερώθηκε</div>
+                                            <small class="text-muted">Χειμερινό Εξάμηνο 2024 - Πριν από 1 ώρα</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="activity-item px-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">Σφάλμα χρονοπρογραμματισμού</div>
+                                            <small class="text-muted">Σύγκρουση αίθουσας - Πριν από 2 ώρες</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="activity-item px-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-download"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">Backup ολοκληρώθηκε</div>
+                                            <small class="text-muted">Αυτόματο backup - Πριν από 3 ώρες</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Current Schedules -->
+                <div class="row fade-in">
+                    <!-- Quick Actions -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-bolt me-2"></i>
+                                    Γρήγορες Ενέργειες
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-3">
+                                    <div class="quick-action-card p-3 text-center">
+                                        <i class="fas fa-user-plus fa-2x mb-2"></i>
+                                        <div class="fw-bold">Προσθήκη Χρήστη</div>
+                                        <small>Δημιουργία νέου λογαριασμού</small>
+                                    </div>
+                                    <div class="quick-action-card p-3 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <i class="fas fa-book fa-2x mb-2"></i>
+                                        <div class="fw-bold">Νέο Μάθημα</div>
+                                        <small>Προσθήκη μαθήματος</small>
+                                    </div>
+                                    <div class="quick-action-card p-3 text-center" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #333;">
+                                        <i class="fas fa-door-open fa-2x mb-2"></i>
+                                        <div class="fw-bold">Νέα Αίθουσα</div>
+                                        <small>Καταχώρηση αίθουσας</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Schedules -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Τρέχοντες Χρονοπρογραμματισμοί
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Εξάμηνο</th>
+                                                <th>Κατάσταση</th>
+                                                <th>Πρόοδος</th>
+                                                <th>Τελευταία Ενημέρωση</th>
+                                                <th>Ενέργειες</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <strong>Χειμερινό 2024</strong><br>
+                                                    <small class="text-muted">42 μαθήματα</small>
+                                                </td>
+                                                <td><span class="badge badge-status bg-success">Ενεργό</span></td>
+                                                <td>
+                                                    <div class="progress" style="height: 8px;">
+                                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                                    </div>
+                                                    <small>100%</small>
+                                                </td>
+                                                <td>
+                                                    <small>Σήμερα<br>14:30</small>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-success">
+                                                        <i class="fas fa-download"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>Εαρινό 2025</strong><br>
+                                                    <small class="text-muted">38 μαθήματα</small>
+                                                </td>
+                                                <td><span class="badge badge-status bg-warning">Σε Εξέλιξη</span></td>
+                                                <td>
+                                                    <div class="progress" style="height: 8px;">
+                                                        <div class="progress-bar bg-warning" style="width: 65%"></div>
+                                                    </div>
+                                                    <small>65%</small>
+                                                </td>
+                                                <td>
+                                                    <small>Χθες<br>16:45</small>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-warning">
+                                                        <i class="fas fa-play"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>Θερινό 2024</strong><br>
+                                                    <small class="text-muted">15 μαθήματα</small>
+                                                </td>
+                                                <td><span class="badge badge-status bg-secondary">Αρχειοθετημένο</span></td>
+                                                <td>
+                                                    <div class="progress" style="height: 8px;">
+                                                        <div class="progress-bar bg-secondary" style="width: 100%"></div>
+                                                    </div>
+                                                    <small>100%</small>
+                                                </td>
+                                                <td>
+                                                    <small>15/9/2024<br>10:00</small>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-archive"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- System Health Modal -->
+    <div class="modal fade" id="systemHealthModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--admin-gradient); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-heartbeat me-2"></i>
+                        Υγεία Συστήματος
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Απόδοση Server</h6>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <small>CPU Usage</small>
+                                    <small>45%</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <small>Memory Usage</small>
+                                    <small>62%</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" style="width: 62%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Βάση Δεδομένων</h6>
+                            <div class="mb-3">
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" style="width: 12%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <small>Query Performance</small>
+                                    <small>Excellent</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: 95%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Κλείσιμο</button>
+                    <button type="button" class="btn btn-admin">Λεπτομερή Στοιχεία</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Schedule Modal -->
+    <div class="modal fade" id="newScheduleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--admin-gradient); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>
+                        Νέος Χρονοπρογραμματισμός
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Όνομα Χρονοπρογραμματισμού</label>
+                            <input type="text" class="form-control" placeholder="π.χ. Χειμερινό Εξάμηνο 2025">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Εξάμηνο</label>
+                            <select class="form-select">
+                                <option>Χειμερινό 2024</option>
+                                <option>Εαρινό 2025</option>
+                                <option>Θερινό 2025</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Ώρα Έναρξης</label>
+                                <input type="time" class="form-control" value="09:00">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ώρα Λήξης</label>
+                                <input type="time" class="form-control" value="21:00">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                    <button type="button" class="btn btn-admin">Δημιουργία</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate cards on load
+            const cards = document.querySelectorAll('.fade-in');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Sidebar navigation
+            const navLinks = document.querySelectorAll('.sidebar .nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (!this.href.includes('http')) {
+                        e.preventDefault();
+                    }
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Quick action cards
+            const quickActionCards = document.querySelectorAll('.quick-action-card');
+            quickActionCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Add click animation
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1.05)';
+                    }, 100);
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                });
+            });
+
+            // Real-time data simulation
+            function updateStats() {
+                const cpuUsage = Math.floor(Math.random() * 20) + 40;
+                const memoryUsage = Math.floor(Math.random() * 20) + 50;
+                const activeConnections = Math.floor(Math.random() * 10) + 8;
+                
+                // Update progress bars if modal is open
+                const healthModal = document.getElementById('systemHealthModal');
+                if (healthModal && healthModal.classList.contains('show')) {
+                    const progressBars = healthModal.querySelectorAll('.progress-bar');
+                    if (progressBars.length >= 3) {
+                        progressBars[0].style.width = cpuUsage + '%';
+                        progressBars[1].style.width = memoryUsage + '%';
+                        progressBars[2].style.width = (activeConnections * 8) + '%';
+                    }
+                }
+            }
+
+            // Update stats every 5 seconds
+            setInterval(updateStats, 5000);
+
+            // Progress ring animation
+            const progressRing = document.querySelector('.progress-ring-circle');
+            if (progressRing) {
+                setTimeout(() => {
+                    progressRing.style.strokeDashoffset = '37.7'; // 85% progress
+                }, 500);
+            }
+
+            // Table row hover effects
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                row.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+
+            // Notification system
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+                notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                notification.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 5000);
+            }
+
+            // Simulate periodic notifications
+            setTimeout(() => {
+                showNotification('<i class="fas fa-info-circle me-2"></i>Το σύστημα λειτουργεί κανονικά', 'success');
+            }, 3000);
+
+            // Auto-refresh activity feed
+            function updateActivityFeed() {
+                const activities = [
+                    { icon: 'user-plus', color: 'success', title: 'Νέος χρήστης εγγράφηκε', time: 'Μόλις τώρα' },
+                    { icon: 'edit', color: 'primary', title: 'Μάθημα ενημερώθηκε', time: 'Πριν από 5 λεπτά' },
+                    { icon: 'calendar', color: 'info', title: 'Πρόγραμμα δημιουργήθηκε', time: 'Πριν από 15 λεπτά' }
+                ];
+                
+                // This would typically fetch from an API
+                console.log('Activity feed updated');
+            }
+
+            setInterval(updateActivityFeed, 30000); // Update every 30 seconds
+        });
+
+        // Advanced features for admin dashboard
+        class AdminDashboard {
+            constructor() {
+                this.initCharts();
+                this.initRealTimeUpdates();
+            }
+
+            initCharts() {
+                // This would integrate with Chart.js or similar library
+                console.log('Charts initialized');
+            }
+
+            initRealTimeUpdates() {
+                // WebSocket connection for real-time updates
+                console.log('Real-time updates initialized');
+            }
+
+            exportReport(type) {
+                // Handle report generation
+                showNotification(`<i class="fas fa-download me-2"></i>Η αναφορά ${type} εξάγεται...`, 'info');
+                setTimeout(() => {
+                    showNotification(`<i class="fas fa-check me-2"></i>Η αναφορά ${type} έτοιμη για λήψη!`, 'success');
+                }, 2000);
+            }
+        }
+
+        // Initialize admin dashboard
+        const adminDash = new AdminDashboard();
+
+        // Helper function for notifications
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

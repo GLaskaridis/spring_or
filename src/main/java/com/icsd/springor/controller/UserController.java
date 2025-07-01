@@ -81,13 +81,14 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    @ResponseBody  // Add this to indicate we're returning data, not a view name
+    @ResponseBody  
     public ResponseEntity<?> registerUser(@Valid @RequestBody User user,
             BindingResult result) {
+        //elegxos tis formas poy egine upovoli
         if (result.hasErrors()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Validation errors"));
         }
-
+        //elegxos apo tin vasi an uparxei to username
         if (userService.existsByUsername(user.getUsername())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Username is already taken!"));
         }
@@ -96,8 +97,12 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of("message", "Email is already registered!"));
         }
 
+        //dimiourgia antikeimenou User me prosthiki xaraktiristikwn
+        //einai anenergos stin arxi
         user.setActive(false);
-        user.setRole("ROLE_USER");
+        //exei rolo xristi
+        user.setRole("USER");
+        //kruptografisi tou kwdikou tou
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         userService.save(user);
@@ -113,31 +118,54 @@ public class UserController {
     
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request,HttpServletResponse response) {
         try {
-            // Create authentication token
+            //dimiourgia token kata tin eisodo
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                 loginRequest.getUsername(), 
                 loginRequest.getPassword()
             );
             
-            // Authenticate
+            //elegxos authentikopoiisi me to token
             Authentication authentication = authenticationManager.authenticate(authToken);
             
-            // Store in SecurityContext
+             //anaktisi antikeimenou user
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            
+            // Παραγωγή JWT token
+            String jwt = jwtUtils.generateToken(userDetails);
+        
+            // Καθορισμός redirect URL με βάση το ρόλο
+            String redirectUrl = "/users/user_dashboard"; // default για USER
+            if (userDetails.getAuthorities().stream()
+                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
+                redirectUrl = "/users/admin_dashboard";
+            }
+        
+            // Αποθήκευση JWT ως HttpOnly cookie
+            Cookie jwtCookie = new Cookie("jwt", jwt);
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setPath("/");
+            jwtCookie.setMaxAge(24 * 60 * 60); // 24 ώρες
+            response.addCookie(jwtCookie);
+            
+            //apothikeusi sto security context
             SecurityContextHolder.getContext().setAuthentication(authentication);
             
-            // Store in session
+            //apothikeysi sto session
             HttpSession session = request.getSession(true);
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, 
                                 SecurityContextHolder.getContext());
             
-            // Return success response
-            Map<String, Object> response = new HashMap<>();
-            response.put("username", loginRequest.getUsername());
-            response.put("success", true);
-            
-            return ResponseEntity.ok(response);
+            //epistrofi minimatos epitixias
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("username", loginRequest.getUsername());
+            responseMap.put("success", true);
+            responseMap.put("redirectUrl", redirectUrl); // Αυτό έλειπε!
+            responseMap.put("token", jwt);
+            responseMap.put("role", userDetails.getAuthorities().iterator().next().getAuthority());
+
+            return ResponseEntity.ok(responseMap);
         } catch (AuthenticationException e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", "Invalid username or password");
@@ -147,7 +175,6 @@ public class UserController {
 
     @GetMapping("/profile")
     public String showProfile(Model model) {
-        // Get current user and add to model
         return "profile";
     }
 
@@ -156,21 +183,27 @@ public class UserController {
     @GetMapping("/dashboard")
     public String dashboard(Model model, Authentication authentication) {
         logger.info("Dashboard controller called, user: {}", 
-                    authentication != null ? authentication.getName() : "none");
+                authentication != null ? authentication.getName() : "none");
+    
         
-        // Try with explicit template location
-        return "dashboard"; // or try "templates/dashboard" or "/dashboard"
+        if (authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ADMIN"))) {
+            return "redirect:/users/admin_dashboard";
+        } else if (authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("USER"))) {
+            return "redirect:/users/user_dashboard";
+        } else {
+            return "redirect:/users/secretary_dashboard";
+        }
     }
 
     @GetMapping("/manage_users")
     public String showUserManagement(Model model) {
-        // Get current user and add to model
         return "users_manage";
     }
 
     @PostMapping("/update")
     public String updateProfile(@ModelAttribute User user) {
-        // Update current user's profile
         return "redirect:/users/profile";
     }
 
@@ -181,7 +214,6 @@ public class UserController {
 
     @PostMapping("/change-password")
     public String changePassword(@RequestParam String oldPassword, @RequestParam String newPassword) {
-        // Change password for current user
         return "redirect:/users/profile";
     }
 

@@ -112,9 +112,9 @@
                                         if (data.username) {
                                             localStorage.setItem('username', data.username);
                                         }
-
+                                        console.log(data);
                                         // Redirect to dashboard
-                                        window.location.href = '/users/dashboard';
+                                        window.location.href = data.redirectUrl;
                                     } else {
                                         console.error("Login failed:", data);
                                         errorMessage.textContent = data.message || 'Login failed. Please try again.';

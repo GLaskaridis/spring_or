@@ -24,7 +24,7 @@ public class HomeController {
     @Autowired
     private RoomService roomService;
 
-    @GetMapping("/")
+      @GetMapping("/")
     public String home(Model model) {
         // Check if the user is authenticated
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -32,10 +32,19 @@ public class HomeController {
         // If user is authenticated and not the anonymous user
         if (authentication != null && authentication.isAuthenticated() && 
             !authentication.getName().equals("anonymousUser")) {
-            // User is logged in, redirect to dashboard
-            return "redirect:/users/dashboard";
+            
+            //analoga me ton rolo
+            if (authentication.getAuthorities().stream()
+                    .anyMatch(authority -> authority.getAuthority().equals("ADMIN"))) {
+                return "redirect:/users/admin_dashboard";
+            } else if (authentication.getAuthorities().stream()
+                    .anyMatch(authority -> authority.getAuthority().equals("USER"))) {
+                return "redirect:/users/user_dashboard";
+            } else {
+                return "redirect:/users/teacher_dashboard";
+            }
         } else {
-            // User is not logged in, redirect to login page
+            //ean den uparxei sindesi, se petaei sto login
             return "redirect:/users/login";
         }
     }
