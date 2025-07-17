@@ -33,12 +33,15 @@ public class HomeController {
         if (authentication != null && authentication.isAuthenticated() && 
             !authentication.getName().equals("anonymousUser")) {
             
+            
+            
             //analoga me ton rolo
             if (authentication.getAuthorities().stream()
                     .anyMatch(authority -> authority.getAuthority().equals("ADMIN"))) {
                 return "redirect:/users/admin_dashboard";
             } else if (authentication.getAuthorities().stream()
                     .anyMatch(authority -> authority.getAuthority().equals("USER"))) {
+                System.out.println("yeeeeeeahhhhhhhhhh");
                 return "redirect:/users/user_dashboard";
             } else {
                 return "redirect:/users/teacher_dashboard";

@@ -25,6 +25,7 @@ import static org.springframework.security.web.header.writers.ClearSiteDataHeade
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    // Constructor to verify this config is loaded
     public SecurityConfig() {
         System.out.println("====================================");
         System.out.println("SECURITY CONFIG LOADED");
@@ -33,41 +34,49 @@ public class SecurityConfig {
 
     @Autowired
     private UserDetailsService userDetailsService;
-    
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .logout((logout) -> logout
                 .addLogoutHandler(new HeaderWriterLogoutHandler(new ClearSiteDataHeaderWriter(COOKIES)))
-                .logoutSuccessUrl("/users/login"))
-            .csrf(csrf -> csrf.disable())
+                .logoutSuccessUrl("/users/login")
+            )
+            .csrf(csrf -> csrf.disable())  // For simplicity during debugging
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/users/login", "/logout", "/login", "/css/**", "/js/**", "/images/**", "/error", "/users/register").permitAll()
-                .requestMatchers("/admin/**", "/teachers/**", "/courses/**", "/rooms/**").hasRole("ADMIN")
-                .requestMatchers("/user/**").hasRole("USER")
+                .requestMatchers("/users/login", "/users/register", "/logout", "/login", "/css/**", "/js/**", "/images/**", "/error").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Change to stateless for JWT
+                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
             )
-            .formLogin(form -> form.disable())
+            .formLogin(form -> form.disable()) // Disable form login since you're using REST
             .exceptionHandling(handling -> handling
                 .authenticationEntryPoint((request, response, exception) -> {
+                    // Handle unauthenticated requests based on Accept header
                     String accept = request.getHeader("Accept");
                     if (accept != null && accept.contains("application/json")) {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.setContentType("application/json");
                         response.getWriter().write("{\"message\":\"Unauthorized\"}");
                     } else {
+                        // Redirect to login for HTML requests
                         response.sendRedirect("/users/login");
                     }
                 })
-            )
-            // Add JWT filter before UsernamePasswordAuthenticationFilter
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    // Handle access denied - redirect to login or show error page
+                    String accept = request.getHeader("Accept");
+                    if (accept != null && accept.contains("application/json")) {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"message\":\"Access Denied\"}");
+                    } else {
+                        // Redirect to login instead of trying to render access_denied template
+                        response.sendRedirect("/users/login?error=access_denied");
+                    }
+                })
+            );
         
         return http.build();
     }

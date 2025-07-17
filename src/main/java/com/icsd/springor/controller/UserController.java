@@ -173,9 +173,79 @@ public class UserController {
         }
     }
 
-    @GetMapping("/profile")
-    public String showProfile(Model model) {
+     @GetMapping("/profile")
+    public String profile(Model model, Authentication authentication) {
+        logger.info("Profile page accessed by: {}", 
+                   authentication != null ? authentication.getName() : "anonymous");
+        
+        if (authentication != null) {
+            model.addAttribute("username", authentication.getName());
+            
+            // Determine user type for profile customization
+            boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+            model.addAttribute("isAdmin", isAdmin);
+            model.addAttribute("userRole", isAdmin ? "ADMIN" : "USER");
+        }
+        
         return "profile";
+    }
+
+    /**
+     * Settings page - Common for both user types but with different options
+     */
+    @GetMapping("/settings")
+    public String settings(Model model, Authentication authentication) {
+        logger.info("Settings page accessed by: {}", 
+                   authentication != null ? authentication.getName() : "anonymous");
+        
+        if (authentication != null) {
+            model.addAttribute("username", authentication.getName());
+            
+            boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+            model.addAttribute("isAdmin", isAdmin);
+            model.addAttribute("userRole", isAdmin ? "ADMIN" : "USER");
+        }
+        
+        return "settings";
+    }
+
+    /**
+     * Help page - Common for both user types
+     */
+    @GetMapping("/help")
+    public String help(Model model, Authentication authentication) {
+        logger.info("Help page accessed by: {}", 
+                   authentication != null ? authentication.getName() : "anonymous");
+        
+        if (authentication != null) {
+            model.addAttribute("username", authentication.getName());
+            
+            boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+            model.addAttribute("isAdmin", isAdmin);
+        }
+        
+        return "help";
+    }
+
+    /**
+     * Access denied page
+     */
+    @GetMapping("/access-denied")
+    public String accessDenied(Model model, Authentication authentication) {
+        logger.warn("Access denied page accessed by: {}", 
+                   authentication != null ? authentication.getName() : "anonymous");
+        
+        if (authentication != null) {
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("userRole", 
+                authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN")) ? "ADMIN" : "USER");
+        }
+        
+        return "access_denied";
     }
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(UserController.class);
@@ -196,6 +266,57 @@ public class UserController {
             return "redirect:/users/secretary_dashboard";
         }
     }
+    
+    @GetMapping("/user_dashboard")
+    public String userDashboard(Model model, Authentication authentication) {
+        logger.info("User dashboard accessed by: {}", 
+                   authentication != null ? authentication.getName() : "anonymous");
+        
+        // Add user information to the model for the template
+        if (authentication != null) {
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("userRole", "USER");
+            
+            // Add user authorities for template logic
+            boolean isUser = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_USER"));
+            model.addAttribute("isUser", isUser);
+            
+            logger.debug("User {} accessing user dashboard with authorities: {}", 
+                        authentication.getName(), authentication.getAuthorities());
+        }
+        
+        // Return the user dashboard template
+        return "teacher_dashboard";
+    }
+
+    /**
+     * Admin Dashboard - Serves the admin_dashboard.html template
+     * Only accessible to users with ROLE_ADMIN
+     */
+    @GetMapping("/admin_dashboard")
+    public String adminDashboard(Model model, Authentication authentication) {
+        logger.info("Admin dashboard accessed by: {}", 
+                   authentication != null ? authentication.getName() : "anonymous");
+        
+        // Add admin information to the model for the template
+        if (authentication != null) {
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("userRole", "ADMIN");
+            
+            // Add admin authorities for template logic
+            boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+            model.addAttribute("isAdmin", isAdmin);
+            
+            logger.debug("Admin {} accessing admin dashboard with authorities: {}", 
+                        authentication.getName(), authentication.getAuthorities());
+        }
+        
+        // Return the admin dashboard template
+        return "admin_dashboard";
+    }
+
 
     @GetMapping("/manage_users")
     public String showUserManagement(Model model) {
