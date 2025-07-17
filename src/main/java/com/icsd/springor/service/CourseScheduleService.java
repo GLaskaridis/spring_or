@@ -18,6 +18,9 @@ public class CourseScheduleService {
     @Autowired
     private AssignmentService assignmentService;
     
+    @Autowired
+    private TeacherPreferenceService preferenceService;
+    
     public CourseSchedule createSchedule(String name, String semester, String startTime, String endTime, 
                                        Integer maxHoursPerDay, Double maxDistanceKm) {
         
@@ -62,6 +65,12 @@ public class CourseScheduleService {
             }
         }
         
+        if (newStatus == CourseSchedule.ScheduleStatus.EXECUTION_PHASE) {
+            if (!preferenceService.areAllPreferencesProvided(scheduleId)) {
+                throw new RuntimeException("Cannot move to execution phase. Not all teachers have provided their preferences.");
+            }
+        }
+        
         schedule.setStatus(newStatus);
         return scheduleRepository.save(schedule);
     }
@@ -93,7 +102,6 @@ public class CourseScheduleService {
     public void deleteSchedule(Long id) {
         CourseSchedule schedule = getScheduleById(id);
         
-        // Only allow deletion if in early phases
         if (schedule.getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE && 
             schedule.getStatus() != CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
             throw new RuntimeException("Cannot delete schedule in current state: " + schedule.getStatus());
