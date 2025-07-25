@@ -42,37 +42,50 @@ public class SecurityConfig {
                 .addLogoutHandler(new HeaderWriterLogoutHandler(new ClearSiteDataHeaderWriter(COOKIES)))
                 .logoutSuccessUrl("/users/login")
             )
-            .csrf(csrf -> csrf.disable())  // For simplicity during debugging
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/users/login", "/users/register", "/logout", "/login", "/css/**", "/js/**", "/images/**", "/error").permitAll()
+                // Public endpoints
+                .requestMatchers("/users/login", "/users/register", "/logout", "/login", 
+                                "/css/**", "/js/**", "/images/**", "/error").permitAll()
+                
+                // Teacher endpoints - only teachers can access
+                .requestMatchers("/course-preferences/**", "/time-preferences/my-assignments/**").hasRole("TEACHER")
+                
+                // Program Manager endpoints - can manage assignments and execute scheduling
+                .requestMatchers("/admin/assignments/**", "/schedules/admin/**", 
+                                "/schedule-execution/**", "/assignments/**").hasAnyRole("PROGRAM_MANAGER", "ADMIN")
+                
+                // Admin-only endpoints - user management
+                .requestMatchers("/teachers/**", "/users/manage_users").hasRole("ADMIN")
+                
+                // Mixed access - both teachers and managers can view
+                .requestMatchers("/schedules/dashboard", "/rooms/list", "/courses/list").hasAnyRole("TEACHER", "PROGRAM_MANAGER", "ADMIN")
+                
+                // All other requests need authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
             )
-            .formLogin(form -> form.disable()) // Disable form login since you're using REST
+            .formLogin(form -> form.disable())
             .exceptionHandling(handling -> handling
                 .authenticationEntryPoint((request, response, exception) -> {
-                    // Handle unauthenticated requests based on Accept header
                     String accept = request.getHeader("Accept");
                     if (accept != null && accept.contains("application/json")) {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.setContentType("application/json");
                         response.getWriter().write("{\"message\":\"Unauthorized\"}");
                     } else {
-                        // Redirect to login for HTML requests
                         response.sendRedirect("/users/login");
                     }
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    // Handle access denied - redirect to login or show error page
                     String accept = request.getHeader("Accept");
                     if (accept != null && accept.contains("application/json")) {
                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                         response.setContentType("application/json");
-                        response.getWriter().write("{\"message\":\"Access Denied\"}");
+                        response.getWriter().write("{\"message\":\"Access Denied - Insufficient permissions\"}");
                     } else {
-                        // Redirect to login instead of trying to render access_denied template
                         response.sendRedirect("/users/login?error=access_denied");
                     }
                 })

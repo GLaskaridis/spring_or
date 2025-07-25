@@ -52,27 +52,15 @@ public class HomeController {
         }
     }
     
-    @GetMapping("/assign")
-    public String assign(Model model) {
-        CourseScheduler scheduler = new CourseScheduler();
-        List<Course> courses = courseService.getAllCourses();
-        
-        Course course = courses.get(0);
-        System.out.println(course.getName());
-        course.setTimePreference(new Course.TimePreference(
-            DayOfWeek.FRIDAY,    // προτιμώμενη μέρα
-            0,                   // πρώτο slot (9πμ-12μμ)
-            8                    // βάρος προτίμησης (1-10)
-        ));
-        //courses.add(course);
-        
-        List<Room> rooms = roomService.getAllRooms();
-        System.out.println(rooms);
-        List<CourseAssignment> assignments = scheduler.createSchedule(courses, rooms);
-        System.out.println(assignments.size());
-        assignments.forEach(System.out::println);
-        
-        return "home";
+    @GetMapping("/dashboard")
+    public String dashboard(Model model, Authentication authentication) {
+        return "redirect:/schedules/dashboard";
     }
+    
+    @GetMapping("/assign")
+public String assign(Model model) {
+    // Redirect to test execution
+    return "redirect:/schedule-execution/test";
+}
     
 }

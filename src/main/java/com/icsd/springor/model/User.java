@@ -2,7 +2,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-
 package com.icsd.springor.model;
 
 import com.icsd.springor.DTO.TeacherType;
@@ -15,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+
 
 @Entity
 @Table(name = "users")
@@ -46,8 +46,10 @@ public class User {
     @Column(nullable = false)
     private boolean active = false;
 
+    // Change this from String to UserRole enum
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role = "ROLE_USER";
+    private UserRole role = UserRole.TEACHER;
 
     @Column
     private LocalDateTime passwordResetTokenExpiryTime;
@@ -55,6 +57,7 @@ public class User {
     @Column
     private String passwordResetToken;
 
+    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -119,12 +122,31 @@ public class User {
         this.active = active;
     }
 
-    public String getRole() {
+    // Updated role methods
+    public UserRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    // Helper method to get role name for Spring Security
+    public String getRoleName() {
+        return role != null ? role.getRoleName() : "ROLE_TEACHER";
+    }
+
+    // Convenience methods
+    public boolean isTeacher() {
+        return role == UserRole.TEACHER;
+    }
+
+    public boolean isProgramManager() {
+        return role == UserRole.PROGRAM_MANAGER;
+    }
+
+    public boolean isAdmin() {
+        return role == UserRole.ADMIN;
     }
 
     public LocalDateTime getPasswordResetTokenExpiryTime() {
@@ -142,7 +164,4 @@ public class User {
     public void setPasswordResetToken(String passwordResetToken) {
         this.passwordResetToken = passwordResetToken;
     }
-
-   
-    
 }

@@ -8,6 +8,7 @@ import com.icsd.springor.DTO.LoginRequest;
 import org.springframework.web.bind.annotation.*;
 
 import com.icsd.springor.model.User;
+import com.icsd.springor.model.UserRole;
 import com.icsd.springor.service.UserService;
 import com.icsd.springor.utilities.JwtUtils;
 import jakarta.servlet.http.Cookie;
@@ -84,11 +85,13 @@ public class UserController {
     @ResponseBody  
     public ResponseEntity<?> registerUser(@Valid @RequestBody User user,
             BindingResult result) {
-        //elegxos tis formas poy egine upovoli
+
+        // Έλεγχος της φόρμας που έγινε υποβολή
         if (result.hasErrors()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Validation errors"));
         }
-        //elegxos apo tin vasi an uparxei to username
+
+        // Έλεγχος από τη βάση αν υπάρχει το username
         if (userService.existsByUsername(user.getUsername())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Username is already taken!"));
         }
@@ -97,16 +100,20 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of("message", "Email is already registered!"));
         }
 
-        //dimiourgia antikeimenou User me prosthiki xaraktiristikwn
-        //einai anenergos stin arxi
+        // Δημιουργία αντικειμένου User με προσθήκη χαρακτηριστικών
+        // Είναι ανενεργός στην αρχή
         user.setActive(false);
-        //exei rolo xristi
-        user.setRole("USER");
-        //kruptografisi tou kwdikou tou
+
+        // Εξ ορισμού όλοι οι νέοι χρήστες είναι διδάσκοντες
+        // Ο διαχειριστής μπορεί να τους αλλάξει ρόλο αργότερα
+        UserRole assignedRole = UserRole.TEACHER;
+        user.setRole(assignedRole);
+
+        // Κρυπτογράφηση του κωδικού του
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         userService.save(user);
-        return ResponseEntity.ok(Map.of("message", "Registration successful"));
+        return ResponseEntity.ok(Map.of("message", "Registration successful. Account pending activation."));
     }
     
     @GetMapping("/logout")

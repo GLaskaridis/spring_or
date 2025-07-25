@@ -5,7 +5,6 @@
 
 package com.icsd.springor.model;
 
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,7 +29,7 @@ public class CourseSchedule {
     private String name;
     
     @Column(nullable = false)
-    private String semester; // e.g., "2024-2025 Fall"
+    private String semester; // e.g., "2024-2025 EARINO"
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -59,8 +58,9 @@ public class CourseSchedule {
     private Set<Assignment> assignments;
     
     public enum ScheduleStatus {
-        ASSIGNMENT_PHASE,      // ΑΝΑΘΕΣΗ_ΜΑΘΗΜΑΤΩΝ
-        REQUIREMENTS_PHASE,    // ΠΑΡΟΧΗ_ΑΠΑΙΤΗΣΕΩΝ
+        COURSE_PREFERENCES,    // ΕΠΙΛΟΓΗ_ΜΑΘΗΜΑΤΩΝ (διδάσκοντες επιλέγουν προτιμήσεις)
+        ASSIGNMENT_PHASE,      // ΑΝΑΘΕΣΗ_ΜΑΘΗΜΑΤΩΝ (διαχειριστής κάνει αναθέσεις βάσει προτιμήσεων)
+        REQUIREMENTS_PHASE,    // ΠΑΡΟΧΗ_ΑΠΑΙΤΗΣΕΩΝ (διδάσκοντες δίνουν χρονικές προτιμήσεις)
         EXECUTION_PHASE,       // ΕΚΤΕΛΕΣΗ
         SOLUTION_FOUND,        // ΕΥΡΕΣΗ_ΛΥΣΗΣ
         NO_SOLUTION_FOUND,     // ΜΗ_ΕΥΡΕΣΗ_ΛΥΣΗΣ

@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+
 @Service
 @Transactional
 public class AssignmentService {
@@ -51,10 +53,12 @@ public class AssignmentService {
         CourseSchedule schedule = scheduleRepository.findById(scheduleId)
             .orElseThrow(() -> new RuntimeException("Schedule not found with id: " + scheduleId));
         
+        // Check if assignment already exists
         if (assignmentRepository.existsByCourseAndCourseComponentAndSchedule(course, component, schedule)) {
             throw new RuntimeException("Assignment already exists for this course component");
         }
         
+        // Check if schedule is in correct phase
         if (schedule.getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE) {
             throw new RuntimeException("Cannot create assignments. Schedule is not in assignment phase.");
         }
@@ -96,6 +100,7 @@ public class AssignmentService {
         Assignment assignment = assignmentRepository.findById(assignmentId)
             .orElseThrow(() -> new RuntimeException("Assignment not found with id: " + assignmentId));
         
+        // Check if schedule allows modifications
         if (assignment.getSchedule().getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE) {
             throw new RuntimeException("Cannot modify assignments. Schedule is not in assignment phase.");
         }
@@ -112,6 +117,7 @@ public class AssignmentService {
         Assignment assignment = assignmentRepository.findById(assignmentId)
             .orElseThrow(() -> new RuntimeException("Assignment not found with id: " + assignmentId));
         
+        // Check if schedule allows modifications
         if (assignment.getSchedule().getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE) {
             throw new RuntimeException("Cannot delete assignments. Schedule is not in assignment phase.");
         }
@@ -120,12 +126,15 @@ public class AssignmentService {
     }
     
     public boolean areAllCoursesAssigned(Long scheduleId) {
+        // Get all courses that should be assigned
         List<Course> allCourses = courseRepository.findAll();
         List<Assignment> assignments = assignmentRepository.findActiveAssignmentsBySchedule(scheduleId);
         
+        // Check if every course component has an assignment
         for (Course course : allCourses) {
             if (!course.isActive()) continue;
             
+            // Check if course has theory component and if it's assigned
             boolean hasTheory = course.getTeachingHours().stream()
                 .anyMatch(th -> th.getComponent() == Course.TeachingHours.CourseComponent.THEORY);
             if (hasTheory) {
@@ -135,6 +144,7 @@ public class AssignmentService {
                 if (!theoryAssigned) return false;
             }
             
+            // Check if course has lab component and if it's assigned
             boolean hasLab = course.getTeachingHours().stream()
                 .anyMatch(th -> th.getComponent() == Course.TeachingHours.CourseComponent.LABORATORY);
             if (hasLab) {

@@ -25,9 +25,12 @@ public class TeacherPreferenceDTO {
     private String courseCode;
     private TeacherPreference.PreferenceType type;
     
+    
     private DayOfWeek preferredDay;
     private LocalTime preferredStartTime;
     private LocalTime preferredEndTime;
+    private Integer preferredSlot; // 0-3 for the 4 daily slots
+    private Integer preferenceWeight; // 1-10
     
     private Long preferredRoomId;
     private String preferredRoomName;

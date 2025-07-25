@@ -9,6 +9,7 @@ import com.icsd.springor.DTO.UserCreateDTO;
 import com.icsd.springor.DTO.UserDTO;
 import com.icsd.springor.DTO.UserUpdateDTO;
 import com.icsd.springor.model.User;
+import com.icsd.springor.model.UserRole;
 import com.icsd.springor.service.UserService;
 import com.icsd.springor.utilities.JwtUtils;
 import java.util.List;
@@ -72,7 +73,8 @@ public class TeachersController {
             
             //metatropi tou DTO se xristi kai apothikeusi
             User user = convertToEntity(userDTO);
-            user.setRole("TEACHER"); //rolos teacher
+             UserRole assignedRole = UserRole.TEACHER;
+            user.setRole(assignedRole);
             userService.save(user);
             
             redirectAttributes.addFlashAttribute("message", "Ο διδάσκων προστέθηκε επιτυχώς");
@@ -109,7 +111,9 @@ public class TeachersController {
         newUser.setTeacherRank(userCreateDTO.getTeacherRank());
         newUser.setPassword(userCreateDTO.getPassword()); // Will be encoded in service
         newUser.setActive(userCreateDTO.isActive());
-        newUser.setRole("TEACHER");
+        
+        UserRole assignedRole = UserRole.TEACHER;
+        newUser.setRole(assignedRole);
         
         User savedUser = userService.registerUser(newUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedUser));
@@ -215,7 +219,7 @@ public class TeachersController {
         dto.setTeacherType(user.getTeacherType());
         dto.setTeacherRank(user.getTeacherRank());
         dto.setActive(user.isActive());
-        dto.setRole(user.getRole());
+        dto.setRole(user.getRoleName());
         return dto;
     }
     

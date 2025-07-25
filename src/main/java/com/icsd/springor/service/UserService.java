@@ -6,12 +6,14 @@
 package com.icsd.springor.service;
 
 import com.icsd.springor.model.User;
+import com.icsd.springor.model.UserRole;
 import com.icsd.springor.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -74,7 +76,6 @@ public class UserService {
         user.setPasswordResetToken(token);
         user.setPasswordResetTokenExpiryTime(LocalDateTime.now().plusHours(2));
         userRepository.save(user);
-        // TODO: Send email with reset link
     }
 
     public void resetPassword(String token, String newPassword) {
@@ -89,8 +90,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public List<User> searchUsers(/* Add search criteria parameters */) {
-        // Implement search logic
+    public List<User> searchUsers() {
         return userRepository.findAll(); // Placeholder
     }
 
@@ -110,8 +110,7 @@ public class UserService {
     }
 
     private boolean isValidUser(User user) {
-        // Implement validation logic
-        return true; // Placeholder
+        return true; 
     }
     
    
@@ -125,5 +124,76 @@ public class UserService {
 
     public User save(User user) {
         return userRepository.save(user);
+    }
+    
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with username: " + username));
+    }
+
+    private Long getCurrentTeacherId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        String username = authentication.getName();
+
+        try {
+            //βρίσκουμε τον χρήστη από το username
+            User user = findAllTeachers().stream()
+                .filter(u -> u.getUsername().equals(username))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+            return user.getId();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting current teacher ID: " + e.getMessage());
+        }
+    }
+    
+    public User getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        String username = authentication.getName();
+        return findByUsername(username);
+    }
+
+    public Long getCurrentUserId(Authentication authentication) {
+        return getCurrentUser(authentication).getId();
+    }
+    
+    public boolean isCurrentUserAdmin(Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        return "ROLE_ADMIN".equals(user.getRole());
+    }
+    
+    public boolean isCurrentUserTeacher(Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        return "ROLE_USER".equals(user.getRole()) || "ROLE_TEACHER".equals(user.getRole());
+    }
+    
+
+    public boolean isCurrentUserProgramManager(Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        return user.isProgramManager();
+    }
+
+
+    public boolean hasRole(Authentication authentication, UserRole role) {
+        User user = getCurrentUser(authentication);
+        return user.getRole() == role;
+    }
+
+    public boolean canManageSchedules(Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        return user.isProgramManager() || user.isAdmin();
+    }
+
+    public boolean canManageUsers(Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        return user.isAdmin();
     }
 }

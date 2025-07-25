@@ -31,21 +31,22 @@ public class TeacherPreference {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "preference_type", nullable = false)
-    private PreferenceType type; //eidos (uparxei enum apaitisi i protimisi)
+    private PreferenceType type; // REQUIREMENT (must be satisfied) or PREFERENCE (nice to have)
     
-    //preference sxetika me tin imera
+    // Time preferences - simplified to slot system
     @Enumerated(EnumType.STRING)
     @Column(name = "preferred_day")
     private DayOfWeek preferredDay;
     
+    // Slot preference (0=9-12, 1=12-15, 2=15-18, 3=18-21)
+    @Column(name = "preferred_slot")
+    private Integer preferredSlot;
     
-    //preference sxetika me tin wra
-    @Column(name = "preferred_start_time")
-    private LocalTime preferredStartTime;
+    // Weight/Priority for this preference (1-10, where 10 is highest)
+    @Column(name = "preference_weight")
+    private Integer preferenceWeight = 5;
     
-    @Column(name = "preferred_end_time")
-    private LocalTime preferredEndTime;
-    
+    // Room preferences
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "preferred_room_id")
     private Room preferredRoom;
@@ -60,7 +61,7 @@ public class TeacherPreference {
     @Column(name = "max_capacity")
     private Integer maxCapacity;
     
-    //priority/Weight (1-10, where 10 is highest priority)
+    // Priority/Weight (1-10, where 10 is highest priority)
     @Column(name = "priority_weight", nullable = false)
     private Integer priorityWeight = 5;
     
@@ -71,7 +72,7 @@ public class TeacherPreference {
     private boolean active = true;
     
     public enum PreferenceType {
-        REQUIREMENT,    
-        PREFERENCE      
+        REQUIREMENT,    // Must be satisfied
+        PREFERENCE      // Nice to have
     }
 }

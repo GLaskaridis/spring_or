@@ -35,7 +35,6 @@ public class Assignment {
     @Column(nullable = false)
     private boolean active = true;
     
-    // Optional: reference to which schedule this assignment belongs to
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
     private CourseSchedule schedule;

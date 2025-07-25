@@ -24,7 +24,6 @@ public class CourseScheduleService {
     public CourseSchedule createSchedule(String name, String semester, String startTime, String endTime, 
                                        Integer maxHoursPerDay, Double maxDistanceKm) {
         
-        // Check if schedule with same name and semester already exists
         if (scheduleRepository.findByNameAndSemester(name, semester).isPresent()) {
             throw new RuntimeException("Schedule with this name and semester already exists");
         }
@@ -36,7 +35,7 @@ public class CourseScheduleService {
         schedule.setEndTime(endTime != null ? endTime : "21:00");
         schedule.setMaxHoursPerDay(maxHoursPerDay != null ? maxHoursPerDay : 9);
         schedule.setMaxDistanceKm(maxDistanceKm != null ? maxDistanceKm : 1.0);
-        schedule.setStatus(CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE);
+        schedule.setStatus(CourseSchedule.ScheduleStatus.COURSE_PREFERENCES);
         
         return scheduleRepository.save(schedule);
     }
@@ -53,17 +52,16 @@ public class CourseScheduleService {
     public CourseSchedule changeScheduleStatus(Long scheduleId, CourseSchedule.ScheduleStatus newStatus) {
         CourseSchedule schedule = getScheduleById(scheduleId);
         
-        // Validate state transitions
         if (!isValidStateTransition(schedule.getStatus(), newStatus)) {
             throw new RuntimeException("Invalid state transition from " + schedule.getStatus() + " to " + newStatus);
         }
         
-        // Additional checks for specific transitions
         if (newStatus == CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
             if (!assignmentService.areAllCoursesAssigned(scheduleId)) {
                 throw new RuntimeException("Cannot move to requirements phase. Not all courses are assigned.");
             }
         }
+        
         
         if (newStatus == CourseSchedule.ScheduleStatus.EXECUTION_PHASE) {
             if (!preferenceService.areAllPreferencesProvided(scheduleId)) {
@@ -91,9 +89,9 @@ public class CourseScheduleService {
                 return target == CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE || 
                        target == CourseSchedule.ScheduleStatus.TERMINATED;
             case SOLUTION_APPROVED:
-                return false; // Final state
+                return false; 
             case TERMINATED:
-                return false; // Final state
+                return false; 
             default:
                 return false;
         }
@@ -102,7 +100,7 @@ public class CourseScheduleService {
     public void deleteSchedule(Long id) {
         CourseSchedule schedule = getScheduleById(id);
         
-        if (schedule.getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE && 
+         if (schedule.getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE && 
             schedule.getStatus() != CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
             throw new RuntimeException("Cannot delete schedule in current state: " + schedule.getStatus());
         }
