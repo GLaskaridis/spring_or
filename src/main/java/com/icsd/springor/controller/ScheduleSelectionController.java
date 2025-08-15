@@ -7,7 +7,6 @@ package com.icsd.springor.controller;
 
 import com.icsd.springor.model.CourseSchedule;
 import com.icsd.springor.service.CourseScheduleService;
-import com.icsd.springor.service.CoursePreferenceService;
 import com.icsd.springor.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -26,23 +25,18 @@ public class ScheduleSelectionController {
     private CourseScheduleService scheduleService;
     
     @Autowired
-    private CoursePreferenceService preferenceService;
-    
-    @Autowired
     private UserService userService;
     
+    // Teacher interface - Show available schedules for preferences
     @GetMapping("/teacher/available")
     public String showAvailableSchedules(Model model, Authentication authentication) {
         try {
             Long teacherId = getCurrentTeacherId(authentication);
             
+            // Get schedules that are in REQUIREMENTS_PHASE (where teachers provide preferences)
             List<CourseSchedule> availableSchedules = scheduleService.getAllSchedules().stream()
-                .filter(s -> s.getStatus() == CourseSchedule.ScheduleStatus.COURSE_PREFERENCES)
+                .filter(s -> s.getStatus() == CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE)
                 .collect(Collectors.toList());
-            
-            for (CourseSchedule schedule : availableSchedules) {
-                var teacherPrefs = preferenceService.getTeacherPreferences(teacherId, schedule.getId());
-            }
             
             model.addAttribute("availableSchedules", availableSchedules);
             model.addAttribute("teacherId", teacherId);
@@ -54,6 +48,7 @@ public class ScheduleSelectionController {
         }
     }
     
+    // Admin interface - Show all schedules with their status
     @GetMapping("/admin/all")
     public String showAllSchedulesAdmin(Model model) {
         try {
@@ -68,17 +63,18 @@ public class ScheduleSelectionController {
         }
     }
     
+    // Dashboard redirect based on user role and schedule status
     @GetMapping("/dashboard")
     public String dashboard(Model model, Authentication authentication) {
         try {
-            
+            // Check if user is admin or teacher
             boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
             
             if (isAdmin) {
                 return "redirect:/schedules/admin/all";
             } else {
-           
+                // Teacher - redirect to available schedules for preferences
                 return "redirect:/schedules/teacher/available";
             }
             
@@ -89,7 +85,6 @@ public class ScheduleSelectionController {
     }
     
     private Long getCurrentTeacherId(Authentication authentication) {
-         Long teacherId = userService.getCurrentUserId(authentication);
-         return teacherId;
+        return userService.getCurrentUserId(authentication);
     }
 }

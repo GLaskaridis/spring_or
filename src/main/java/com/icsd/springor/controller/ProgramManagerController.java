@@ -6,8 +6,9 @@
 package com.icsd.springor.controller;
 
 import com.icsd.springor.DTO.AssignmentDTO;
-import com.icsd.springor.DTO.CoursePreferenceDTO;
+import com.icsd.springor.DTO.RoomPreferenceDTO;
 import com.icsd.springor.DTO.TeacherPreferenceDTO;
+import com.icsd.springor.DTO.TimeSlotPreferenceDTO;
 import com.icsd.springor.model.CourseSchedule;
 import com.icsd.springor.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,17 +32,18 @@ public class ProgramManagerController {
     private CourseScheduleService scheduleService;
     
     @Autowired
-    private CoursePreferenceService coursePreferenceService;
-    
-    @Autowired
     private AssignmentService assignmentService;
     
     @Autowired
-    private TeacherPreferenceService timePreferenceService;
+    private TimeSlotPreferenceService timeSlotPreferenceService;
+    
+    @Autowired
+    private RoomPreferenceService roomPreferenceService;
     
     @Autowired
     private UserService userService;
     
+    // Main dashboard for Program Manager
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         try {
@@ -68,31 +70,25 @@ public class ProgramManagerController {
         }
     }
     
-     @GetMapping("/course-preferences/{scheduleId}")
-    public String viewCoursePreferences(@PathVariable Long scheduleId, Model model) {
+    // View teacher preferences for assignment decisions
+    @GetMapping("/assignments/{scheduleId}")
+    public String viewAssignments(@PathVariable Long scheduleId, Model model) {
         try {
             CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
-            List<CoursePreferenceDTO> allPreferences = coursePreferenceService.getAllPreferencesForSchedule(scheduleId);
-            
-            Map<String, List<CoursePreferenceDTO>> preferencesByCourse = allPreferences.stream()
-                .collect(Collectors.groupingBy(p -> p.getCourseCode() + " - " + p.getCourseName()));
-            
-           Map<String, List<CoursePreferenceDTO>> preferencesByTeacher = allPreferences.stream()
-                .collect(Collectors.groupingBy(CoursePreferenceDTO::getTeacherName));
+            List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
             
             model.addAttribute("schedule", schedule);
-            model.addAttribute("preferencesByCourse", preferencesByCourse);
-            model.addAttribute("preferencesByTeacher", preferencesByTeacher);
-            model.addAttribute("allPreferences", allPreferences);
+            model.addAttribute("assignments", assignments);
             
-            return "program-manager-course-preferences";
+            return "program-manager-assignments";
         } catch (Exception e) {
-            model.addAttribute("error", "Error loading preferences: " + e.getMessage());
+            model.addAttribute("error", "Error loading assignments: " + e.getMessage());
             return "error";
         }
     }
     
-    @GetMapping("/assignments/{scheduleId}")
+    // Assignment interface - where program manager manages assignments
+    @GetMapping("/assignments/{scheduleId}/manage")
     public String manageAssignments(@PathVariable Long scheduleId, Model model) {
         try {
             CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
@@ -102,58 +98,63 @@ public class ProgramManagerController {
                 return "error";
             }
             
-            List<CoursePreferenceDTO> preferences = coursePreferenceService.getAllPreferencesForSchedule(scheduleId);
             List<AssignmentDTO> existingAssignments = assignmentService.getAssignmentsBySchedule(scheduleId);
             
-            // Group preferences by course component for easier assignment
-            Map<String, List<CoursePreferenceDTO>> preferencesByComponent = preferences.stream()
-                .collect(Collectors.groupingBy(p -> p.getCourseCode() + "_" + p.getCourseComponent()));
-            
             model.addAttribute("schedule", schedule);
-            model.addAttribute("preferencesByComponent", preferencesByComponent);
             model.addAttribute("existingAssignments", existingAssignments);
             
-            return "program-manager-assignments";
+            return "program-manager-assignment-management";
         } catch (Exception e) {
             model.addAttribute("error", "Error loading assignment interface: " + e.getMessage());
             return "error";
         }
     }
     
-     @GetMapping("/time-preferences/{scheduleId}")
-    public String viewTimePreferences(@PathVariable Long scheduleId, Model model) {
+    // View time and room preferences after assignments are made
+    @GetMapping("/preferences/{scheduleId}")
+    public String viewPreferences(@PathVariable Long scheduleId, Model model) {
         try {
             CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
             List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
-            List<TeacherPreferenceDTO> timePreferences = timePreferenceService.getPreferencesBySchedule(scheduleId);
+            List<TimeSlotPreferenceDTO> timeSlotPreferences = timeSlotPreferenceService.getAllPreferencesForSchedule(scheduleId);
+            List<RoomPreferenceDTO> roomPreferences = roomPreferenceService.getAllPreferencesForSchedule(scheduleId);
             
-            Map<Long, List<TeacherPreferenceDTO>> preferencesByAssignment = timePreferences.stream()
-                .collect(Collectors.groupingBy(TeacherPreferenceDTO::getAssignmentId));
+            // Group preferences by assignment
+            Map<Long, List<TimeSlotPreferenceDTO>> timeSlotPrefsByAssignment = timeSlotPreferences.stream()
+                .collect(Collectors.groupingBy(TimeSlotPreferenceDTO::getAssignmentId));
+            Map<Long, List<RoomPreferenceDTO>> roomPrefsByAssignment = roomPreferences.stream()
+                .collect(Collectors.groupingBy(RoomPreferenceDTO::getAssignmentId));
             
-             boolean readyForExecution = timePreferenceService.areAllPreferencesProvided(scheduleId);
+            // Check readiness for execution - simple check for now
+            boolean readyForExecution = assignments.size() > 0 && 
+                (!timeSlotPreferences.isEmpty() || !roomPreferences.isEmpty());
             
             model.addAttribute("schedule", schedule);
             model.addAttribute("assignments", assignments);
-            model.addAttribute("preferencesByAssignment", preferencesByAssignment);
+            model.addAttribute("timeSlotPrefsByAssignment", timeSlotPrefsByAssignment);
+            model.addAttribute("roomPrefsByAssignment", roomPrefsByAssignment);
             model.addAttribute("readyForExecution", readyForExecution);
             
-            return "program-manager-time-preferences";
+            return "program-manager-preferences";
         } catch (Exception e) {
-            model.addAttribute("error", "Error loading time preferences: " + e.getMessage());
+            model.addAttribute("error", "Error loading preferences: " + e.getMessage());
             return "error";
         }
     }
     
+    // Execute scheduling algorithm
     @GetMapping("/execute-scheduling/{scheduleId}")
     public String executeScheduling(@PathVariable Long scheduleId, 
                                   Authentication authentication,
                                   RedirectAttributes redirectAttributes) {
         try {
+            // Verify user can execute scheduling
             if (!userService.canManageSchedules(authentication)) {
                 redirectAttributes.addFlashAttribute("error", "You don't have permission to execute scheduling");
                 return "redirect:/program-manager/dashboard";
             }
             
+            // Redirect to schedule execution controller
             return "redirect:/schedule-execution/execute/" + scheduleId;
             
         } catch (Exception e) {
@@ -162,6 +163,7 @@ public class ProgramManagerController {
         }
     }
     
+    // Change schedule status
     @PostMapping("/change-status/{scheduleId}")
     public String changeScheduleStatus(@PathVariable Long scheduleId,
                                      @RequestParam CourseSchedule.ScheduleStatus newStatus,
@@ -176,27 +178,35 @@ public class ProgramManagerController {
         return "redirect:/program-manager/dashboard";
     }
     
+    // Statistics and overview
     @GetMapping("/statistics/{scheduleId}")
     public String viewStatistics(@PathVariable Long scheduleId, Model model) {
         try {
             CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
-            List<CoursePreferenceDTO> coursePrefs = coursePreferenceService.getAllPreferencesForSchedule(scheduleId);
             List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
-            List<TeacherPreferenceDTO> timePrefs = timePreferenceService.getPreferencesBySchedule(scheduleId);
+            List<TimeSlotPreferenceDTO> timeSlotPrefs = timeSlotPreferenceService.getAllPreferencesForSchedule(scheduleId);
+            List<RoomPreferenceDTO> roomPrefs = roomPreferenceService.getAllPreferencesForSchedule(scheduleId);
             
-           long totalTeachers = coursePrefs.stream()
-                .map(CoursePreferenceDTO::getTeacherId)
+            // Calculate statistics
+            long totalTeachers = assignments.stream()
+                .map(AssignmentDTO::getTeacherId)
                 .distinct()
                 .count();
             
-            long totalCourses = coursePrefs.stream()
-                .map(CoursePreferenceDTO::getCourseId)
+            long totalCourses = assignments.stream()
+                .map(AssignmentDTO::getCourseId)
                 .distinct()
                 .count();
             
             long assignedCourses = assignments.size();
-            long teachersWithTimePrefs = timePrefs.stream()
-                .map(TeacherPreferenceDTO::getAssignmentId)
+            
+            long assignmentsWithTimePrefs = timeSlotPrefs.stream()
+                .map(TimeSlotPreferenceDTO::getAssignmentId)
+                .distinct()
+                .count();
+            
+            long assignmentsWithRoomPrefs = roomPrefs.stream()
+                .map(RoomPreferenceDTO::getAssignmentId)
                 .distinct()
                 .count();
             
@@ -204,9 +214,10 @@ public class ProgramManagerController {
             model.addAttribute("totalTeachers", totalTeachers);
             model.addAttribute("totalCourses", totalCourses);
             model.addAttribute("assignedCourses", assignedCourses);
-            model.addAttribute("teachersWithTimePrefs", teachersWithTimePrefs);
-            model.addAttribute("coursePreferences", coursePrefs.size());
-            model.addAttribute("timePreferences", timePrefs.size());
+            model.addAttribute("assignmentsWithTimePrefs", assignmentsWithTimePrefs);
+            model.addAttribute("assignmentsWithRoomPrefs", assignmentsWithRoomPrefs);
+            model.addAttribute("totalTimeSlotPreferences", timeSlotPrefs.size());
+            model.addAttribute("totalRoomPreferences", roomPrefs.size());
             
             return "program-manager-statistics";
         } catch (Exception e) {

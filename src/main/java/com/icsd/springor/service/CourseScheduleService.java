@@ -24,6 +24,7 @@ public class CourseScheduleService {
     public CourseSchedule createSchedule(String name, String semester, String startTime, String endTime, 
                                        Integer maxHoursPerDay, Double maxDistanceKm) {
         
+        // Check if schedule with same name and semester already exists
         if (scheduleRepository.findByNameAndSemester(name, semester).isPresent()) {
             throw new RuntimeException("Schedule with this name and semester already exists");
         }
@@ -35,7 +36,7 @@ public class CourseScheduleService {
         schedule.setEndTime(endTime != null ? endTime : "21:00");
         schedule.setMaxHoursPerDay(maxHoursPerDay != null ? maxHoursPerDay : 9);
         schedule.setMaxDistanceKm(maxDistanceKm != null ? maxDistanceKm : 1.0);
-        schedule.setStatus(CourseSchedule.ScheduleStatus.COURSE_PREFERENCES);
+        schedule.setStatus(CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE);
         
         return scheduleRepository.save(schedule);
     }
@@ -49,25 +50,61 @@ public class CourseScheduleService {
         return scheduleRepository.findByOrderByCreatedAtDesc();
     }
     
+//    public CourseSchedule changeScheduleStatus(Long scheduleId, CourseSchedule.ScheduleStatus newStatus) {
+//        CourseSchedule schedule = getScheduleById(scheduleId);
+//        
+//        if (!isValidStateTransition(schedule.getStatus(), newStatus)) {
+//            throw new RuntimeException("Invalid state transition from " + schedule.getStatus() + " to " + newStatus);
+//        }
+//        
+//        if (newStatus == CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
+//            if (!assignmentService.areAllCoursesAssigned(scheduleId)) {
+//                throw new RuntimeException("Cannot move to requirements phase. Not all courses are assigned.");
+//            }
+//        }
+//        
+//        
+//        if (newStatus == CourseSchedule.ScheduleStatus.EXECUTION_PHASE) {
+//            if (!preferenceService.areAllPreferencesProvided(scheduleId)) {
+//                throw new RuntimeException("Cannot move to execution phase. Not all teachers have provided their preferences.");
+//            }
+//        }
+//        
+//        schedule.setStatus(newStatus);
+//        return scheduleRepository.save(schedule);
+//    }
+    
+    
     public CourseSchedule changeScheduleStatus(Long scheduleId, CourseSchedule.ScheduleStatus newStatus) {
         CourseSchedule schedule = getScheduleById(scheduleId);
         
+        // Validate state transitions
         if (!isValidStateTransition(schedule.getStatus(), newStatus)) {
             throw new RuntimeException("Invalid state transition from " + schedule.getStatus() + " to " + newStatus);
         }
-        
+                
         if (newStatus == CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
             if (!assignmentService.areAllCoursesAssigned(scheduleId)) {
                 throw new RuntimeException("Cannot move to requirements phase. Not all courses are assigned.");
             }
         }
         
+        if (newStatus == CourseSchedule.ScheduleStatus.EXECUTION_PHASE) {
+            // elegxos an ola ta assignment exoun protimisi
+            // You'll need to inject the new preference services and add this check:
+            // if (!hasAllRequiredPreferences(scheduleId)) {
+            //     throw new RuntimeException("Cannot move to execution phase. Not all teachers have provided required preferences.");
+            // }
+        }
         
+        //elegxos protimisewn
+        /*
         if (newStatus == CourseSchedule.ScheduleStatus.EXECUTION_PHASE) {
             if (!preferenceService.areAllPreferencesProvided(scheduleId)) {
                 throw new RuntimeException("Cannot move to execution phase. Not all teachers have provided their preferences.");
             }
         }
+        */
         
         schedule.setStatus(newStatus);
         return scheduleRepository.save(schedule);

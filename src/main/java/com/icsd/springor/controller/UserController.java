@@ -100,12 +100,12 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of("message", "Email is already registered!"));
         }
 
-        // Δημιουργία αντικειμένου User με προσθήκη χαρακτηριστικών
-        // Είναι ανενεργός στην αρχή
+        // δημιουργία αντικειμένου User με προσθήκη χαρακτηριστικών
+        // είναι ανενεργός στην αρχή
         user.setActive(false);
 
-        // Εξ ορισμού όλοι οι νέοι χρήστες είναι διδάσκοντες
-        // Ο διαχειριστής μπορεί να τους αλλάξει ρόλο αργότερα
+        //εξ ορισμού όλοι οι νέοι χρήστες είναι διδάσκοντες
+        //ο διαχειριστής μπορεί να τους αλλάξει ρόλο αργότερα
         UserRole assignedRole = UserRole.TEACHER;
         user.setRole(assignedRole);
 

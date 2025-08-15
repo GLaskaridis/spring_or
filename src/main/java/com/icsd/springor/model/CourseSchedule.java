@@ -29,7 +29,7 @@ public class CourseSchedule {
     private String name;
     
     @Column(nullable = false)
-    private String semester; // e.g., "2024-2025 EARINO"
+    private String semester; // e.g., "2024-2025 Fall"
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -58,9 +58,8 @@ public class CourseSchedule {
     private Set<Assignment> assignments;
     
     public enum ScheduleStatus {
-        COURSE_PREFERENCES,    // ΕΠΙΛΟΓΗ_ΜΑΘΗΜΑΤΩΝ (διδάσκοντες επιλέγουν προτιμήσεις)
-        ASSIGNMENT_PHASE,      // ΑΝΑΘΕΣΗ_ΜΑΘΗΜΑΤΩΝ (διαχειριστής κάνει αναθέσεις βάσει προτιμήσεων)
-        REQUIREMENTS_PHASE,    // ΠΑΡΟΧΗ_ΑΠΑΙΤΗΣΕΩΝ (διδάσκοντες δίνουν χρονικές προτιμήσεις)
+        ASSIGNMENT_PHASE,      // ΑΝΑΘΕΣΗ_ΜΑΘΗΜΑΤΩΝ (διαχειριστής εισάγει έτοιμες αναθέσεις)
+        REQUIREMENTS_PHASE,    // ΠΑΡΟΧΗ_ΠΡΟΤΙΜΗΣΕΩΝ (διδάσκοντες δίνουν προτιμήσεις)
         EXECUTION_PHASE,       // ΕΚΤΕΛΕΣΗ
         SOLUTION_FOUND,        // ΕΥΡΕΣΗ_ΛΥΣΗΣ
         NO_SOLUTION_FOUND,     // ΜΗ_ΕΥΡΕΣΗ_ΛΥΣΗΣ
