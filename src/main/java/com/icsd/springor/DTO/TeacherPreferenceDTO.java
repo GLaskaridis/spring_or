@@ -41,4 +41,5 @@ public class TeacherPreferenceDTO {
     private Integer priorityWeight;
     private String notes;
     private boolean active;
+    private String courseComponent;
 }

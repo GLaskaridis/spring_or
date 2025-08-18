@@ -42,9 +42,9 @@ public class HomeController {
             } else if (authentication.getAuthorities().stream()
                     .anyMatch(authority -> authority.getAuthority().equals("USER"))) {
                 System.out.println("yeeeeeeahhhhhhhhhh");
-                return "redirect:/users/user_dashboard";
+                return "redirect:users/user_dashboard";
             } else {
-                return "redirect:/users/teacher_dashboard";
+                return "redirect:users/user_dashboard";
             }
         } else {
             //ean den uparxei sindesi, se petaei sto login
@@ -52,15 +52,25 @@ public class HomeController {
         }
     }
     
-    @GetMapping("/dashboard")
-    public String dashboard(Model model, Authentication authentication) {
-        return "redirect:/schedules/dashboard";
+//    @GetMapping("/dashboard")
+//    public String dashboard(Model model, Authentication authentication) {
+//        return "redirect:/schedules/dashboard";
+//    }
+//    
+    @GetMapping("/assign")
+    public String assign(Model model) {
+        // Redirect to test execution
+        return "redirect:/schedule-execution/test";
     }
     
-    @GetMapping("/assign")
-public String assign(Model model) {
-    // Redirect to test execution
-    return "redirect:/schedule-execution/test";
-}
+//    @GetMapping("/preferences")
+//    public String redirectToPreferences() {
+//        return "redirect:/preferences";
+//    }
+
+//    @GetMapping("/users/admin_dashboard")
+//    public String adminDashboardRedirect() {
+//        return "redirect:/admin/dashboard";
+//    }
     
 }

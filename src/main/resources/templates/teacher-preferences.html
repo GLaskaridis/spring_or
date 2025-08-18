@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="el" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Προτιμήσεις Διδασκαλίας</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: white;
+            border-radius: 1rem 1rem 0 0 !important;
+            border: none;
+            padding: 1.25rem;
+        }
+
+        .assignment-card {
+            border-left: 4px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .assignment-card:hover {
+            border-left-color: var(--primary-color);
+        }
+
+        .assignment-card.has-preferences {
+            border-left-color: var(--success-color);
+        }
+
+        .assignment-card.no-preferences {
+            border-left-color: var(--warning-color);
+        }
+
+        .preference-item {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .preference-item.requirement {
+            border-left-color: var(--danger-color);
+            background: #fff5f5;
+        }
+
+        .preference-item.preference {
+            border-left-color: var(--success-color);
+            background: #f0fff4;
+        }
+
+        .time-slot {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            margin: 0.25rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .weight-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            color: white;
+            text-align: center;
+            line-height: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .weight-1, .weight-2, .weight-3 { background-color: #dc3545; }
+        .weight-4, .weight-5, .weight-6 { background-color: #fd7e14; }
+        .weight-7, .weight-8 { background-color: #198754; }
+        .weight-9, .weight-10 { background-color: #0d6efd; }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .btn-preference {
+            border-radius: 0.75rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-preference:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .modal-content {
+            border-radius: 1rem;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: white;
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-custom {
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .schedule-status {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .status-requirements { background-color: #d1ecf1; color: #0c5460; }
+        .status-assignment { background-color: #f8d7da; color: #721c24; }
+        .status-execution { background-color: #fff3cd; color: #856404; }
+        .status-solution { background-color: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Σύστημα Χρονοπρογραμματισμού
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-home me-1"></i>Αρχική
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/preferences">
+                            <i class="fas fa-sliders-h me-1"></i>Προτιμήσεις
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/schedule">
+                            <i class="fas fa-calendar-alt me-1"></i>Πρόγραμμα
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span id="username-display">Διδάσκων</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header Section -->
+        <div class="row mb-4 fade-in">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-sliders-h me-2"></i>
+                                    Προτιμήσεις Διδασκαλίας
+                                </h4>
+                                <small class="opacity-75">Διαχειριστείτε τις προτιμήσεις χρόνου και αίθουσας για τα μαθήματά σας</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="schedule-status status-requirements" id="schedule-status">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Φάση Απαιτήσεων
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="text-center">
+                                    <h5 class="text-primary mb-0" id="total-assignments">0</h5>
+                                    <small class="text-muted">Συνολικές Αναθέσεις</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="text-center">
+                                    <h5 class="text-success mb-0" id="completed-preferences">0</h5>
+                                    <small class="text-muted">Ολοκληρωμένες</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="text-center">
+                                    <h5 class="text-warning mb-0" id="pending-preferences">0</h5>
+                                    <small class="text-muted">Εκκρεμότητες</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="text-center">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Πρόοδος</small>
+                                        <small id="progress-percentage">0%</small>
+                                    </div>
+                                    <div class="progress progress-custom">
+                                        <div class="progress-bar bg-primary" id="progress-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignments and Preferences -->
+        <div class="row fade-in">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-book me-2"></i>
+                            Τα Μαθήματά μου & Προτιμήσεις
+                        </h5>
+                    </div>
+                    <div class="card-body" id="assignments-container">
+                        <!-- Loading skeleton -->
+                        <div class="d-flex justify-content-center p-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Φόρτωση...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Preference Modal -->
+    <div class="modal fade" id="preferenceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="fas fa-plus me-2"></i>
+                        Νέα Προτίμηση
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="preferenceForm">
+                        <input type="hidden" id="assignmentId" name="assignmentId">
+                        <input type="hidden" id="preferenceId" name="preferenceId">
+                        
+                        <!-- Assignment Info -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <strong>Μάθημα:</strong> <span id="modal-course-name">-</span><br>
+                                    <strong>Τύπος:</strong> <span id="modal-course-component">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preference Type -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="preferenceType" class="form-label">
+                                    <i class="fas fa-flag me-1"></i>Τύπος Προτίμησης
+                                </label>
+                                <select class="form-select" id="preferenceType" name="type" required>
+                                    <option value="">Επιλέξτε τύπο...</option>
+                                    <option value="REQUIREMENT">Απαίτηση (Υποχρεωτική)</option>
+                                    <option value="PREFERENCE">Προτίμηση (Προαιρετική)</option>
+                                </select>
+                                <div class="form-text">
+                                    <strong>Απαίτηση:</strong> Πρέπει να ικανοποιηθεί οπωσδήποτε<br>
+                                    <strong>Προτίμηση:</strong> Θα ικανοποιηθεί αν είναι δυνατό
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="preferenceWeight" class="form-label">
+                                    <i class="fas fa-weight-hanging me-1"></i>Βαρύτητα (1-10)
+                                </label>
+                                <input type="range" class="form-range" id="preferenceWeight" name="preferenceWeight" 
+                                       min="1" max="10" value="5" oninput="updateWeightDisplay(this.value)">
+                                <div class="d-flex justify-content-between">
+                                    <small>Χαμηλή</small>
+                                    <span id="weight-display" class="fw-bold">5</span>
+                                    <small>Υψηλή</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Time Preferences -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6><i class="fas fa-clock me-2"></i>Προτιμήσεις Χρόνου</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="preferredDay" class="form-label">Προτιμώμενη Ημέρα</label>
+                                <select class="form-select" id="preferredDay" name="preferredDay">
+                                    <option value="">Χωρίς προτίμηση</option>
+                                    <option value="MONDAY">Δευτέρα</option>
+                                    <option value="TUESDAY">Τρίτη</option>
+                                    <option value="WEDNESDAY">Τετάρτη</option>
+                                    <option value="THURSDAY">Πέμπτη</option>
+                                    <option value="FRIDAY">Παρασκευή</option>
+                                    <option value="SATURDAY">Σάββατο</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="preferredSlot" class="form-label">Προτιμώμενο Ωράριο</label>
+                                <select class="form-select" id="preferredSlot" name="preferredSlot">
+                                    <option value="">Χωρίς προτίμηση</option>
+                                    <option value="0">09:00 - 12:00</option>
+                                    <option value="1">12:00 - 15:00</option>
+                                    <option value="2">15:00 - 18:00</option>
+                                    <option value="3">18:00 - 21:00</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Room Preferences -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6><i class="fas fa-door-open me-2"></i>Προτιμήσεις Αίθουσας</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="preferredRoom" class="form-label">Συγκεκριμένη Αίθουσα</label>
+                                <select class="form-select" id="preferredRoom" name="preferredRoomId">
+                                    <option value="">Χωρίς προτίμηση</option>
+                                    <!-- Will be populated by JavaScript -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="roomType" class="form-label">Τύπος Αίθουσας</label>
+                                <select class="form-select" id="roomType" name="preferredRoomType">
+                                    <option value="">Χωρίς προτίμηση</option>
+                                    <option value="TEACHING">Διδασκαλίας</option>
+                                    <option value="LABORATORY">Εργαστηρίου</option>
+                                    <option value="AMPHITHEATER">Αμφιθέατρο</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Capacity Requirements -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="minCapacity" class="form-label">Ελάχιστη Χωρητικότητα</label>
+                                <input type="number" class="form-control" id="minCapacity" name="minCapacity" 
+                                       min="1" placeholder="π.χ. 30">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="maxCapacity" class="form-label">Μέγιστη Χωρητικότητα</label>
+                                <input type="number" class="form-control" id="maxCapacity" name="maxCapacity" 
+                                       min="1" placeholder="π.χ. 100">
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="notes" class="form-label">
+                                    <i class="fas fa-sticky-note me-1"></i>Σημειώσεις
+                                </label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                          placeholder="Επιπλέον σημειώσεις ή διευκρινίσεις..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Ακύρωση
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="savePreference()">
+                        <i class="fas fa-save me-1"></i>Αποθήκευση
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let userToken = null;
+        let userAssignments = [];
+        let userPreferences = [];
+        let availableRooms = [];
+        let currentEditingAssignment = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+            loadPageData();
+        });
+
+        function checkAuthentication() {
+            userToken = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+            
+            if (!userToken) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+            
+            if (username) {
+                document.getElementById('username-display').textContent = username;
+            }
+        }
+
+        async function loadPageData() {
+            try {
+                showAlert('Φόρτωση δεδομένων...', 'info');
+                
+                // Load assignments and preferences in parallel
+                await Promise.all([
+                    loadUserAssignments(),
+                    loadAvailableRooms()
+                ]);
+                
+                await loadUserPreferences();
+                
+                renderAssignments();
+                updateStatistics();
+                
+                hideAlert();
+            } catch (error) {
+                console.error('Error loading page data:', error);
+                showAlert('Σφάλμα κατά τη φόρτωση των δεδομένων', 'error');
+            }
+        }
+
+        async function loadUserAssignments() {
+            const response = await fetch('/assignments/api/my-assignments', {
+                headers: {
+                    'Authorization': 'Bearer ' + userToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load assignments');
+            }
+
+            userAssignments = await response.json();
+        }
+
+        async function loadUserPreferences() {
+            // Load preferences for all assignments
+            const promises = userAssignments.map(async (assignment) => {
+                try {
+                    const response = await fetch(`/preferences/api/assignments/${assignment.id}/preferences`, {
+                        headers: {
+                            'Authorization': 'Bearer ' + userToken,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const preferences = await response.json();
+                        return { assignmentId: assignment.id, preferences };
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load preferences for assignment ${assignment.id}:`, error);
+                }
+                return { assignmentId: assignment.id, preferences: [] };
+            });
+
+            const results = await Promise.all(promises);
+            userPreferences = results.reduce((acc, result) => {
+                acc[result.assignmentId] = result.preferences;
+                return acc;
+            }, {});
+        }
+
+        async function loadAvailableRooms() {
+            try {
+                const response = await fetch('/api/rooms', {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    availableRooms = await response.json();
+                    populateRoomSelect();
+                }
+            } catch (error) {
+                console.warn('Failed to load rooms:', error);
+                availableRooms = [];
+            }
+        }
+
+        function populateRoomSelect() {
+            const roomSelect = document.getElementById('preferredRoom');
+            roomSelect.innerHTML = '<option value="">Χωρίς προτίμηση</option>';
+            
+            availableRooms.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.id;
+                option.textContent = `${room.name} (${room.capacity} άτομα) - ${room.building}`;
+                roomSelect.appendChild(option);
+            });
+        }
+
+        function renderAssignments() {
+            const container = document.getElementById('assignments-container');
+            
+            if (!userAssignments || userAssignments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <h5>Δεν έχετε αναθέσεις μαθημάτων</h5>
+                        <p class="text-muted">Επικοινωνήστε με τον διαχειριστή για αναθέσεις μαθημάτων</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const assignmentsHTML = userAssignments.map(assignment => {
+                const preferences = userPreferences[assignment.id] || [];
+                const hasPreferences = preferences.length > 0;
+                const componentText = assignment.courseComponent === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο';
+                const componentIcon = assignment.courseComponent === 'THEORY' ? 'fas fa-chalkboard-teacher' : 'fas fa-flask';
+                
+                return `
+                    <div class="col-lg-6 mb-4">
+                        <div class="card assignment-card ${hasPreferences ? 'has-preferences' : 'no-preferences'}">
+                            <div class="card-header bg-white">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="${componentIcon} me-2"></i>
+                                            ${assignment.courseName}
+                                        </h6>
+                                        <small class="text-muted">${assignment.courseCode} • ${componentText}</small>
+                                        <div class="mt-2">
+                                            <span class="badge bg-primary">${assignment.courseYear}ο Εξάμηνο</span>
+                                            ${assignment.scheduleName ? `<span class="badge bg-info">${assignment.scheduleName}</span>` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="showAddPreferenceModal(${assignment.id})">
+                                            <i class="fas fa-plus me-1"></i>Προσθήκη
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                ${renderPreferences(preferences, assignment.id)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="row">${assignmentsHTML}</div>`;
+        }
+
+        function renderPreferences(preferences, assignmentId) {
+            if (!preferences || preferences.length === 0) {
+                return `
+                    <div class="empty-state py-3">
+                        <i class="fas fa-clock"></i>
+                        <p class="mb-2">Δεν έχετε ορίσει προτιμήσεις</p>
+                        <button class="btn btn-sm btn-primary btn-preference" onclick="showAddPreferenceModal(${assignmentId})">
+                            <i class="fas fa-plus me-1"></i>Προσθήκη Προτίμησης
+                        </button>
+                    </div>
+                `;
+            }
+
+            return preferences.map(pref => {
+                const typeClass = pref.type === 'REQUIREMENT' ? 'requirement' : 'preference';
+                const typeIcon = pref.type === 'REQUIREMENT' ? 'fas fa-exclamation-circle' : 'fas fa-heart';
+                const typeText = pref.type === 'REQUIREMENT' ? 'Απαίτηση' : 'Προτίμηση';
+                
+                const dayText = pref.preferredDay ? getDayText(pref.preferredDay) : 'Χωρίς προτίμηση';
+                const slotText = pref.preferredSlot !== null ? getSlotText(pref.preferredSlot) : 'Χωρίς προτίμηση';
+                const roomText = pref.preferredRoomName || (pref.preferredRoomType ? getRoomTypeText(pref.preferredRoomType) : 'Χωρίς προτίμηση');
+                
+                return `
+                    <div class="preference-item ${typeClass}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="${typeIcon} me-2"></i>
+                                    <strong>${typeText}</strong>
+                                    <span class="weight-indicator weight-${pref.preferenceWeight || 5} ms-2">
+                                        ${pref.preferenceWeight || 5}
+                                    </span>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">Χρόνος:</small>
+                                        <span class="time-slot">${dayText}</span>
+                                        <span class="time-slot">${slotText}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">Αίθουσα:</small>
+                                        <span>${roomText}</span>
+                                    </div>
+                                </div>
+                                ${pref.notes ? `<div class="mt-2"><small class="text-muted"><i class="fas fa-sticky-note me-1"></i>${pref.notes}</small></div>` : ''}
+                            </div>
+                            <div class="ms-3">
+                                <button class="btn btn-sm btn-outline-secondary me-1" onclick="editPreference(${pref.id}, ${assignmentId})" title="Επεξεργασία">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deletePreference(${pref.id}, ${assignmentId})" title="Διαγραφή">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getDayText(day) {
+            const days = {
+                'MONDAY': 'Δευτέρα',
+                'TUESDAY': 'Τρίτη', 
+                'WEDNESDAY': 'Τετάρτη',
+                'THURSDAY': 'Πέμπτη',
+                'FRIDAY': 'Παρασκευή',
+                'SATURDAY': 'Σάββατο'
+            };
+            return days[day] || day;
+        }
+
+        function getSlotText(slot) {
+            const slots = {
+                0: '09:00-12:00',
+                1: '12:00-15:00', 
+                2: '15:00-18:00',
+                3: '18:00-21:00'
+            };
+            return slots[slot] || `Slot ${slot}`;
+        }
+
+        function getRoomTypeText(type) {
+            const types = {
+                'TEACHING': 'Αίθουσα Διδασκαλίας',
+                'LABORATORY': 'Εργαστήριο',
+                'AMPHITHEATER': 'Αμφιθέατρο'
+            };
+            return types[type] || type;
+        }
+
+        function updateStatistics() {
+            const totalAssignments = userAssignments.length;
+            const completedPreferences = Object.values(userPreferences).filter(prefs => prefs.length > 0).length;
+            const pendingPreferences = totalAssignments - completedPreferences;
+            const progressPercentage = totalAssignments > 0 ? Math.round((completedPreferences / totalAssignments) * 100) : 0;
+
+            document.getElementById('total-assignments').textContent = totalAssignments;
+            document.getElementById('completed-preferences').textContent = completedPreferences;
+            document.getElementById('pending-preferences').textContent = pendingPreferences;
+            document.getElementById('progress-percentage').textContent = progressPercentage + '%';
+            document.getElementById('progress-bar').style.width = progressPercentage + '%';
+        }
+
+        function showAddPreferenceModal(assignmentId) {
+            currentEditingAssignment = userAssignments.find(a => a.id === assignmentId);
+            
+            if (!currentEditingAssignment) {
+                showAlert('Σφάλμα: Δεν βρέθηκε η ανάθεση', 'error');
+                return;
+            }
+
+            // Reset form
+            document.getElementById('preferenceForm').reset();
+            document.getElementById('assignmentId').value = assignmentId;
+            document.getElementById('preferenceId').value = '';
+            
+            // Update modal title and course info
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus me-2"></i>Νέα Προτίμηση';
+            document.getElementById('modal-course-name').textContent = currentEditingAssignment.courseName;
+            document.getElementById('modal-course-component').textContent = 
+                currentEditingAssignment.courseComponent === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο';
+
+            // Set default weight
+            document.getElementById('preferenceWeight').value = '5';
+            updateWeightDisplay('5');
+
+            // Show modal
+            new bootstrap.Modal(document.getElementById('preferenceModal')).show();
+        }
+
+        async function editPreference(preferenceId, assignmentId) {
+            try {
+                // Load preference data
+                const response = await fetch(`/preferences/api/preferences/${preferenceId}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load preference');
+                }
+
+                const preference = await response.json();
+                currentEditingAssignment = userAssignments.find(a => a.id === assignmentId);
+
+                // Populate form
+                document.getElementById('assignmentId').value = assignmentId;
+                document.getElementById('preferenceId').value = preferenceId;
+                document.getElementById('preferenceType').value = preference.type || '';
+                document.getElementById('preferenceWeight').value = preference.preferenceWeight || 5;
+                document.getElementById('preferredDay').value = preference.preferredDay || '';
+                document.getElementById('preferredSlot').value = preference.preferredSlot || '';
+                document.getElementById('preferredRoom').value = preference.preferredRoomId || '';
+                document.getElementById('roomType').value = preference.preferredRoomType || '';
+                document.getElementById('minCapacity').value = preference.minCapacity || '';
+                document.getElementById('maxCapacity').value = preference.maxCapacity || '';
+                document.getElementById('notes').value = preference.notes || '';
+
+                // Update modal title
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Επεξεργασία Προτίμησης';
+                document.getElementById('modal-course-name').textContent = currentEditingAssignment.courseName;
+                document.getElementById('modal-course-component').textContent = 
+                    currentEditingAssignment.courseComponent === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο';
+
+                updateWeightDisplay(preference.preferenceWeight || 5);
+
+                // Show modal
+                new bootstrap.Modal(document.getElementById('preferenceModal')).show();
+
+            } catch (error) {
+                console.error('Error loading preference:', error);
+                showAlert('Σφάλμα κατά τη φόρτωση της προτίμησης', 'error');
+            }
+        }
+
+        async function savePreference() {
+            try {
+                const form = document.getElementById('preferenceForm');
+                const formData = new FormData(form);
+                const preferenceId = formData.get('preferenceId');
+                const assignmentId = formData.get('assignmentId');
+
+                // Convert FormData to JSON
+                const preferenceData = {};
+                for (let [key, value] of formData.entries()) {
+                    if (value !== '' && key !== 'preferenceId') {
+                        if (key === 'preferenceWeight' || key === 'preferredSlot' || 
+                            key === 'minCapacity' || key === 'maxCapacity' || key === 'preferredRoomId') {
+                            preferenceData[key] = parseInt(value);
+                        } else {
+                            preferenceData[key] = value;
+                        }
+                    }
+                }
+
+                let url, method;
+                if (preferenceId) {
+                    // Update existing preference
+                    url = `/preferences/api/preferences/${preferenceId}`;
+                    method = 'PUT';
+                } else {
+                    // Create new preference
+                    url = `/preferences/api/assignments/${assignmentId}/preferences`;
+                    method = 'POST';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(preferenceData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save preference');
+                }
+
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('preferenceModal')).hide();
+
+                // Reload data
+                await loadUserPreferences();
+                renderAssignments();
+                updateStatistics();
+
+                showAlert(preferenceId ? 'Προτίμηση ενημερώθηκε επιτυχώς!' : 'Προτίμηση προστέθηκε επιτυχώς!', 'success');
+
+            } catch (error) {
+                console.error('Error saving preference:', error);
+                showAlert('Σφάλμα κατά την αποθήκευση της προτίμησης', 'error');
+            }
+        }
+
+        async function deletePreference(preferenceId, assignmentId) {
+            if (!confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την προτίμηση;')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/preferences/api/preferences/${preferenceId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete preference');
+                }
+
+                // Reload data
+                await loadUserPreferences();
+                renderAssignments();
+                updateStatistics();
+
+                showAlert('Προτίμηση διαγράφηκε επιτυχώς!', 'success');
+
+            } catch (error) {
+                console.error('Error deleting preference:', error);
+                showAlert('Σφάλμα κατά τη διαγραφή της προτίμησης', 'error');
+            }
+        }
+
+        function updateWeightDisplay(value) {
+            document.getElementById('weight-display').textContent = value;
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertClass = {
+                'info': 'alert-info',
+                'success': 'alert-success',
+                'error': 'alert-danger',
+                'warning': 'alert-warning'
+            }[type] || 'alert-info';
+
+            const alertHTML = `
+                <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+
+        function hideAlert() {
+            const alerts = document.querySelectorAll('#alert-container .alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }
+    </script>
+</body>
+</html>

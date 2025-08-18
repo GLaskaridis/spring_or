@@ -1,6 +1,7 @@
 package com.icsd.springor.service;
 
 import com.icsd.springor.model.Room;
+import com.icsd.springor.model.RoomType;
 import com.icsd.springor.repository.RoomRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,4 +51,14 @@ public class RoomService {
         Room room = getRoomById(id);
         roomRepository.delete(room);
     }
+    
+    public List<Room> getRoomsByType(RoomType type) {
+        return roomRepository.findByTypeAndActiveTrue(type);
+    }
+
+    public List<Room> getRoomsWithMinCapacity(Integer minCapacity) {
+        return roomRepository.findByCapacityGreaterThanEqualAndActiveTrue(minCapacity);
+    }
+    
+    
 }

@@ -35,7 +35,11 @@ public class Assignment {
     @Column(nullable = false)
     private boolean active = true;
     
+    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "schedule_id")
+    @JoinColumn(name = "schedule_id", nullable = true)
     private CourseSchedule schedule;
+    
+    @Column(name = "is_general_assignment", nullable = false)
+    private boolean isGeneralAssignment = false;
 }

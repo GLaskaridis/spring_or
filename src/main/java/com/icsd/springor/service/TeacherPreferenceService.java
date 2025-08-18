@@ -37,7 +37,6 @@ public class TeacherPreferenceService {
         Assignment assignment = assignmentRepository.findById(preferenceDTO.getAssignmentId())
             .orElseThrow(() -> new RuntimeException("Assignment not found"));
         
-        // Check if schedule allows preference modifications
         if (assignment.getSchedule().getStatus() != CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
             throw new RuntimeException("Cannot modify preferences. Schedule is not in requirements phase.");
         }
@@ -93,36 +92,36 @@ public class TeacherPreferenceService {
                 .collect(Collectors.toList());
     }
     
-    public TeacherPreferenceDTO updatePreference(Long preferenceId, TeacherPreferenceDTO preferenceDTO) {
-        TeacherPreference preference = preferenceRepository.findById(preferenceId)
-            .orElseThrow(() -> new RuntimeException("Preference not found"));
-        
-        // Check if schedule allows modifications
-        if (preference.getAssignment().getSchedule().getStatus() != CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
-            throw new RuntimeException("Cannot modify preferences. Schedule is not in requirements phase.");
-        }
-        
-        preference.setType(preferenceDTO.getType());
-        preference.setPreferredDay(preferenceDTO.getPreferredDay());
-        preference.setPreferredSlot(preferenceDTO.getPreferredSlot());
-        preference.setPreferenceWeight(preferenceDTO.getPreferenceWeight());
-        preference.setPreferredRoomType(preferenceDTO.getPreferredRoomType());
-        preference.setMinCapacity(preferenceDTO.getMinCapacity());
-        preference.setMaxCapacity(preferenceDTO.getMaxCapacity());
-        preference.setPriorityWeight(preferenceDTO.getPriorityWeight());
-        preference.setNotes(preferenceDTO.getNotes());
-        
-        if (preferenceDTO.getPreferredRoomId() != null) {
-            Room room = roomRepository.findById(preferenceDTO.getPreferredRoomId())
-                .orElseThrow(() -> new RuntimeException("Room not found"));
-            preference.setPreferredRoom(room);
-        } else {
-            preference.setPreferredRoom(null);
-        }
-        
-        TeacherPreference savedPreference = preferenceRepository.save(preference);
-        return convertToDTO(savedPreference);
-    }
+//    public TeacherPreferenceDTO updatePreference(Long preferenceId, TeacherPreferenceDTO preferenceDTO) {
+//        TeacherPreference preference = preferenceRepository.findById(preferenceId)
+//            .orElseThrow(() -> new RuntimeException("Preference not found"));
+//        
+//        // Check if schedule allows modifications
+//        if (preference.getAssignment().getSchedule().getStatus() != CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
+//            throw new RuntimeException("Cannot modify preferences. Schedule is not in requirements phase.");
+//        }
+//        
+//        preference.setType(preferenceDTO.getType());
+//        preference.setPreferredDay(preferenceDTO.getPreferredDay());
+//        preference.setPreferredSlot(preferenceDTO.getPreferredSlot());
+//        preference.setPreferenceWeight(preferenceDTO.getPreferenceWeight());
+//        preference.setPreferredRoomType(preferenceDTO.getPreferredRoomType());
+//        preference.setMinCapacity(preferenceDTO.getMinCapacity());
+//        preference.setMaxCapacity(preferenceDTO.getMaxCapacity());
+//        preference.setPriorityWeight(preferenceDTO.getPriorityWeight());
+//        preference.setNotes(preferenceDTO.getNotes());
+//        
+//        if (preferenceDTO.getPreferredRoomId() != null) {
+//            Room room = roomRepository.findById(preferenceDTO.getPreferredRoomId())
+//                .orElseThrow(() -> new RuntimeException("Room not found"));
+//            preference.setPreferredRoom(room);
+//        } else {
+//            preference.setPreferredRoom(null);
+//        }
+//        
+//        TeacherPreference savedPreference = preferenceRepository.save(preference);
+//        return convertToDTO(savedPreference);
+//    }
     
     public void deletePreference(Long preferenceId) {
         TeacherPreference preference = preferenceRepository.findById(preferenceId)
@@ -151,12 +150,76 @@ public class TeacherPreferenceService {
         return true;
     }
     
-    private TeacherPreferenceDTO convertToDTO(TeacherPreference preference) {
+
+    public TeacherPreferenceDTO updatePreference(Long preferenceId, TeacherPreferenceDTO preferenceDTO) {
+        TeacherPreference preference = preferenceRepository.findById(preferenceId)
+            .orElseThrow(() -> new RuntimeException("Preference not found with id: " + preferenceId));
+
+        // Check if schedule allows modifications
+        if (preference.getAssignment().getSchedule().getStatus() != CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE) {
+            throw new RuntimeException("Cannot modify preferences. Schedule is not in requirements phase.");
+        }
+
+        // Update fields
+        if (preferenceDTO.getType() != null) {
+            preference.setType(preferenceDTO.getType());
+        }
+        if (preferenceDTO.getPreferredDay() != null) {
+            preference.setPreferredDay(preferenceDTO.getPreferredDay());
+        }
+        if (preferenceDTO.getPreferredSlot() != null) {
+            preference.setPreferredSlot(preferenceDTO.getPreferredSlot());
+        }
+        if (preferenceDTO.getPreferenceWeight() != null) {
+            preference.setPreferenceWeight(preferenceDTO.getPreferenceWeight());
+        }
+        if (preferenceDTO.getPreferredRoomType() != null) {
+            preference.setPreferredRoomType(preferenceDTO.getPreferredRoomType());
+        }
+        if (preferenceDTO.getMinCapacity() != null) {
+            preference.setMinCapacity(preferenceDTO.getMinCapacity());
+        }
+        if (preferenceDTO.getMaxCapacity() != null) {
+            preference.setMaxCapacity(preferenceDTO.getMaxCapacity());
+        }
+        if (preferenceDTO.getPriorityWeight() != null) {
+            preference.setPriorityWeight(preferenceDTO.getPriorityWeight());
+        }
+        if (preferenceDTO.getNotes() != null) {
+            preference.setNotes(preferenceDTO.getNotes());
+        }
+
+        // Update preferred room if specified
+        if (preferenceDTO.getPreferredRoomId() != null) {
+            Room room = roomRepository.findById(preferenceDTO.getPreferredRoomId())
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+            preference.setPreferredRoom(room);
+        } else if (preferenceDTO.getPreferredRoomId() == null && preference.getPreferredRoom() != null) {
+            // Clear room preference if explicitly set to null
+            preference.setPreferredRoom(null);
+        }
+
+        TeacherPreference savedPreference = preferenceRepository.save(preference);
+        return convertToDTO(savedPreference);
+    }
+    
+    public TeacherPreferenceDTO getPreferenceById(Long preferenceId) {
+        TeacherPreference preference = preferenceRepository.findById(preferenceId)
+            .orElseThrow(() -> new RuntimeException("Preference not found with id: " + preferenceId));
+
+        if (!preference.isActive()) {
+            throw new RuntimeException("Preference is not active");
+        }
+
+        return convertToDTO(preference);
+    }
+    
+    
+    
+   private TeacherPreferenceDTO convertToDTO(TeacherPreference preference) {
         TeacherPreferenceDTO dto = new TeacherPreferenceDTO();
         dto.setId(preference.getId());
         dto.setAssignmentId(preference.getAssignment().getId());
-        dto.setCourseName(preference.getAssignment().getCourse().getName());
-        dto.setCourseCode(preference.getAssignment().getCourse().getCode());
         dto.setType(preference.getType());
         dto.setPreferredDay(preference.getPreferredDay());
         dto.setPreferredSlot(preference.getPreferredSlot());
@@ -166,13 +229,24 @@ public class TeacherPreferenceService {
         dto.setMaxCapacity(preference.getMaxCapacity());
         dto.setPriorityWeight(preference.getPriorityWeight());
         dto.setNotes(preference.getNotes());
-        dto.setActive(preference.isActive());
-        
+
+        // Room information
         if (preference.getPreferredRoom() != null) {
             dto.setPreferredRoomId(preference.getPreferredRoom().getId());
             dto.setPreferredRoomName(preference.getPreferredRoom().getName());
         }
-        
+
+        // Assignment information for display
+        if (preference.getAssignment() != null && preference.getAssignment().getCourse() != null) {
+            dto.setCourseName(preference.getAssignment().getCourse().getName());
+            dto.setCourseCode(preference.getAssignment().getCourse().getCode());
+
+            // 🔧 ΔΙΟΡΘΩΣΗ: Σωστό courseComponent mapping
+            if (preference.getAssignment().getCourseComponent() != null) {
+                dto.setCourseComponent(preference.getAssignment().getCourseComponent().name());
+            }
+        }
+
         return dto;
     }
 }

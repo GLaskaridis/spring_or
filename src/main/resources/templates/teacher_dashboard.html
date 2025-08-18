@@ -150,6 +150,29 @@
             justify-content: center;
         }
 
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 margin-bottom: 2rem;
@@ -173,18 +196,16 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
+                            <span class="notification-badge" id="notificationCount">0</span>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-calendar text-primary me-2"></i>Νέο μάθημα ανατέθηκε</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-clock text-warning me-2"></i>Προθεσμία προτιμήσεων</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-check text-success me-2"></i>Πρόγραμμα εγκρίθηκε</a></li>
+                        <ul class="dropdown-menu" id="notificationDropdown">
+                            <li><span class="dropdown-item-text">Δεν υπάρχουν ειδοποιήσεις</span></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
-                            Διδάσκων
+                            <span id="username-display">Διδάσκων</span>
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
@@ -208,23 +229,23 @@
                             <i class="fas fa-tachometer-alt"></i>
                             Αρχική Σελίδα
                         </a>
-                        <a class="nav-link" href="#my-courses">
+                        <a class="nav-link" href="users/my-courses">
                             <i class="fas fa-book"></i>
                             Τα Μαθήματά μου
                         </a>
-                        <a class="nav-link" href="#preferences">
+                        <a class="nav-link" href="/users/preferences">
                             <i class="fas fa-sliders-h"></i>
                             Προτιμήσεις Διδασκαλίας
                         </a>
-                        <a class="nav-link" href="#schedule">
+                        <a class="nav-link" href="users/schedule">
                             <i class="fas fa-calendar-alt"></i>
                             Πρόγραμμα Μαθημάτων
                         </a>
-                        <a class="nav-link" href="#rooms">
+                        <a class="nav-link" href="users/rooms">
                             <i class="fas fa-door-open"></i>
                             Αίθουσες
                         </a>
-                        <a class="nav-link" href="#availability">
+                        <a class="nav-link" href="users/availability">
                             <i class="fas fa-clock"></i>
                             Διαθεσιμότητα
                         </a>
@@ -239,16 +260,16 @@
                     <div class="col-12">
                         <div class="card border-0">
                             <div class="card-body p-4">
-                                <h2 class="card-title mb-1">Καλωσήρθατε πίσω!</h2>
+                                <h2 class="card-title mb-1">Καλωσήρθατε πίσω, <span id="welcome-name">Διδάσκων</span>!</h2>
                                 <p class="text-muted mb-3">Διαχειριστείτε τα μαθήματα και τις προτιμήσεις σας εύκολα και γρήγορα</p>
                                 <div class="d-flex flex-wrap gap-2">
-                                    <button class="btn btn-primary quick-action-btn">
+                                    <button class="btn btn-primary quick-action-btn" onclick="showPreferencesModal()">
                                         <i class="fas fa-plus me-2"></i>Νέα Προτίμηση
                                     </button>
-                                    <button class="btn btn-outline-primary quick-action-btn">
+                                    <button class="btn btn-outline-primary quick-action-btn" onclick="viewSchedule()">
                                         <i class="fas fa-calendar me-2"></i>Δες Πρόγραμμα
                                     </button>
-                                    <button class="btn btn-outline-secondary quick-action-btn">
+                                    <button class="btn btn-outline-secondary quick-action-btn" onclick="exportToPDF()">
                                         <i class="fas fa-download me-2"></i>Εξαγωγή PDF
                                     </button>
                                 </div>
@@ -264,7 +285,7 @@
                             <div class="card-body text-center">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h3 class="mb-0">5</h3>
+                                        <h3 class="mb-0" id="total-courses">0</h3>
                                         <small>Μαθήματα</small>
                                     </div>
                                     <i class="fas fa-book fa-2x opacity-50"></i>
@@ -277,7 +298,7 @@
                             <div class="card-body text-center">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h3 class="mb-0">12</h3>
+                                        <h3 class="mb-0" id="total-hours">0</h3>
                                         <small>Ώρες/Εβδομάδα</small>
                                     </div>
                                     <i class="fas fa-clock fa-2x opacity-50"></i>
@@ -290,7 +311,7 @@
                             <div class="card-body text-center">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h3 class="mb-0">3</h3>
+                                        <h3 class="mb-0" id="pending-tasks">0</h3>
                                         <small>Εκκρεμότητες</small>
                                     </div>
                                     <i class="fas fa-exclamation-triangle fa-2x opacity-50"></i>
@@ -303,10 +324,10 @@
                             <div class="card-body text-center">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h3 class="mb-0">8</h3>
-                                        <small>Αίθουσες</small>
+                                        <h3 class="mb-0" id="active-schedules">0</h3>
+                                        <small>Ενεργά Προγράμματα</small>
                                     </div>
-                                    <i class="fas fa-door-open fa-2x opacity-50"></i>
+                                    <i class="fas fa-calendar-alt fa-2x opacity-50"></i>
                                 </div>
                             </div>
                         </div>
@@ -322,79 +343,12 @@
                                 <h5 class="mb-0">
                                     <i class="fas fa-book me-2"></i>
                                     Τα Μαθήματά μου
+                                    <span class="badge bg-light text-dark ms-2" id="courses-count">0</span>
                                 </h5>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <div class="schedule-item p-3">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h6 class="mb-1">Δομές Δεδομένων</h6>
-                                                    <small class="text-muted">CS-203 • Θεωρία</small>
-                                                    <div class="mt-2">
-                                                        <span class="badge bg-primary">3ο Εξάμηνο</span>
-                                                        <span class="badge bg-success">Ενεργό</span>
-                                                    </div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <small class="text-muted">4 ώρες</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <div class="schedule-item p-3">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h6 class="mb-1">Αλγόριθμοι</h6>
-                                                    <small class="text-muted">CS-301 • Εργαστήριο</small>
-                                                    <div class="mt-2">
-                                                        <span class="badge bg-primary">5ο Εξάμηνο</span>
-                                                        <span class="badge bg-warning">Εκκρεμότητα</span>
-                                                    </div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <small class="text-muted">2 ώρες</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <div class="schedule-item p-3">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h6 class="mb-1">Βάσεις Δεδομένων</h6>
-                                                    <small class="text-muted">CS-403 • Θεωρία</small>
-                                                    <div class="mt-2">
-                                                        <span class="badge bg-primary">7ο Εξάμηνο</span>
-                                                        <span class="badge bg-success">Ενεργό</span>
-                                                    </div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <small class="text-muted">3 ώρες</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <div class="schedule-item p-3">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h6 class="mb-1">Τεχνητή Νοημοσύνη</h6>
-                                                    <small class="text-muted">CS-501 • Θεωρία</small>
-                                                    <div class="mt-2">
-                                                        <span class="badge bg-info">Επιλογής</span>
-                                                        <span class="badge bg-success">Ενεργό</span>
-                                                    </div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <small class="text-muted">3 ώρες</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="card-body" id="courses-container">
+                                <!-- Loading skeleton -->
+                                <div class="loading-skeleton" style="height: 200px; border-radius: 0.5rem;"></div>
                             </div>
                         </div>
                     </div>
@@ -408,32 +362,32 @@
                                     Κατάσταση Εξαμήνου
                                 </h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body" id="status-container">
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between mb-1">
                                         <small>Προτιμήσεις Ολοκληρωμένες</small>
-                                        <small>60%</small>
+                                        <small id="preferences-percentage">0%</small>
                                     </div>
                                     <div class="progress progress-custom">
-                                        <div class="progress-bar bg-primary" style="width: 60%"></div>
+                                        <div class="progress-bar bg-primary" id="preferences-progress" style="width: 0%"></div>
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between mb-1">
                                         <small>Αναθέσεις Μαθημάτων</small>
-                                        <small>100%</small>
+                                        <small id="assignments-percentage">0%</small>
                                     </div>
                                     <div class="progress progress-custom">
-                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                        <div class="progress-bar bg-success" id="assignments-progress" style="width: 0%"></div>
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between mb-1">
                                         <small>Διαθεσιμότητα Ορισμένη</small>
-                                        <small>80%</small>
+                                        <small id="availability-percentage">0%</small>
                                     </div>
                                     <div class="progress progress-custom">
-                                        <div class="progress-bar bg-info" style="width: 80%"></div>
+                                        <div class="progress-bar bg-info" id="availability-progress" style="width: 0%"></div>
                                     </div>
                                 </div>
                             </div>
@@ -446,31 +400,8 @@
                                     Επόμενες Δραστηριότητες
                                 </h5>
                             </div>
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
-                                    <div class="me-3">
-                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                            <i class="fas fa-calendar"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted">Σήμερα, 14:00</small>
-                                        <div class="fw-bold">Δομές Δεδομένων</div>
-                                        <small>Αίθουσα Α.1.2</small>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
-                                    <div class="me-3">
-                                        <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                            <i class="fas fa-exclamation"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted">Αύριο</small>
-                                        <div class="fw-bold">Προθεσμία Προτιμήσεων</div>
-                                        <small>Αλγόριθμοι - Εργαστήριο</small>
-                                    </div>
-                                </div>
+                            <div class="card-body" id="activities-container">
+                                <div class="loading-skeleton" style="height: 120px; border-radius: 0.5rem;"></div>
                             </div>
                         </div>
                     </div>
@@ -479,10 +410,44 @@
         </div>
     </div>
 
+    <!-- Alert Container -->
+    <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Add smooth scrolling and interactive elements
+        let currentUser = null;
+        let userAssignments = [];
+        let userToken = null;
+
+        // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            checkAuthentication();
+
+            // Initialize UI components
+            initializeUI();
+
+            // Load user data
+            loadDashboardData();
+        });
+
+        function checkAuthentication() {
+            userToken = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+
+            if (!userToken) {
+                window.location.href = 'users/login?redirect=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+
+            // Display username
+            if (username) {
+                document.getElementById('username-display').textContent = username;
+                document.getElementById('welcome-name').textContent = username;
+            }
+        }
+
+        function initializeUI() {
             // Animate cards on load
             const cards = document.querySelectorAll('.fade-in');
             cards.forEach((card, index) => {
@@ -500,6 +465,287 @@
             });
 
             // Add ripple effect to buttons
+            addRippleEffect();
+        }
+
+        async function loadDashboardData() {
+            try {
+                showAlert('Φόρτωση δεδομένων...', 'info');
+
+                // Load user assignments
+                await loadUserAssignments();
+
+                // Load statistics
+                await loadStatistics();
+
+                // Load activities
+                await loadUpcomingActivities();
+
+                hideAlert();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showAlert('Σφάλμα κατά τη φόρτωση των δεδομένων', 'error');
+                handleAuthError(error);
+            }
+        }
+
+       async function loadUserAssignments() {
+            try {
+                console.log('Loading user assignments...');
+                console.log('Token exists:', !!userToken);
+                console.log('Token preview:', userToken ? userToken.substring(0, 20) + '...' : 'NO TOKEN');
+
+                const response = await fetch('/assignments/api/my-assignments', {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response URL:', response.url);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+                // Check if we got redirected (common sign of auth failure)
+                if (response.url && !response.url.includes('/assignments/api/my-assignments')) {
+                    console.error('Request was redirected to:', response.url);
+                    throw new Error('Authentication failed - request was redirected');
+                }
+
+                if (response.status === 401) {
+                    console.error('401 Unauthorized');
+                    handleAuthError();
+                    return;
+                }
+
+                if (response.status === 403) {
+                    console.error('403 Forbidden - Check user roles');
+                    showAlert('Δεν έχετε δικαίωμα πρόσβασης (403 Forbidden)', 'error');
+                    showEmptyState('courses-container', 'lock', 'Δεν έχετε δικαίωμα πρόσβασης');
+                    return;
+                }
+
+                // Check content type before parsing
+                const contentType = response.headers.get('content-type');
+                console.log('📄 Content-Type:', contentType);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText.substring(0, 500));
+                    throw new Error(`HTTP ${response.status}: Server returned error`);
+                }
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    const responseText = await response.text();
+                    console.error('Expected JSON but got:', responseText.substring(0, 200));
+                    throw new Error('Server returned HTML instead of JSON - likely authentication redirect');
+                }
+
+                userAssignments = await response.json();
+                console.log('Successfully loaded assignments:', userAssignments);
+                renderAssignments();
+
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+
+               
+            }
+        }
+
+        function renderAssignments() {
+            const container = document.getElementById('courses-container');
+            const countElement = document.getElementById('courses-count');
+
+            if (!userAssignments || userAssignments.length === 0) {
+                showEmptyState('courses-container', 'book', 'Δεν έχετε αναθέσεις μαθημάτων');
+                countElement.textContent = '0';
+                return;
+            }
+
+            countElement.textContent = userAssignments.length;
+
+            const coursesHTML = userAssignments.map(assignment => {
+                const componentText = assignment.courseComponent === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο';
+                const componentClass = assignment.courseComponent === 'THEORY' ? 'bg-primary' : 'bg-info';
+                const statusClass = assignment.active ? 'bg-success' : 'bg-secondary';
+                const statusText = assignment.active ? 'Ενεργό' : 'Ανενεργό';
+
+                return `
+                    <div class="col-md-6 mb-3">
+                        <div class="schedule-item p-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">${assignment.courseName}</h6>
+                                    <small class="text-muted">${assignment.courseCode} • ${componentText}</small>
+                                    <div class="mt-2">
+                                        <span class="badge ${componentClass}">${assignment.courseYear || 'N/A'}ο Εξάμηνο</span>
+                                        <span class="badge ${statusClass}">${statusText}</span>
+                                        ${assignment.scheduleName ? `<span class="badge bg-outline-secondary">${assignment.scheduleName}</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>${assignment.teacherName || 'N/A'}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="row">${coursesHTML}</div>`;
+        }
+
+        async function loadStatistics() {
+            try {
+                // Calculate statistics from assignments
+                const totalCourses = userAssignments.length;
+                const activeCourses = userAssignments.filter(a => a.active).length;
+
+                // Update statistics cards
+                document.getElementById('total-courses').textContent = totalCourses;
+                document.getElementById('total-hours').textContent = totalCourses * 3; // Approximate
+                document.getElementById('pending-tasks').textContent = totalCourses - activeCourses;
+                document.getElementById('active-schedules').textContent = new Set(userAssignments.map(a => a.scheduleId)).size;
+
+                // Update progress bars
+                const assignmentsProgress = totalCourses > 0 ? 100 : 0;
+                const preferencesProgress = Math.floor(Math.random() * 80) + 20; // Mock data
+                const availabilityProgress = Math.floor(Math.random() * 60) + 40; // Mock data
+
+                updateProgressBar('assignments-progress', 'assignments-percentage', assignmentsProgress);
+                updateProgressBar('preferences-progress', 'preferences-percentage', preferencesProgress);
+                updateProgressBar('availability-progress', 'availability-percentage', availabilityProgress);
+
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        function updateProgressBar(progressId, percentageId, value) {
+            document.getElementById(progressId).style.width = value + '%';
+            document.getElementById(percentageId).textContent = value + '%';
+        }
+
+        async function loadUpcomingActivities() {
+            const container = document.getElementById('activities-container');
+
+            // Mock upcoming activities based on assignments
+            if (userAssignments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>Δεν υπάρχουν προγραμματισμένες δραστηριότητες</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const activitiesHTML = `
+                <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                    <div class="me-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <small class="text-muted">Σήμερα, 14:00</small>
+                        <div class="fw-bold">${userAssignments[0]?.courseName || 'Μάθημα'}</div>
+                        <small>Αίθουσα - Προς καθορισμό</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                    <div class="me-3">
+                        <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-exclamation"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <small class="text-muted">Αύριο</small>
+                        <div class="fw-bold">Προθεσμία Προτιμήσεων</div>
+                        <small>Συμπληρώστε τις προτιμήσεις σας</small>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = activitiesHTML;
+        }
+
+        function showEmptyState(containerId, icon, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-${icon}"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function handleAuthError(error) {
+            if (error && error.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                window.location.href = '/login?session=expired';
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertId = 'alert-' + Date.now();
+
+            const alertClass = {
+                'info': 'alert-info',
+                'success': 'alert-success',
+                'error': 'alert-danger',
+                'warning': 'alert-warning'
+            }[type] || 'alert-info';
+
+            const alertHTML = `
+                <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+
+        function hideAlert() {
+            const alerts = document.querySelectorAll('#alert-container .alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }
+
+        // Quick action functions
+        function showPreferencesModal() {
+            showAlert('Ανακατεύθυνση στις προτιμήσεις...', 'info');
+            // Redirect to preferences page
+            window.location.href = '/preferences';
+        }
+
+        function viewSchedule() {
+            showAlert('Ανακατεύθυνση στο πρόγραμμα...', 'info');
+            // Redirect to schedule page
+            window.location.href = '/schedule';
+        }
+
+        function exportToPDF() {
+            showAlert('Η εξαγωγή PDF θα υλοποιηθεί σύντομα', 'warning');
+        }
+
+        function addRippleEffect() {
             const buttons = document.querySelectorAll('.quick-action-btn');
             buttons.forEach(button => {
                 button.addEventListener('click', function(e) {
@@ -508,7 +754,7 @@
                     const size = Math.max(rect.width, rect.height);
                     const x = e.clientX - rect.left - size / 2;
                     const y = e.clientY - rect.top - size / 2;
-                    
+
                     ripple.style.cssText = `
                         position: absolute;
                         width: ${size}px;
@@ -521,15 +767,15 @@
                         animation: ripple 0.6s linear;
                         pointer-events: none;
                     `;
-                    
+
                     this.style.position = 'relative';
                     this.style.overflow = 'hidden';
                     this.appendChild(ripple);
-                    
+
                     setTimeout(() => ripple.remove(), 600);
                 });
             });
-        });
+        }
 
         // Add CSS for ripple animation
         const style = document.createElement('style');

@@ -118,6 +118,49 @@ public class Course {
         
     }
     
+    public boolean isActive() {
+        return this.active;
+    }
+
+    public boolean isRequired() {
+        return this.type == CourseType.BASIC;
+    }
+
+    public int getTotalHours() {
+        if (this.teachingHours == null || this.teachingHours.isEmpty()) {
+            return 0;
+        }
+        return this.teachingHours.stream()
+            .mapToInt(th -> th.getHours() != null ? th.getHours() : 0)
+            .sum();
+    }
+    
+    public int getTheoryHours() {
+        if (this.teachingHours == null) return 0;
+        return this.teachingHours.stream()
+            .filter(th -> th.getComponent() == TeachingHours.CourseComponent.THEORY)
+            .mapToInt(th -> th.getHours() != null ? th.getHours() : 0)
+            .findFirst()
+            .orElse(0);
+    }
+    
+    public int getLabHours() {
+        if (this.teachingHours == null) return 0;
+        return this.teachingHours.stream()
+            .filter(th -> th.getComponent() == TeachingHours.CourseComponent.LABORATORY)
+            .mapToInt(th -> th.getHours() != null ? th.getHours() : 0)
+            .findFirst()
+            .orElse(0);
+    }
+
+    public boolean hasTheory() {
+        return getTheoryHours() > 0;
+    }
+
+    public boolean hasLab() {
+        return getLabHours() > 0;
+    }
+    
     private TimePreference timePreference;
     
    

@@ -31,9 +31,15 @@ public class CourseSchedule {
     @Column(nullable = false)
     private String semester; // e.g., "2024-2025 Fall"
     
+    @Column(nullable = false)
+    private Integer year;
+    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ScheduleStatus status = ScheduleStatus.ASSIGNMENT_PHASE;
+    
+     @Column(nullable = false)
+    private boolean active = true;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;

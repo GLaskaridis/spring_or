@@ -164,4 +164,6 @@ public class User {
     public void setPasswordResetToken(String passwordResetToken) {
         this.passwordResetToken = passwordResetToken;
     }
+    
+    
 }

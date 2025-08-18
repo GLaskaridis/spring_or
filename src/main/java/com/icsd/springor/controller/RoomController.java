@@ -4,15 +4,22 @@
  */
 package com.icsd.springor.controller;
 
+import static com.google.protobuf.JavaFeaturesProto.java;
 import com.icsd.springor.DTO.RoomDTO;
 import com.icsd.springor.model.Room;
 import com.icsd.springor.model.RoomAvailability;
 import com.icsd.springor.service.RoomService;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -119,5 +126,111 @@ public class RoomController {
         dto.setAvailability(availabilitySlots);
         return dto;
     }
+
+    @GetMapping("/api")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getAllRoomsApi() {
+        try {
+            List<Room> rooms = roomService.getAllRooms();
+
+            List<Map<String, Object>> roomData = rooms.stream()
+                    .map(room -> {
+                        Map<String, Object> roomInfo = new HashMap<>();
+                        roomInfo.put("id", room.getId());
+                        roomInfo.put("name", room.getName() != null ? room.getName() : "Αίθουσα " + room.getId());
+                        roomInfo.put("building", room.getBuilding() != null ? room.getBuilding() : "Κτήριο A");
+                        roomInfo.put("capacity", room.getCapacity() != null ? room.getCapacity() : 50);
+                        roomInfo.put("type", room.getType() != null ? room.getType().toString() : "TEACHING");
+                        roomInfo.put("location", room.getLocation() != null ? room.getLocation() : "");
+                        roomInfo.put("active", true); // Assuming all rooms are active
+                        return roomInfo;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(roomData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+    }
+
+    /**
+     * API endpoint για λήψη αιθουσών με φίλτρα
+     */
+    @GetMapping("/api/filter")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getFilteredRoomsApi(
+            @RequestParam(required = false) String building,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer minCapacity) {
+        try {
+            List<Room> rooms = roomService.getAllRooms();
+
+            // Apply filters
+            List<Room> filteredRooms = rooms.stream()
+                    .filter(room -> building == null || building.isEmpty()
+                    || (room.getBuilding() != null && room.getBuilding().contains(building)))
+                    .filter(room -> type == null || type.isEmpty()
+                    || (room.getType() != null && room.getType().toString().equals(type)))
+                    .filter(room -> minCapacity == null
+                    || (room.getCapacity() != null && room.getCapacity() >= minCapacity))
+                    .collect(Collectors.toList());
+
+            List<Map<String, Object>> roomData = filteredRooms.stream()
+                    .map(room -> {
+                        Map<String, Object> roomInfo = new HashMap<>();
+                        roomInfo.put("id", room.getId());
+                        roomInfo.put("name", room.getName());
+                        roomInfo.put("building", room.getBuilding());
+                        roomInfo.put("capacity", room.getCapacity());
+                        roomInfo.put("type", room.getType().toString());
+                        roomInfo.put("location", room.getLocation());
+                        return roomInfo;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(roomData);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * API endpoint για λήψη συγκεκριμένης αίθουσας
+     */
+    @GetMapping("/api/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getRoomByIdApi(@PathVariable Long id) {
+        try {
+            Room room = roomService.getRoomById(id);
+
+            Map<String, Object> roomInfo = new HashMap<>();
+            roomInfo.put("id", room.getId());
+            roomInfo.put("name", room.getName());
+            roomInfo.put("building", room.getBuilding());
+            roomInfo.put("capacity", room.getCapacity());
+            roomInfo.put("type", room.getType().toString());
+            roomInfo.put("location", room.getLocation());
+
+            // Add availability info if needed
+            if (room.getAvailability() != null) {
+                List<Map<String, Object>> availability = room.getAvailability().stream()
+                        .map(avail -> {
+                            Map<String, Object> availInfo = new HashMap<>();
+                            availInfo.put("day", avail.getDay().toString());
+                            availInfo.put("startTime", avail.getStartTime().toString());
+                            availInfo.put("endTime", avail.getEndTime().toString());
+                            return availInfo;
+                        })
+                        .collect(Collectors.toList());
+                roomInfo.put("availability", availability);
+            }
+
+            return ResponseEntity.ok(roomInfo);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
 
 }

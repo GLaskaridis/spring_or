@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="el" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Πρόγραμμα Μαθημάτων</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: white;
+            border-radius: 1rem 1rem 0 0 !important;
+            border: none;
+        }
+
+        .schedule-table {
+            border-collapse: separate;
+            border-spacing: 2px;
+        }
+
+        .schedule-table th {
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            font-weight: 500;
+            padding: 1rem 0.5rem;
+            border-radius: 0.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .schedule-table td {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            vertical-align: top;
+            height: 120px;
+            min-width: 150px;
+            border: 1px solid #e9ecef;
+        }
+
+        .time-slot {
+            background: var(--accent-color);
+            color: white;
+            text-align: center;
+            font-weight: 500;
+            writing-mode: horizontal-tb;
+            border-radius: 0.5rem;
+            padding: 1rem 0.5rem;
+            min-width: 80px;
+        }
+
+        .class-item {
+            background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .class-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .class-item.theory {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+        }
+
+        .class-item.laboratory {
+            background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);
+        }
+
+        .class-item.pending {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);
+        }
+
+        .empty-slot {
+            color: #6c757d;
+            font-style: italic;
+            text-align: center;
+            padding: 2rem 0.5rem;
+        }
+
+        .legend {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 0.25rem;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .schedule-controls {
+            background: white;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        @media (max-width: 768px) {
+            .schedule-table {
+                font-size: 0.8rem;
+            }
+            
+            .schedule-table td {
+                height: 80px;
+                min-width: 120px;
+                padding: 0.25rem;
+            }
+            
+            .class-item {
+                font-size: 0.75rem;
+                padding: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Σύστημα Χρονοπρογραμματισμού
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-home me-1"></i>Αρχική
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/my-courses">
+                            <i class="fas fa-book me-1"></i>Τα Μαθήματά μου
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/preferences">
+                            <i class="fas fa-sliders-h me-1"></i>Προτιμήσεις
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/schedule">
+                            <i class="fas fa-calendar-alt me-1"></i>Πρόγραμμα
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span id="username-display">Διδάσκων</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4 fade-in">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    Πρόγραμμα Μαθημάτων
+                                </h4>
+                                <small class="opacity-75">Εβδομαδιαίο πρόγραμμα διδασκαλίας</small>
+                            </div>
+                            <div>
+                                <button class="btn btn-light me-2" onclick="exportSchedule()">
+                                    <i class="fas fa-download me-1"></i>
+                                    Εξαγωγή
+                                </button>
+                                <button class="btn btn-light" onclick="refreshSchedule()">
+                                    <i class="fas fa-sync-alt me-1"></i>
+                                    Ανανέωση
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="schedule-controls fade-in">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);"></div>
+                            <span>Θεωρία</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);"></div>
+                            <span>Εργαστήριο</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);"></div>
+                            <span>Εκκρεμότητα</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <select class="form-select d-inline-block w-auto" id="scheduleSelector">
+                        <option value="">Επιλέξτε χρονοπρογραμματισμό...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Table -->
+        <div class="row fade-in">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table schedule-table mb-0" id="scheduleTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 100px;">Ώρα</th>
+                                        <th>Δευτέρα</th>
+                                        <th>Τρίτη</th>
+                                        <th>Τετάρτη</th>
+                                        <th>Πέμπτη</th>
+                                        <th>Παρασκευή</th>
+                                        <th>Σάββατο</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduleBody">
+                                    <!-- Schedule content will be loaded here -->
+                                    <tr>
+                                        <td colspan="7" class="text-center p-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Φόρτωση...</span>
+                                            </div>
+                                            <p class="mt-2 mb-0">Φόρτωση προγράμματος...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Details Modal -->
+    <div class="modal fade" id="classModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-class-title">
+                        <i class="fas fa-book me-2"></i>
+                        Λεπτομέρειες Μαθήματος
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modal-class-content">
+                    <!-- Class details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Κλείσιμο</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let userToken = null;
+        let userAssignments = [];
+        let scheduleData = [];
+        let availableSchedules = [];
+
+        const timeSlots = [
+            { id: 0, start: '09:00', end: '12:00', label: '09:00-12:00' },
+            { id: 1, start: '12:00', end: '15:00', label: '12:00-15:00' },
+            { id: 2, start: '15:00', end: '18:00', label: '15:00-18:00' },
+            { id: 3, start: '18:00', end: '21:00', label: '18:00-21:00' }
+        ];
+
+        const daysOfWeek = [
+            { id: 'MONDAY', label: 'Δευτέρα' },
+            { id: 'TUESDAY', label: 'Τρίτη' },
+            { id: 'WEDNESDAY', label: 'Τετάρτη' },
+            { id: 'THURSDAY', label: 'Πέμπτη' },
+            { id: 'FRIDAY', label: 'Παρασκευή' },
+            { id: 'SATURDAY', label: 'Σάββατο' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+            loadData();
+            
+            // Schedule selector change handler
+            document.getElementById('scheduleSelector').addEventListener('change', function() {
+                loadScheduleData();
+            });
+        });
+
+        function checkAuthentication() {
+            userToken = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+            
+            if (!userToken) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+            
+            if (username) {
+                document.getElementById('username-display').textContent = username;
+            }
+        }
+
+        async function loadData() {
+            try {
+                // Load user assignments and available schedules
+                await Promise.all([
+                    loadUserAssignments(),
+                    loadAvailableSchedules()
+                ]);
+                
+                // Render schedule table
+                renderScheduleTable();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError();
+            }
+        }
+
+        async function loadUserAssignments() {
+            const response = await fetch('/assignments/api/my-assignments', {
+                headers: {
+                    'Authorization': 'Bearer ' + userToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load assignments');
+            }
+
+            userAssignments = await response.json();
+        }
+
+        async function loadAvailableSchedules() {
+            try {
+                // Get unique schedules from assignments
+                const uniqueSchedules = userAssignments.reduce((acc, assignment) => {
+                    if (assignment.scheduleId && assignment.scheduleName) {
+                        acc[assignment.scheduleId] = assignment.scheduleName;
+                    }
+                    return acc;
+                }, {});
+
+                availableSchedules = Object.entries(uniqueSchedules).map(([id, name]) => ({
+                    id: parseInt(id),
+                    name: name
+                }));
+
+                populateScheduleSelector();
+            } catch (error) {
+                console.warn('Error loading schedules:', error);
+                availableSchedules = [];
+            }
+        }
+
+        function populateScheduleSelector() {
+            const selector = document.getElementById('scheduleSelector');
+            selector.innerHTML = '<option value="">Επιλέξτε χρονοπρογραμματισμό...</option>';
+            
+            availableSchedules.forEach(schedule => {
+                const option = document.createElement('option');
+                option.value = schedule.id;
+                option.textContent = schedule.name;
+                selector.appendChild(option);
+            });
+
+            // Auto-select first schedule if available
+            if (availableSchedules.length > 0) {
+                selector.value = availableSchedules[0].id;
+                loadScheduleData();
+            }
+        }
+
+        async function loadScheduleData() {
+            const selectedScheduleId = document.getElementById('scheduleSelector').value;
+            
+            if (!selectedScheduleId) {
+                renderScheduleTable();
+                return;
+            }
+
+            try {
+                // Filter assignments for selected schedule
+                const scheduleAssignments = userAssignments.filter(a => 
+                    a.scheduleId && a.scheduleId.toString() === selectedScheduleId
+                );
+
+                // Try to load actual schedule data from API
+                const response = await fetch(`/api/schedules/${selectedScheduleId}/classes`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    scheduleData = await response.json();
+                } else {
+                    // Generate mock schedule data if API not available
+                    scheduleData = generateMockSchedule(scheduleAssignments);
+                }
+
+                renderScheduleTable();
+
+            } catch (error) {
+                console.warn('Error loading schedule data, using assignments only:', error);
+                scheduleData = generateMockSchedule(userAssignments.filter(a => 
+                    a.scheduleId && a.scheduleId.toString() === selectedScheduleId
+                ));
+                renderScheduleTable();
+            }
+        }
+
+        function generateMockSchedule(assignments) {
+            // Generate some sample schedule data
+            const mockData = [];
+            
+            assignments.forEach((assignment, index) => {
+                const dayIndex = index % 6; // Distribute across 6 days
+                const slotIndex = Math.floor(index / 6) % 4; // Distribute across 4 time slots
+                
+                mockData.push({
+                    id: assignment.id,
+                    courseName: assignment.courseName,
+                    courseCode: assignment.courseCode,
+                    courseComponent: assignment.courseComponent,
+                    teacherName: assignment.teacherName,
+                    day: daysOfWeek[dayIndex].id,
+                    timeSlot: slotIndex,
+                    room: 'Αίθουσα ' + (index + 1),
+                    status: assignment.active ? 'CONFIRMED' : 'PENDING'
+                });
+            });
+
+            return mockData;
+        }
+
+        function renderScheduleTable() {
+            const tbody = document.getElementById('scheduleBody');
+            tbody.innerHTML = '';
+
+            timeSlots.forEach(slot => {
+                const row = document.createElement('tr');
+                
+                // Time slot cell
+                const timeCell = document.createElement('td');
+                timeCell.className = 'time-slot';
+                timeCell.textContent = slot.label;
+                row.appendChild(timeCell);
+
+                // Day cells
+                daysOfWeek.forEach(day => {
+                    const dayCell = document.createElement('td');
+                    
+                    // Find classes for this day and time slot
+                    const classes = scheduleData.filter(item => 
+                        item.day === day.id && item.timeSlot === slot.id
+                    );
+
+                    if (classes.length > 0) {
+                        classes.forEach(classItem => {
+                            const classDiv = document.createElement('div');
+                            const componentClass = classItem.courseComponent === 'THEORY' ? 'theory' : 'laboratory';
+                            const statusClass = classItem.status === 'PENDING' ? 'pending' : '';
+                            
+                            classDiv.className = `class-item ${componentClass} ${statusClass}`;
+                            classDiv.innerHTML = `
+                                <div class="fw-bold">${classItem.courseName}</div>
+                                <small>${classItem.courseCode}</small>
+                                <div><i class="fas fa-door-open me-1"></i>${classItem.room || 'TBD'}</div>
+                            `;
+                            
+                            classDiv.onclick = () => showClassDetails(classItem);
+                            dayCell.appendChild(classDiv);
+                        });
+                    } else {
+                        dayCell.innerHTML = '<div class="empty-slot">Κενό</div>';
+                    }
+
+                    row.appendChild(dayCell);
+                });
+
+                tbody.appendChild(row);
+            });
+        }
+
+        function showClassDetails(classItem) {
+            const componentText = classItem.courseComponent === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο';
+            const componentIcon = classItem.courseComponent === 'THEORY' ? 'fas fa-chalkboard-teacher' : 'fas fa-flask';
+            const dayText = daysOfWeek.find(d => d.id === classItem.day)?.label || classItem.day;
+            const timeText = timeSlots.find(t => t.id === classItem.timeSlot)?.label || 'N/A';
+            
+            document.getElementById('modal-class-title').innerHTML = 
+                `<i class="${componentIcon} me-2"></i>${classItem.courseName}`;
+
+            document.getElementById('modal-class-content').innerHTML = `
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Βασικές Πληροφορίες</h6>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <strong>Κωδικός:</strong> ${classItem.courseCode}<br>
+                                    <strong>Τύπος:</strong> ${componentText}<br>
+                                    <strong>Διδάσκων:</strong> ${classItem.teacherName || 'N/A'}
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong>Ημέρα:</strong> ${dayText}<br>
+                                    <strong>Ώρα:</strong> ${timeText}<br>
+                                    <strong>Αίθουσα:</strong> ${classItem.room || 'Προς καθορισμό'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${classItem.status === 'PENDING' ? `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Προσοχή:</strong> Αυτό το μάθημα είναι σε εκκρεμότητα και μπορεί να αλλάξει.
+                    </div>
+                ` : ''}
+            `;
+            
+            new bootstrap.Modal(document.getElementById('classModal')).show();
+        }
+
+        function refreshSchedule() {
+            loadData();
+            showAlert('Ανανέωση προγράμματος...', 'info');
+        }
+
+        function exportSchedule() {
+            showAlert('Η εξαγωγή προγράμματος θα υλοποιηθεί σύντομα', 'warning');
+        }
+
+        function showError() {
+            const tbody = document.getElementById('scheduleBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center p-4">
+                        <div class="alert alert-danger mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Σφάλμα κατά τη φόρτωση του προγράμματος. 
+                            <button class="btn btn-outline-danger btn-sm ms-2" onclick="loadData()">
+                                <i class="fas fa-sync-alt me-1"></i>Επανάληψη
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertClass = {
+                'info': 'alert-info',
+                'success': 'alert-success',
+                'error': 'alert-danger',
+                'warning': 'alert-warning'
+            }[type] || 'alert-info';
+
+            const alertHTML = `
+                <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

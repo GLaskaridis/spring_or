@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CourseService {
@@ -59,4 +60,16 @@ public class CourseService {
         // Implement validation logic here
         return true; // Placeholder
     }
+    
+    public long countAllCourses() {
+    return courseRepository.count();
+}
+
+    public List<Course> getAllActiveCourses() {
+        return courseRepository.findAll().stream()
+            .filter(Course::isActive)
+            .collect(Collectors.toList());
+    }
+
+    
 }

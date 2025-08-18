@@ -23,4 +23,12 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
     
     @Query("SELECT cs FROM CourseSchedule cs WHERE cs.status = 'ASSIGNMENT_PHASE' ORDER BY cs.createdAt DESC")
     List<CourseSchedule> findSchedulesInAssignmentPhase();
+    
+    boolean existsByName(String name);
+    
+    List<CourseSchedule> findByStatus(CourseSchedule.ScheduleStatus status);
+    
+    List<CourseSchedule> findBySemesterAndYear(String semester, Integer year);
+    
+    List<CourseSchedule> findByActiveTrue();
 }

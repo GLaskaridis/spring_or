@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Δημιουργία Χρονοπρογραμματισμού</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --accent-color: #4299e1;
+            --success-color: #38a169;
+            --admin-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+
+        .card-header {
+            background: var(--admin-gradient);
+            color: white;
+            border-radius: 1rem 1rem 0 0 !important;
+            border: none;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--admin-gradient);
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+
+        .form-control, .form-select {
+            border-radius: 0.5rem;
+            border: 2px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(66, 153, 225, 0.25);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .preset-btn {
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: var(--primary-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--accent-color);
+            background: rgba(66, 153, 225, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .preset-btn.selected {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-calendar-plus me-3"></i>
+                            Δημιουργία Χρονοπρογραμματισμού
+                        </h3>
+                        <p class="mb-0 mt-2 opacity-75">Δημιουργήστε έναν νέο χρονοπρογραμματισμό για το εξάμηνό σας</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Quick Presets -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">
+                                <i class="fas fa-magic me-2"></i>
+                                Γρήγοροι Προκαθορισμοί
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="preset-btn" onclick="usePreset('winter')">
+                                        <i class="fas fa-snowflake fa-2x mb-2 text-primary"></i>
+                                        <h6>Χειμερινό 2025-26</h6>
+                                        <small class="text-muted">Χειμερινό εξάμηνο 2025-26</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="preset-btn" onclick="usePreset('summer')">
+                                        <i class="fas fa-leaf fa-2x mb-2 text-success"></i>
+                                        <h6>Εαρινό 2026</h6>
+                                        <small class="text-muted">Εαρινό εξάμηνο 2026</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="preset-btn" onclick="usePreset('summer')">
+                                        <i class="fas fa-leaf fa-2x mb-2 text-success"></i>
+                                        <h6>Χειμερινό 2026-27</h6>
+                                        <small class="text-muted">Χειμερινό εξάμηνο 2025-26</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="preset-btn" onclick="usePreset('general')">
+                                        <i class="fas fa-cog fa-2x mb-2 text-warning"></i>
+                                        <h6>Γενικές Αναθέσεις</h6>
+                                        <small class="text-muted">Για γενική διαχείριση αναθέσεων χωρίς συγκεκριμένο εξάμηνο</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Custom Form -->
+                        <form id="scheduleForm">
+                            <div class="mb-3">
+                                <label for="scheduleName" class="form-label">
+                                    <i class="fas fa-tag me-2"></i>
+                                    Όνομα Χρονοπρογραμματισμού <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="scheduleName" name="name" required
+                                       placeholder="π.χ. Χειμερινό Εξάμηνο 2024-25">
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="scheduleSemester" class="form-label">
+                                        <i class="fas fa-calendar me-2"></i>
+                                        Εξάμηνο <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="scheduleSemester" name="semester" required>
+                                        <option value="">Επιλέξτε εξάμηνο...</option>
+                                        <option value="Χειμερινό">Χειμερινό</option>
+                                        <option value="Θερινό">Θερινό</option>
+                                        <option value="Γενικό">Γενικό</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="scheduleYear" class="form-label">
+                                        <i class="fas fa-clock me-2"></i>
+                                        Ακαδημαϊκό Έτος <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" class="form-control" id="scheduleYear" name="year" 
+                                           min="2024" max="2030" required
+                                           placeholder="π.χ. 2024">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="scheduleDescription" class="form-label">
+                                    <i class="fas fa-align-left me-2"></i>
+                                    Περιγραφή
+                                </label>
+                                <textarea class="form-control" id="scheduleDescription" name="description" rows="3"
+                                          placeholder="Προαιρετική περιγραφή του χρονοπρογραμματισμού..."></textarea>
+                            </div>
+
+                            <!-- Alert Container -->
+                            <div id="alert-container" class="mb-3"></div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                <a href="/admin/dashboard" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Επιστροφή
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    Δημιουργία Χρονοπρογραμματισμού
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Success Card (Hidden by default) -->
+                <div class="card mt-4 d-none" id="successCard">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h5 class="text-success">Επιτυχής Δημιουργία!</h5>
+                        <p class="mb-3">Ο χρονοπρογραμματισμός δημιουργήθηκε επιτυχώς.</p>
+                        <div class="d-grid gap-2 d-md-flex justify-content-center">
+                            <a href="/admin/assignments" class="btn btn-primary">
+                                <i class="fas fa-tasks me-2"></i>
+                                Προσθήκη Αναθέσεων
+                            </a>
+                            <a href="/admin/schedules" class="btn btn-outline-primary">
+                                <i class="fas fa-list me-2"></i>
+                                Όλοι οι Χρονοπρογραμματισμοί
+                            </a>
+                            <button class="btn btn-success" onclick="createAnother()">
+                                <i class="fas fa-plus me-2"></i>
+                                Δημιουργία Άλλου
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Set current year as default
+        document.getElementById('scheduleYear').value = new Date().getFullYear();
+
+        // Preset configurations
+        const presets = {
+            winter: {
+                name: `Χειμερινό Εξάμηνο ${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+                semester: 'Χειμερινό',
+                year: new Date().getFullYear(),
+                description: 'Χρονοπρογραμματισμός μαθημάτων για το χειμερινό εξάμηνο'
+            },
+            spring: {
+                name: `Θερινό Εξάμηνο ${new Date().getFullYear() + 1}`,
+                semester: 'Θερινό',
+                year: new Date().getFullYear() + 1,
+                description: 'Χρονοπρογραμματισμός μαθημάτων για το θερινό εξάμηνο'
+            },
+            general: {
+                name: 'Γενικές Αναθέσεις Μαθημάτων',
+                semester: 'Γενικό',
+                year: new Date().getFullYear(),
+                description: 'Γενικός χρονοπρογραμματισμός για διαχείριση όλων των αναθέσεων μαθημάτων χωρίς συγκεκριμένο εξάμηνο'
+            }
+        };
+
+        // Use preset
+        function usePreset(type) {
+            const preset = presets[type];
+            if (preset) {
+                document.getElementById('scheduleName').value = preset.name;
+                document.getElementById('scheduleSemester').value = preset.semester;
+                document.getElementById('scheduleYear').value = preset.year;
+                document.getElementById('scheduleDescription').value = preset.description;
+
+                // Visual feedback
+                document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('selected'));
+                event.currentTarget.classList.add('selected');
+            }
+        }
+
+        // Form submission
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const scheduleData = Object.fromEntries(formData.entries());
+
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Δημιουργία...';
+            submitBtn.disabled = true;
+
+            // Send request
+            fetch('/admin/api/schedules', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(scheduleData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success
+                    showAlert('Ο χρονοπρογραμματισμός δημιουργήθηκε επιτυχώς!', 'success');
+                    
+                    // Hide form and show success card
+                    setTimeout(() => {
+                        document.querySelector('.card').style.display = 'none';
+                        document.getElementById('successCard').classList.remove('d-none');
+                    }, 1500);
+                    
+                } else {
+                    showAlert(data.message || 'Σφάλμα κατά τη δημιουργία', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Σφάλμα κατά τη δημιουργία χρονοπρογραμματισμού', 'danger');
+            })
+            .finally(() => {
+                // Restore button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+
+        // Show alert
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check' : 'exclamation-triangle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            // Auto-close after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    const alert = alertContainer.querySelector('.alert');
+                    if (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Create another schedule
+        function createAnother() {
+            document.getElementById('successCard').classList.add('d-none');
+            document.querySelector('.card').style.display = 'block';
+            document.getElementById('scheduleForm').reset();
+            document.getElementById('scheduleYear').value = new Date().getFullYear();
+            document.getElementById('alert-container').innerHTML = '';
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('selected'));
+        }
+    </script>
+</body>
+</html>

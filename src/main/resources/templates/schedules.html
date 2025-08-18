@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="el" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Διαχείριση Χρονοπρογραμματισμών</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+        <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+        <style>
+            :root {
+                --primary-color: #1a365d;
+                --secondary-color: #2d3748;
+                --accent-color: #4299e1;
+                --success-color: #38a169;
+                --warning-color: #ed8936;
+                --danger-color: #e53e3e;
+                --light-bg: #f7fafc;
+                --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                --admin-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+
+            body {
+                background-color: var(--light-bg);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            .navbar {
+                background: var(--admin-gradient);
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+
+            .navbar-brand {
+                font-weight: bold;
+                font-size: 1.6rem;
+            }
+
+            .sidebar {
+                min-height: calc(100vh - 76px);
+                background: white;
+                box-shadow: var(--card-shadow);
+                border-radius: 0.75rem;
+            }
+
+            .sidebar .nav-link {
+                color: var(--secondary-color);
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                margin: 0.25rem;
+                transition: all 0.3s ease;
+                font-weight: 500;
+            }
+
+            .sidebar .nav-link:hover, .sidebar .nav-link.active {
+                background: var(--admin-gradient);
+                color: white;
+                transform: translateX(8px);
+            }
+
+            .sidebar .nav-link i {
+                width: 20px;
+                margin-right: 12px;
+            }
+
+            .card {
+                border: none;
+                border-radius: 1rem;
+                box-shadow: var(--card-shadow);
+                transition: all 0.3s ease;
+                background: white;
+            }
+
+            .card-header {
+                background: var(--admin-gradient);
+                color: white;
+                border-radius: 1rem 1rem 0 0 !important;
+                border: none;
+                font-weight: 600;
+            }
+
+            .btn-primary {
+                background: var(--admin-gradient);
+                border: none;
+                border-radius: 0.5rem;
+                padding: 0.75rem 1.5rem;
+                font-weight: 500;
+                transition: all 0.3s ease;
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            }
+
+            .table-container {
+                border-radius: 1rem;
+                overflow: hidden;
+                box-shadow: var(--card-shadow);
+            }
+
+            .table thead th {
+                background: var(--admin-gradient);
+                color: white;
+                border: none;
+                font-weight: 600;
+            }
+
+            .badge-status {
+                padding: 0.5rem 1rem;
+                border-radius: 2rem;
+                font-weight: 500;
+            }
+
+            .form-control, .form-select {
+                border-radius: 0.5rem;
+                border: 2px solid #e2e8f0;
+                transition: all 0.3s ease;
+            }
+
+            .form-control:focus, .form-select:focus {
+                border-color: var(--accent-color);
+                box-shadow: 0 0 0 0.2rem rgba(66, 153, 225, 0.25);
+            }
+
+            .fade-in {
+                animation: fadeIn 0.8s ease-in;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .schedule-stats {
+                background: var(--admin-gradient);
+                color: white;
+                border-radius: 1rem;
+                padding: 2rem;
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+
+            .schedule-stats h3 {
+                font-size: 2.5rem;
+                font-weight: bold;
+                margin-bottom: 0.5rem;
+            }
+
+            .schedule-stats p {
+                opacity: 0.9;
+                margin: 0;
+            }
+
+            .notification-badge {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background: var(--danger-color);
+                color: white;
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                font-size: 0.75rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+            }
+
+            .phase-indicator {
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                margin-right: 8px;
+            }
+
+            .phase-assignment {
+                background-color: #3b82f6;
+            }
+            .phase-requirements {
+                background-color: #f59e0b;
+            }
+            .phase-execution {
+                background-color: #8b5cf6;
+            }
+            .phase-solution {
+                background-color: #10b981;
+            }
+            .phase-approved {
+                background-color: #059669;
+            }
+            .phase-no-solution {
+                background-color: #ef4444;
+            }
+            .phase-completed {
+                background-color: #6b7280;
+            }
+            .phase-terminated {
+                background-color: #374151;
+            }
+
+            @media (max-width: 768px) {
+                .sidebar {
+                    margin-bottom: 2rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Διαχείριση Συστήματος
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/dashboard">
+                                <i class="fas fa-home me-1"></i>
+                                Αρχική
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">2</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Ειδοποιήσεις</h6></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-calendar text-success me-2"></i>Νέος χρονοπρογραμματισμός δημιουργήθηκε</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Χρονοπρογραμματισμός χρειάζεται ενημέρωση</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-shield me-1"></i>
+                                Διαχειριστής
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cogs me-2"></i>Ρυθμίσεις</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid mt-4">
+            <div class="row">
+                <!-- Sidebar -->
+                <div class="col-lg-3 col-md-4 mb-4">
+                    <div class="sidebar p-3 fade-in">
+                        <nav class="nav flex-column">
+                            <a class="nav-link" href="/admin/dashboard">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Επισκόπηση
+                            </a>
+                            <a class="nav-link" href="/teachers/list">
+                                <i class="fas fa-users"></i>
+                                Διαχείριση Χρηστών
+                            </a>
+                            <a class="nav-link" href="/courses/list">
+                                <i class="fas fa-book"></i>
+                                Διαχείριση Μαθημάτων
+                            </a>
+                            <a class="nav-link" href="/rooms/list">
+                                <i class="fas fa-door-open"></i>
+                                Διαχείριση Αιθουσών
+                            </a>
+                            <a class="nav-link active" href="/admin/schedules">
+                                <i class="fas fa-calendar-alt"></i>
+                                Χρονοπρογραμματισμός
+                            </a>
+                            <a class="nav-link" href="/admin/assignments">
+                                <i class="fas fa-tasks"></i>
+                                Αναθέσεις Μαθημάτων
+                            </a>
+                            <a class="nav-link" href="#reports">
+                                <i class="fas fa-chart-bar"></i>
+                                Αναφορές & Στατιστικά
+                            </a>
+                            <a class="nav-link" href="#system-settings">
+                                <i class="fas fa-cogs"></i>
+                                Ρυθμίσεις Συστήματος
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-lg-9 col-md-8">
+                    <!-- Page Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                        <div>
+                            <h1 class="h3 mb-0">Διαχείριση Χρονοπρογραμματισμών</h1>
+                            <p class="text-muted">Δημιουργία και διαχείριση χρονοπρογραμματισμών εξαμήνου</p>
+                        </div>
+                        <button class="btn btn-primary" id="addScheduleBtn" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                            <i class="fas fa-plus me-2"></i>
+                            Νέος Χρονοπρογραμματισμός
+                        </button>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <div class="row mb-4 fade-in">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="schedule-stats">
+                                <h3 id="totalSchedules">0</h3>
+                                <p>Συνολικοί Χρονοπρογραμματισμοί</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="schedule-stats" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <h3 id="activeSchedules">0</h3>
+                                <p>Ενεργοί</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="schedule-stats" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <h3 id="inProgressSchedules">0</h3>
+                                <p>Σε Εξέλιξη</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="schedule-stats" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <h3 id="completedSchedules">0</h3>
+                                <p>Ολοκληρωμένοι</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts Container -->
+                    <div id="schedules-alert" class="mb-4"></div>
+
+                    <!-- Schedules Table -->
+                    <div class="card fade-in">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list me-2"></i>
+                                Λίστα Χρονοπρογραμματισμών
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table id="schedulesTable" class="table table-hover w-100">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Όνομα</th>
+                                            <th>Εξάμηνο</th>
+                                            <th>Έτος</th>
+                                            <th>Κατάσταση</th>
+                                            <th>Αναθέσεις</th>
+                                            <th>Ημερομηνία Δημιουργίας</th>
+                                            <th>Ενέργειες</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Δυναμικό περιεχόμενο -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Modal -->
+        <div class="modal fade" id="scheduleModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: var(--admin-gradient); color: white;">
+                        <h5 class="modal-title" id="scheduleModalTitle">
+                            <i class="fas fa-calendar-plus me-2"></i>
+                            Νέος Χρονοπρογραμματισμός
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="scheduleForm">
+                            <input type="hidden" id="scheduleId" name="id">
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="scheduleName" class="form-label">Όνομα Χρονοπρογραμματισμού <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="scheduleName" name="name" required
+                                           placeholder="π.χ. Χειμερινό Εξάμηνο 2024-25">
+                                    <div class="form-text">Δώστε ένα περιγραφικό όνομα για τον χρονοπρογραμματισμό</div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="scheduleSemester" class="form-label">Εξάμηνο <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="scheduleSemester" name="semester" required>
+                                        <option value="">Επιλέξτε εξάμηνο...</option>
+                                        <option value="Χειμερινό">Χειμερινό</option>
+                                        <option value="Εαρινό">Εαρινό</option>
+                                        <option value="Θερινό">Θερινό</option>
+                                        <option value="Γενικό">Γενικό</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="scheduleYear" class="form-label">Ακαδημαϊκό Έτος <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="scheduleYear" name="year" 
+                                           min="2024" max="2030" required
+                                           placeholder="π.χ. 2024">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="scheduleDescription" class="form-label">Περιγραφή</label>
+                                <textarea class="form-control" id="scheduleDescription" name="description" rows="3"
+                                          placeholder="Προαιρετική περιγραφή του χρονοπρογραμματισμού..."></textarea>
+                            </div>
+
+                            <!-- Advanced Settings -->
+                            <div class="card border-0 bg-light">
+                                <div class="card-header bg-transparent border-0">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-cogs me-2"></i>
+                                        Προηγμένες Ρυθμίσεις
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="scheduleStartTime" class="form-label">Ώρα Έναρξης Μαθημάτων</label>
+                                            <input type="time" class="form-control" id="scheduleStartTime" name="startTime" value="08:00">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="scheduleEndTime" class="form-label">Ώρα Λήξης Μαθημάτων</label>
+                                            <input type="time" class="form-control" id="scheduleEndTime" name="endTime" value="21:00">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="maxHoursPerDay" class="form-label">Μέγιστες Ώρες ανά Ημέρα</label>
+                                            <input type="number" class="form-control" id="maxHoursPerDay" name="maxHoursPerDay" min="1" max="12" value="9">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="maxDistanceKm" class="form-label">Μέγιστη Απόσταση Αιθουσών (km)</label>
+                                            <input type="number" class="form-control" id="maxDistanceKm" name="maxDistanceKm" min="0" max="10" step="0.1" value="1.0">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="scheduleActive" name="active" checked>
+                                                <label class="form-check-label" for="scheduleActive">
+                                                    Ενεργός Χρονοπρογραμματισμός
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Σημείωση:</strong> Μετά τη δημιουργία, ο χρονοπρογραμματισμός θα είναι στη φάση 
+                                "Ανάθεση Μαθημάτων" και θα μπορείτε να προσθέσετε αναθέσεις μαθημάτων.
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>
+                            Ακύρωση
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="saveSchedule()">
+                            <i class="fas fa-save me-1"></i>
+                            Αποθήκευση
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteScheduleModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Επιβεβαίωση Διαγραφής
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε τον χρονοπρογραμματισμό;</p>
+                        <div id="deleteScheduleDetails" class="alert alert-warning"></div>
+                        <div class="alert alert-danger">
+                            <strong>Προσοχή:</strong> Αυτή η ενέργεια θα διαγράψει επίσης:
+                            <ul class="mb-0 mt-2">
+                                <li>Όλες τις αναθέσεις μαθημάτων</li>
+                                <li>Όλες τις προτιμήσεις διδασκόντων</li>
+                                <li>Τα αποτελέσματα χρονοπρογραμματισμού</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteScheduleBtn">
+                            <i class="fas fa-trash me-1"></i>
+                            Διαγραφή
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Change Modal -->
+        <div class="modal fade" id="statusChangeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: var(--admin-gradient); color: white;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-exchange-alt me-2"></i>
+                            Αλλαγή Κατάστασης Χρονοπρογραμματισμού
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Επιλέξτε τη νέα κατάσταση για τον χρονοπρογραμματισμό:</p>
+
+                        <div class="mb-3">
+                            <label for="newStatus" class="form-label">Νέα Κατάσταση</label>
+                            <select class="form-select" id="newStatus">
+                                <option value="ASSIGNMENT_PHASE">Φάση Ανάθεσης Μαθημάτων</option>
+                                <option value="REQUIREMENTS_PHASE">Φάση Παροχής Απαιτήσεων</option>
+                                <option value="EXECUTION">Εκτέλεση Αλγορίθμου</option>
+                                <option value="SOLUTION_FOUND">Λύση Βρέθηκε</option>
+                                <option value="SOLUTION_APPROVED">Λύση Εγκρίθηκε</option>
+                                <option value="COMPLETED">Ολοκληρώθηκε</option>
+                            </select>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Σημείωση:</strong> Η αλλαγή κατάστασης μπορεί να επηρεάσει τις διαθέσιμες λειτουργίες 
+                            για τον χρονοπρογραμματισμό.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                        <button type="button" class="btn btn-primary" onclick="changeScheduleStatus()">
+                            <i class="fas fa-check me-1"></i>
+                            Αλλαγή Κατάστασης
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scripts -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+        <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+        <script>
+                            let schedulesTable;
+                            let currentScheduleId = null;
+
+                            // Initialize DataTable
+                            $(document).ready(function () {
+                                schedulesTable = $('#schedulesTable').DataTable({
+                                    responsive: true,
+                                    pageLength: 10,
+                                    processing: true,
+                                    ajax: {
+                                        url: '/admin/api/schedules',
+                                        type: 'GET',
+                                        dataSrc: function (json) {
+                                            updateStatistics(json);
+                                            return json;
+                                        }
+                                    },
+                                    columns: [
+                                        {data: 'id'},
+                                        {
+                                            data: 'name',
+                                            render: function (data, type, row) {
+                                                return `<div>
+                                <strong>${data}</strong>
+                                <br><small class="text-muted">${row.description || 'Χωρίς περιγραφή'}</small>
+                            </div>`;
+                                            }
+                                        },
+                                        {data: 'semester'},
+                                        {data: 'year'},
+                                        {
+                                            data: 'status',
+                                            render: function (data, type, row) {
+                                                return getStatusBadge(data);
+                                            }
+                                        },
+                                        {
+                                            data: 'assignmentCount',
+                                            render: function (data, type, row) {
+                                                const count = data || 0;
+                                                return `<span class="badge bg-info">${count} αναθέσεις</span>`;
+                                            }
+                                        },
+                                        {
+                                            data: 'createdDate',
+                                            render: function (data, type, row) {
+                                                if (data) {
+                                                    return new Date(data).toLocaleDateString('el-GR');
+                                                }
+                                                return new Date().toLocaleDateString('el-GR');
+                                            }
+                                        },
+                                        {
+                                            data: null,
+                                            orderable: false,
+                                            render: function (data, type, row) {
+                                                return `<div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewSchedule(${row.id})" title="Προβολή">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editSchedule(${row.id})" title="Επεξεργασία">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-info" onclick="changeStatus(${row.id})" title="Αλλαγή Κατάστασης">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${row.id})" title="Διαγραφή">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>`;
+                                            }
+                                        }
+                                    ],
+                                    language: {
+                                        url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/el.json'
+                                    }
+                                });
+
+                                // Set current year as default
+                                $('#scheduleYear').val(new Date().getFullYear());
+                            });
+
+                            // Add new schedule button
+                            $('#addScheduleBtn').click(function () {
+                                resetForm();
+                                $('#scheduleModalTitle').html('<i class="fas fa-calendar-plus me-2"></i>Νέος Χρονοπρογραμματισμός');
+                                currentScheduleId = null;
+                            });
+
+                            // Reset form
+                            function resetForm() {
+                                $('#scheduleForm')[0].reset();
+                                $('#scheduleId').val('');
+                                $('#scheduleYear').val(new Date().getFullYear());
+                                currentScheduleId = null;
+                            }
+
+                            function saveSchedule() {
+                                console.log('Save schedule function called');
+
+                                const form = document.getElementById('scheduleForm');
+                                if (!form.checkValidity()) {
+                                    console.log('Form validation failed');
+                                    form.reportValidity();
+                                    return;
+                                }
+
+                                const formData = new FormData(form);
+                                const scheduleData = Object.fromEntries(formData.entries());
+
+                                // Add checkbox value
+                                scheduleData.active = document.getElementById('scheduleActive').checked;
+
+                                console.log('Schedule data to send:', scheduleData);
+
+                                const isNewSchedule = !currentScheduleId;
+                                const url = isNewSchedule ? '/admin/api/schedules' : `/admin/api/schedules/${currentScheduleId}`;
+                                const method = isNewSchedule ? 'POST' : 'PUT';
+
+                                console.log('Making request to:', url, 'with method:', method);
+
+                                // Show loading state
+                                const submitBtn = document.querySelector('#scheduleModal button[onclick="saveSchedule()"]');
+                                const originalText = submitBtn.innerHTML;
+                                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Αποθήκευση...';
+                                submitBtn.disabled = true;
+
+                                fetch(url, {
+                                    method: method,
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded',
+                                    },
+                                    body: new URLSearchParams(scheduleData)
+                                })
+                                        .then(response => {
+                                            console.log('Response status:', response.status);
+                                            console.log('Response headers:', response.headers);
+                                            return response.text().then(text => {
+                                                try {
+                                                    return JSON.parse(text);
+                                                } catch (e) {
+                                                    console.error('Failed to parse JSON:', text);
+                                                    throw new Error('Server returned invalid JSON: ' + text);
+                                                }
+                                            });
+                                        })
+                                        .then(data => {
+                                            console.log('Response data:', data);
+                                            if (data.success) {
+                                                showAlert('schedules-alert', data.message, 'success');
+
+                                                // Close modal and reload table
+                                                bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+
+                                                // Reload the table data
+                                                if (typeof schedulesTable !== 'undefined') {
+                                                    schedulesTable.ajax.reload();
+                                                }
+
+                                            } else {
+                                                showAlert('schedules-alert', data.message || 'Άγνωστο σφάλμα', 'danger');
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Fetch error:', error);
+                                            showAlert('schedules-alert', 'Σφάλμα κατά την αποθήκευση: ' + error.message, 'danger');
+                                        })
+                                        .finally(() => {
+                                            // Restore button state
+                                            submitBtn.innerHTML = originalText;
+                                            submitBtn.disabled = false;
+                                        });
+                            }
+
+                            // View schedule
+                            function viewSchedule(id) {
+                                window.location.href = `/admin/assignments?scheduleId=${id}`;
+                            }
+
+                            // Edit schedule
+                            function editSchedule(id) {
+                                currentScheduleId = id;
+
+                                // Get schedule data from the table
+                                const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
+
+                                if (row) {
+                                    $('#scheduleId').val(id);
+                                    $('#scheduleName').val(row.name);
+                                    $('#scheduleSemester').val(row.semester);
+                                    $('#scheduleYear').val(row.year);
+                                    $('#scheduleDescription').val(row.description || '');
+                                    $('#scheduleStartTime').val(row.startTime || '08:00');
+                                    $('#scheduleEndTime').val(row.endTime || '21:00');
+                                    $('#maxHoursPerDay').val(row.maxHoursPerDay || 9);
+                                    $('#maxDistanceKm').val(row.maxDistanceKm || 1.0);
+                                    $('#scheduleActive').prop('checked', row.active !== false);
+
+                                    $('#scheduleModalTitle').html('<i class="fas fa-edit me-2"></i>Επεξεργασία Χρονοπρογραμματισμού');
+
+                                    new bootstrap.Modal(document.getElementById('scheduleModal')).show();
+                                }
+                            }
+
+                            // Change status
+                            function changeStatus(id) {
+                                currentScheduleId = id;
+
+                                // Get current status
+                                const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
+                                if (row) {
+                                    $('#newStatus').val(row.status);
+                                    new bootstrap.Modal(document.getElementById('statusChangeModal')).show();
+                                }
+                            }
+
+                            // Change schedule status
+                            function changeScheduleStatus() {
+                                const newStatus = $('#newStatus').val();
+
+                                if (currentScheduleId && newStatus) {
+                                    fetch(`/admin/api/schedules/${currentScheduleId}/status`, {
+                                        method: 'PUT',
+                                        headers: {
+                                            'Content-Type': 'application/x-www-form-urlencoded',
+                                        },
+                                        body: new URLSearchParams({status: newStatus})
+                                    })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                if (data.success) {
+                                                    showAlert('schedules-alert', data.message, 'success');
+
+                                                    // Close modal
+                                                    bootstrap.Modal.getInstance(document.getElementById('statusChangeModal')).hide();
+
+                                                    // Reload table
+                                                    schedulesTable.ajax.reload();
+                                                } else {
+                                                    showAlert('schedules-alert', data.message, 'danger');
+                                                }
+
+                                                currentScheduleId = null;
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                showAlert('schedules-alert', 'Σφάλμα κατά την αλλαγή κατάστασης', 'danger');
+                                                currentScheduleId = null;
+                                            });
+                                }
+                            }
+
+                            // Delete schedule
+                            function deleteSchedule(id) {
+                                currentScheduleId = id;
+
+                                // Get schedule details for confirmation
+                                const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
+
+                                if (row) {
+                                    $('#deleteScheduleDetails').html(`
+                    <strong>Χρονοπρογραμματισμός:</strong> ${row.name}<br>
+                    <strong>Εξάμηνο:</strong> ${row.semester} ${row.year}<br>
+                    <strong>Κατάσταση:</strong> ${getStatusText(row.status)}<br>
+                    <strong>Αναθέσεις:</strong> ${row.assignmentCount || 0}
+                `);
+
+                                    new bootstrap.Modal(document.getElementById('deleteScheduleModal')).show();
+                                }
+                            }
+
+                            // Confirm delete
+                            $('#confirmDeleteScheduleBtn').click(function () {
+                                if (currentScheduleId) {
+                                    fetch(`/admin/api/schedules/${currentScheduleId}`, {
+                                        method: 'DELETE'
+                                    })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                if (data.success) {
+                                                    showAlert('schedules-alert', data.message, 'success');
+
+                                                    // Close modal
+                                                    bootstrap.Modal.getInstance(document.getElementById('deleteScheduleModal')).hide();
+
+                                                    // Reload table
+                                                    schedulesTable.ajax.reload();
+                                                } else {
+                                                    showAlert('schedules-alert', data.message, 'danger');
+                                                }
+
+                                                currentScheduleId = null;
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                showAlert('schedules-alert', 'Σφάλμα κατά τη διαγραφή', 'danger');
+                                                currentScheduleId = null;
+                                            });
+                                }
+                            });
+
+                            // Update statistics
+                            function updateStatistics(data) {
+                                const total = data.length;
+                                const active = data.filter(s => s.active !== false).length;
+                                const inProgress = data.filter(s =>
+                                    s.status === 'ASSIGNMENT_PHASE' ||
+                                            s.status === 'REQUIREMENTS_PHASE' ||
+                                            s.status === 'EXECUTION_PHASE'
+                                ).length;
+                                const completed = data.filter(s =>
+                                    s.status === 'SOLUTION_APPROVED'
+                                ).length;
+
+                                $('#totalSchedules').text(total);
+                                $('#activeSchedules').text(active);
+                                $('#inProgressSchedules').text(inProgress);
+                                $('#completedSchedules').text(completed);
+                            }
+
+                            // Get status badge HTML
+                            function getStatusBadge(status) {
+                                const statusConfig = {
+                                    'ASSIGNMENT_PHASE': {class: 'bg-primary', text: 'Ανάθεση Μαθημάτων', icon: 'phase-assignment'},
+                                    'REQUIREMENTS_PHASE': {class: 'bg-warning', text: 'Παροχή Προτιμήσεων', icon: 'phase-requirements'},
+                                    'EXECUTION_PHASE': {class: 'bg-info', text: 'Εκτέλεση', icon: 'phase-execution'},
+                                    'SOLUTION_FOUND': {class: 'bg-success', text: 'Εύρεση Λύσης', icon: 'phase-solution'},
+                                    'NO_SOLUTION_FOUND': {class: 'bg-danger', text: 'Μη Εύρεση Λύσης', icon: 'phase-no-solution'},
+                                    'SOLUTION_APPROVED': {class: 'bg-success', text: 'Έγκριση Λύσης', icon: 'phase-approved'},
+                                    'TERMINATED': {class: 'bg-dark', text: 'Λήξη', icon: 'phase-terminated'}
+                                };
+
+                                const config = statusConfig[status] || {class: 'bg-secondary', text: status, icon: 'phase-completed'};
+
+                                return `<span class="badge ${config.class} badge-status">
+                <span class="phase-indicator ${config.icon}"></span>
+                ${config.text}
+            </span>`;
+                            }
+
+                            // Get status text
+                            function getStatusText(status) {
+                                const statusTexts = {
+                                    'ASSIGNMENT_PHASE': 'Ανάθεση Μαθημάτων',
+                                    'REQUIREMENTS_PHASE': 'Παροχή Προτιμήσεων',
+                                    'EXECUTION_PHASE': 'Εκτέλεση',
+                                    'SOLUTION_FOUND': 'Εύρεση Λύσης',
+                                    'NO_SOLUTION_FOUND': 'Μη Εύρεση Λύσης',
+                                    'SOLUTION_APPROVED': 'Έγκριση Λύσης',
+                                    'TERMINATED': 'Λήξη'
+                                };
+                                return statusTexts[status] || status;
+                            }
+
+                            // Show alert
+                            function showAlert(containerId, message, type) {
+                                const alertContainer = document.getElementById(containerId);
+                                alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+                                alertContainer.scrollIntoView({behavior: 'smooth'});
+
+                                // Auto-close after 5 seconds
+                                setTimeout(() => {
+                                    const alert = alertContainer.querySelector('.alert');
+                                    if (alert) {
+                                        const bsAlert = new bootstrap.Alert(alert);
+                                        bsAlert.close();
+                                    }
+                                }, 5000);
+                            }
+        </script>

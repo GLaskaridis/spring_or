@@ -33,4 +33,17 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     List<Assignment> findByTeacherAndSchedule(@Param("teacherId") Long teacherId, @Param("scheduleId") Long scheduleId);
     
     boolean existsByCourseAndCourseComponentAndSchedule(Course course, Course.TeachingHours.CourseComponent component, CourseSchedule schedule);
+    
+    boolean existsByCourseAndCourseComponentAndScheduleIsNull(
+        Course course, 
+        Course.TeachingHours.CourseComponent component
+    );
+    
+    @Query("SELECT a FROM Assignment a WHERE a.schedule IS NULL AND a.active = true")
+    List<Assignment> findGeneralAssignments();
+    
+    
+    @Query("SELECT a FROM Assignment a WHERE a.active = true AND (a.schedule.id = :scheduleId OR (:includeGeneral = true AND a.schedule IS NULL))")
+    List<Assignment> findAssignmentsByScheduleOrGeneral(@Param("scheduleId") Long scheduleId, @Param("includeGeneral") boolean includeGeneral);
+
 }

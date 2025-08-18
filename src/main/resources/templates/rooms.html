@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="el" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Αίθουσες</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: white;
+            border-radius: 1rem 1rem 0 0 !important;
+            border: none;
+        }
+
+        .room-card {
+            border-left: 4px solid var(--accent-color);
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .room-card.teaching {
+            border-left-color: var(--primary-color);
+        }
+
+        .room-card.laboratory {
+            border-left-color: var(--success-color);
+        }
+
+        .room-card.amphitheater {
+            border-left-color: var(--warning-color);
+        }
+
+        .room-capacity {
+            background: linear-gradient(135deg, var(--accent-color) 0%, #5dade2 100%);
+            color: white;
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .room-type-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+        }
+
+        .filter-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .room-features {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .feature-icon {
+            color: var(--success-color);
+            font-size: 1.1rem;
+        }
+
+        .stats-row {
+            background: white;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #5dade2 100%);
+            color: white;
+        }
+
+        .stat-item.teaching {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);
+        }
+
+        .stat-item.laboratory {
+            background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);
+        }
+
+        .stat-item.amphitheater {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Σύστημα Χρονοπρογραμματισμού
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-home me-1"></i>Αρχική
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/my-courses">
+                            <i class="fas fa-book me-1"></i>Τα Μαθήματά μου
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/preferences">
+                            <i class="fas fa-sliders-h me-1"></i>Προτιμήσεις
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/schedule">
+                            <i class="fas fa-calendar-alt me-1"></i>Πρόγραμμα
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/rooms">
+                            <i class="fas fa-door-open me-1"></i>Αίθουσες
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span id="username-display">Διδάσκων</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4 fade-in">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-door-open me-2"></i>
+                                    Αίθουσες
+                                </h4>
+                                <small class="opacity-75">Πληροφορίες διαθέσιμων αιθουσών του τμήματος</small>
+                            </div>
+                            <div>
+                                <button class="btn btn-light" onclick="refreshRooms()">
+                                    <i class="fas fa-sync-alt me-1"></i>
+                                    Ανανέωση
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-row fade-in">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-item">
+                        <h4 class="mb-0" id="total-rooms">0</h4>
+                        <small>Συνολικές Αίθουσες</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-item teaching">
+                        <h4 class="mb-0" id="teaching-rooms">0</h4>
+                        <small>Αίθουσες Διδασκαλίας</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-item laboratory">
+                        <h4 class="mb-0" id="lab-rooms">0</h4>
+                        <small>Εργαστήρια</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-item amphitheater">
+                        <h4 class="mb-0" id="amphitheater-rooms">0</h4>
+                        <small>Αμφιθέατρα</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section fade-in">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-search me-1"></i>Αναζήτηση
+                    </label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Όνομα αίθουσας...">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-building me-1"></i>Κτήριο
+                    </label>
+                    <select class="form-select" id="buildingFilter">
+                        <option value="">Όλα τα κτήρια</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-cogs me-1"></i>Τύπος
+                    </label>
+                    <select class="form-select" id="typeFilter">
+                        <option value="">Όλοι οι τύποι</option>
+                        <option value="TEACHING">Διδασκαλίας</option>
+                        <option value="LABORATORY">Εργαστηρίου</option>
+                        <option value="AMPHITHEATER">Αμφιθέατρο</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-users me-1"></i>Ελάχιστη Χωρητικότητα
+                    </label>
+                    <input type="number" class="form-control" id="capacityFilter" placeholder="π.χ. 30" min="1">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <button class="btn btn-primary me-2" onclick="applyFilters()">
+                        <i class="fas fa-filter me-1"></i>Εφαρμογή Φίλτρων
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times me-1"></i>Καθαρισμός
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rooms Grid -->
+        <div class="row fade-in" id="rooms-container">
+            <!-- Loading skeleton -->
+            <div class="col-12 text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Φόρτωση...</span>
+                </div>
+                <p class="mt-2">Φόρτωση αιθουσών...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Details Modal -->
+    <div class="modal fade" id="roomModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-room-title">
+                        <i class="fas fa-door-open me-2"></i>
+                        Λεπτομέρειες Αίθουσας
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modal-room-content">
+                    <!-- Room details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Κλείσιμο</button>
+                    <button type="button" class="btn btn-primary" id="use-room-btn" style="display: none;">
+                        <i class="fas fa-check me-1"></i>Χρήση στις Προτιμήσεις
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let userToken = null;
+        let allRooms = [];
+        let filteredRooms = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+            loadRooms();
+            
+            // Add event listeners for real-time filtering
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            document.getElementById('buildingFilter').addEventListener('change', applyFilters);
+            document.getElementById('typeFilter').addEventListener('change', applyFilters);
+            document.getElementById('capacityFilter').addEventListener('input', applyFilters);
+        });
+
+        function checkAuthentication() {
+            userToken = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+            
+            if (!userToken) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+            
+            if (username) {
+                document.getElementById('username-display').textContent = username;
+            }
+        }
+
+        async function loadRooms() {
+            try {
+                const response = await fetch('/preferences/api/rooms', {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load rooms');
+                }
+
+                allRooms = await response.json();
+                filteredRooms = [...allRooms];
+                
+                populateBuildingFilter();
+                renderRooms();
+                updateStatistics();
+
+            } catch (error) {
+                console.error('Error loading rooms:', error);
+                showError();
+            }
+        }
+
+        function populateBuildingFilter() {
+            const buildingFilter = document.getElementById('buildingFilter');
+            const buildings = [...new Set(allRooms.map(room => room.building))].sort();
+            
+            buildingFilter.innerHTML = '<option value="">Όλα τα κτήρια</option>';
+            buildings.forEach(building => {
+                const option = document.createElement('option');
+                option.value = building;
+                option.textContent = building;
+                buildingFilter.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedBuilding = document.getElementById('buildingFilter').value;
+            const selectedType = document.getElementById('typeFilter').value;
+            const minCapacity = parseInt(document.getElementById('capacityFilter').value) || 0;
+
+            filteredRooms = allRooms.filter(room => {
+                const matchesSearch = room.name.toLowerCase().includes(searchTerm);
+                const matchesBuilding = !selectedBuilding || room.building === selectedBuilding;
+                const matchesType = !selectedType || room.type === selectedType;
+                const matchesCapacity = room.capacity >= minCapacity;
+
+                return matchesSearch && matchesBuilding && matchesType && matchesCapacity;
+            });
+
+            renderRooms();
+            updateStatistics();
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('buildingFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('capacityFilter').value = '';
+            
+            filteredRooms = [...allRooms];
+            renderRooms();
+            updateStatistics();
+        }
+
+        function renderRooms() {
+            const container = document.getElementById('rooms-container');
+            
+            if (!filteredRooms || filteredRooms.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <i class="fas fa-door-closed"></i>
+                            <h5>Δεν βρέθηκαν αίθουσες</h5>
+                            <p class="text-muted">Δοκιμάστε να αλλάξετε τα κριτήρια αναζήτησης</p>
+                            <button class="btn btn-outline-primary" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>Καθαρισμός Φίλτρων
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const roomsHTML = filteredRooms.map(room => {
+                const typeText = getRoomTypeText(room.type);
+                const typeClass = room.type.toLowerCase();
+                const typeIcon = getRoomTypeIcon(room.type);
+                const typeBadgeClass = getRoomTypeBadgeClass(room.type);
+                
+                return `
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card room-card ${typeClass}" onclick="showRoomDetails(${room.id})">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h5 class="card-title mb-1">
+                                            <i class="${typeIcon} me-2"></i>
+                                            ${room.name}
+                                        </h5>
+                                        <p class="text-muted small mb-0">
+                                            <i class="fas fa-building me-1"></i>${room.building}
+                                        </p>
+                                    </div>
+                                    <span class="badge ${typeBadgeClass} room-type-badge">${typeText}</span>
+                                </div>
+                                
+                                <div class="mb-3 text-center">
+                                    <div class="room-capacity">
+                                        <i class="fas fa-users me-2"></i>
+                                        ${room.capacity} άτομα
+                                    </div>
+                                </div>
+                                
+                                <div class="room-features">
+                                    <i class="fas fa-check-circle feature-icon" title="Διαθέσιμη"></i>
+                                    ${room.type === 'LABORATORY' ? '<i class="fas fa-flask feature-icon" title="Εργαστήριο"></i>' : ''}
+                                    ${room.capacity >= 100 ? '<i class="fas fa-expand-arrows-alt feature-icon" title="Μεγάλη αίθουσα"></i>' : ''}
+                                    ${room.type === 'AMPHITHEATER' ? '<i class="fas fa-volume-up feature-icon" title="Αμφιθέατρο"></i>' : ''}
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <button class="btn btn-outline-primary btn-sm w-100" onclick="event.stopPropagation(); showRoomDetails(${room.id})">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Περισσότερες Πληροφορίες
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = roomsHTML;
+        }
+
+        function getRoomTypeText(type) {
+            const types = {
+                'TEACHING': 'Διδασκαλίας',
+                'LABORATORY': 'Εργαστηρίου',
+                'AMPHITHEATER': 'Αμφιθέατρο'
+            };
+            return types[type] || type;
+        }
+
+        function getRoomTypeIcon(type) {
+            const icons = {
+                'TEACHING': 'fas fa-chalkboard-teacher',
+                'LABORATORY': 'fas fa-flask',
+                'AMPHITHEATER': 'fas fa-volume-up'
+            };
+            return icons[type] || 'fas fa-door-open';
+        }
+
+        function getRoomTypeBadgeClass(type) {
+            const classes = {
+                'TEACHING': 'bg-primary',
+                'LABORATORY': 'bg-success',
+                'AMPHITHEATER': 'bg-warning text-dark'
+            };
+            return classes[type] || 'bg-secondary';
+        }
+
+        function showRoomDetails(roomId) {
+            const room = allRooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            const typeText = getRoomTypeText(room.type);
+            const typeIcon = getRoomTypeIcon(room.type);
+            
+            document.getElementById('modal-room-title').innerHTML = 
+                `<i class="${typeIcon} me-2"></i>${room.name}`;
+
+            document.getElementById('modal-room-content').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6><i class="fas fa-info-circle me-2"></i>Βασικές Πληροφορίες</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Όνομα:</strong></td><td>${room.name}</td></tr>
+                            <tr><td><strong>Κτήριο:</strong></td><td>${room.building}</td></tr>
+                            <tr><td><strong>Τύπος:</strong></td><td>${typeText}</td></tr>
+                            <tr><td><strong>Χωρητικότητα:</strong></td><td>${room.capacity} άτομα</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6><i class="fas fa-cogs me-2"></i>Χαρακτηριστικά</h6>
+                        <div class="d-flex flex-column gap-2">
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>Διαθέσιμη
+                            </span>
+                            ${room.type === 'LABORATORY' ? `
+                                <span class="badge bg-info">
+                                    <i class="fas fa-flask me-1"></i>Εργαστηριακός Εξοπλισμός
+                                </span>
+                            ` : ''}
+                            ${room.capacity >= 100 ? `
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-expand-arrows-alt me-1"></i>Μεγάλη Αίθουσα (100+ άτομα)
+                                </span>
+                            ` : ''}
+                            ${room.type === 'AMPHITHEATER' ? `
+                                <span class="badge" style="background-color: #6f42c1; color: white;">
+                                    <i class="fas fa-volume-up me-1"></i>Ηχητικό Σύστημα
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Σημείωση:</strong> Μπορείτε να επιλέξετε αυτή την αίθουσα ως προτίμηση 
+                    στη σελίδα διαχείρισης προτιμήσεων διδασκαλίας.
+                </div>
+            `;
+
+            // Show use button
+            const useButton = document.getElementById('use-room-btn');
+            useButton.style.display = 'inline-block';
+            useButton.onclick = () => useRoomForPreferences(room);
+            
+            new bootstrap.Modal(document.getElementById('roomModal')).show();
+        }
+
+        function useRoomForPreferences(room) {
+            // Close modal and redirect to preferences with room pre-selected
+            bootstrap.Modal.getInstance(document.getElementById('roomModal')).hide();
+            
+            // Store room selection for preferences page
+            localStorage.setItem('selectedRoom', JSON.stringify(room));
+            
+            // Redirect to preferences
+            window.location.href = '/preferences?preselect=room';
+            
+            showAlert(`Η αίθουσα "${room.name}" θα προεπιλεγεί στις προτιμήσεις σας`, 'success');
+        }
+
+        function updateStatistics() {
+            const totalRooms = filteredRooms.length;
+            const teachingRooms = filteredRooms.filter(r => r.type === 'TEACHING').length;
+            const labRooms = filteredRooms.filter(r => r.type === 'LABORATORY').length;
+            const amphitheaterRooms = filteredRooms.filter(r => r.type === 'AMPHITHEATER').length;
+
+            document.getElementById('total-rooms').textContent = totalRooms;
+            document.getElementById('teaching-rooms').textContent = teachingRooms;
+            document.getElementById('lab-rooms').textContent = labRooms;
+            document.getElementById('amphitheater-rooms').textContent = amphitheaterRooms;
+        }
+
+        function refreshRooms() {
+            loadRooms();
+            showAlert('Ανανέωση δεδομένων αιθουσών...', 'info');
+        }
+
+        function showError() {
+            const container = document.getElementById('rooms-container');
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Σφάλμα κατά τη φόρτωση των αιθουσών. Παρακαλώ δοκιμάστε ξανά.
+                        <button class="btn btn-outline-danger btn-sm ms-2" onclick="loadRooms()">
+                            <i class="fas fa-sync-alt me-1"></i>Επανάληψη
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertClass = {
+                'info': 'alert-info',
+                'success': 'alert-success',
+                'error': 'alert-danger',
+                'warning': 'alert-warning'
+            }[type] || 'alert-info';
+
+            const alertHTML = `
+                <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

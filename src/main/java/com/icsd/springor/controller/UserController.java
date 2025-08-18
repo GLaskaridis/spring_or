@@ -321,7 +321,7 @@ public class UserController {
         }
         
         // Return the admin dashboard template
-        return "admin_dashboard";
+        return "redirect:/admin/dashboard";
     }
 
 
@@ -374,7 +374,25 @@ public class UserController {
         response.put("status", "error");
         return response;
     }
+    
+    @GetMapping("/preferences")
+    public String redirectToPreferences() {
+        return "redirect:/preferences";
+    }
 
-   
+   @GetMapping("/my-courses")
+    public String myCourses() {
+        return "my-courses";
+    }
+    
+    @GetMapping("/schedule")
+    public String schedule() {
+        return "schedule";
+    }
+    
+    @GetMapping("/rooms")
+    public String rooms() {
+        return "rooms";
+    }
 
 }

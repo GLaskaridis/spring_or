@@ -11,6 +11,7 @@ import com.icsd.springor.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
@@ -55,10 +56,7 @@ public class UserService {
         return userRepository.save(user);
     }
     
-    public List<User> findAllTeachers() {
-        return userRepository.findAll();
-    }
-
+  
     public void changePassword(Long userId, String oldPassword, String newPassword) {
         User user = getUserById(userId);
         if (passwordEncoder.matches(oldPassword, user.getPassword())) {
@@ -196,4 +194,26 @@ public class UserService {
         User user = getCurrentUser(authentication);
         return user.isAdmin();
     }
+    
+     
+    public List<User> findAllTeachers() {
+        return userRepository.findAll().stream()
+            .filter(user -> user.getRole() == UserRole.TEACHER)
+            .collect(Collectors.toList());
+    }
+    
+    public long countAllUsers() {
+        return userRepository.count();
+    }
+    
+    public List<User> findAllActiveTeachers() {
+        return userRepository.findAll().stream()
+            .filter(user -> user.isActive() && 
+                    (user.getTeacherType() != null || user.getTeacherRank() != null))
+            .collect(Collectors.toList());
+    }
+    
+   
+    
+
 }

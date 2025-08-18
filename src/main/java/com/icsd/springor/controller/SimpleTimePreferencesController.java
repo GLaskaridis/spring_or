@@ -28,7 +28,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 
 @Controller
-@RequestMapping("/time-preferences")
+@RequestMapping("/simple-time-preferences")  // Αλλαγή του base path
 public class SimpleTimePreferencesController {
     
     @Autowired
@@ -58,24 +58,23 @@ public class SimpleTimePreferencesController {
             var schedule = scheduleService.getScheduleById(scheduleId);
             var myAssignments = assignmentService.getAssignmentsByTeacherAndSchedule(teacherId, scheduleId);
             var myPreferences = preferenceService.getPreferencesByTeacherAndSchedule(teacherId, scheduleId);
-            var rooms = roomService.getAllRooms();
+            var timeSlots = getTimeSlots();
             
             model.addAttribute("schedule", schedule);
             model.addAttribute("assignments", myAssignments);
             model.addAttribute("preferences", myPreferences);
-            model.addAttribute("rooms", rooms);
-            model.addAttribute("preferenceTypes", TeacherPreference.PreferenceType.values());
-            model.addAttribute("roomTypes", RoomType.values());
-            model.addAttribute("daysOfWeek", DayOfWeek.values());
-            model.addAttribute("timeSlots", getTimeSlots());
+            model.addAttribute("timeSlots", timeSlots);
             
-            return "teacher-simple-time-preferences";
+            // Add helper methods to model for Thymeleaf
+            model.addAttribute("slotLabelHelper", this);
+            model.addAttribute("dayLabelHelper", this);
+            
+            return "simple-time-preferences";
         } catch (Exception e) {
             model.addAttribute("error", "Error loading assignments: " + e.getMessage());
             return "error";
         }
     }
-    
     
     @PostMapping("/create-simple")
     public String createSimpleTimePreference(@RequestParam Long assignmentId,
@@ -101,9 +100,8 @@ public class SimpleTimePreferencesController {
             redirectAttributes.addFlashAttribute("error", "Error creating preference: " + e.getMessage());
         }
         
-        return "redirect:/time-preferences/my-assignments/" + scheduleId;
+        return "redirect:/simple-time-preferences/my-assignments/" + scheduleId;
     }
-    
     
     @PostMapping("/update-simple/{preferenceId}")
     public String updateSimpleTimePreference(@PathVariable Long preferenceId,
@@ -128,36 +126,32 @@ public class SimpleTimePreferencesController {
             redirectAttributes.addFlashAttribute("error", "Error updating preference: " + e.getMessage());
         }
         
-        return "redirect:/time-preferences/my-assignments/" + scheduleId;
+        return "redirect:/simple-time-preferences/my-assignments/" + scheduleId;
     }
     
-    
     @PostMapping("/bulk-setup")
-    public String bulkSetupPreferences(@RequestParam DayOfWeek preferredDay,
+    public String bulkSetupPreferences(@RequestParam Long scheduleId,
+                                     @RequestParam Long teacherId,
+                                     @RequestParam DayOfWeek preferredDay,
                                      @RequestParam Integer preferredSlot,
-                                     @RequestParam Integer preferenceWeight,
-                                     @RequestParam Long scheduleId,
-                                     Authentication authentication,
                                      RedirectAttributes redirectAttributes) {
         try {
-            Long teacherId = userService.getCurrentUserId(authentication);
-            var myAssignments = assignmentService.getAssignmentsByTeacherAndSchedule(teacherId, scheduleId);
-            
+            var assignments = assignmentService.getAssignmentsByTeacherAndSchedule(teacherId, scheduleId);
             int created = 0;
-            for (AssignmentDTO assignment : myAssignments) {
-                try {
+            
+            for (var assignment : assignments) {
+                // Check if preference already exists
+                var existingPrefs = preferenceService.getPreferencesByAssignment(assignment.getId());
+                if (existingPrefs.isEmpty()) {
                     TeacherPreferenceDTO preferenceDTO = new TeacherPreferenceDTO();
                     preferenceDTO.setAssignmentId(assignment.getId());
                     preferenceDTO.setType(TeacherPreference.PreferenceType.PREFERENCE);
                     preferenceDTO.setPreferredDay(preferredDay);
                     preferenceDTO.setPreferredSlot(preferredSlot);
-                    preferenceDTO.setPreferenceWeight(preferenceWeight);
+                    preferenceDTO.setPreferenceWeight(5);
                     
                     preferenceService.createPreference(preferenceDTO);
                     created++;
-                } catch (Exception e) {
-                    // Skip if preference already exists
-                    System.out.println("Skipping assignment " + assignment.getId() + ": " + e.getMessage());
                 }
             }
             
@@ -168,10 +162,10 @@ public class SimpleTimePreferencesController {
             redirectAttributes.addFlashAttribute("error", "Error in bulk setup: " + e.getMessage());
         }
         
-        return "redirect:/time-preferences/my-assignments/" + scheduleId;
+        return "redirect:/simple-time-preferences/my-assignments/" + scheduleId;
     }
     
-    @GetMapping("/delete/{preferenceId}")
+    @GetMapping("/delete/{preferenceId}")  // Διατήρηση του ίδιου path αλλά με το νέο base
     public String deleteTimePreference(@PathVariable Long preferenceId,
                                      @RequestParam Long scheduleId,
                                      RedirectAttributes redirectAttributes) {
@@ -182,10 +176,10 @@ public class SimpleTimePreferencesController {
             redirectAttributes.addFlashAttribute("error", "Error deleting preference: " + e.getMessage());
         }
         
-        return "redirect:/time-preferences/my-assignments/" + scheduleId;
+        return "redirect:/simple-time-preferences/my-assignments/" + scheduleId;
     }
     
-    @GetMapping("/admin/overview/{scheduleId}")
+    @GetMapping("/admin/overview/{scheduleId}")  // Διατήρηση του ίδιου path αλλά με το νέο base
     @PreAuthorize("hasRole('PROGRAM_MANAGER') or hasRole('ADMIN')")
     public String adminOverview(@PathVariable Long scheduleId, Model model) {
         try {
@@ -208,7 +202,6 @@ public class SimpleTimePreferencesController {
             return "error";
         }
     }
-    
     
     private List<Map<String, Object>> getTimeSlots() {
         return List.of(
@@ -235,7 +228,6 @@ public class SimpleTimePreferencesController {
         );
     }
     
-    
     public static String getSlotLabel(Integer slot) {
         if (slot == null) return "Δεν έχει οριστεί";
         
@@ -247,7 +239,6 @@ public class SimpleTimePreferencesController {
             default: return "Άγνωστο slot";
         }
     }
-    
     
     public static String getDayLabel(DayOfWeek day) {
         if (day == null) return "Δεν έχει οριστεί";

@@ -47,6 +47,11 @@ public class SecurityConfig {
                 // Public endpoints
                 .requestMatchers("/users/login", "/users/register", "/logout", "/login", 
                                 "/css/**", "/js/**", "/images/**", "/error").permitAll()
+                    
+                
+                .requestMatchers("/assignments/api/my-assignments").hasRole("TEACHER")
+            
+                .requestMatchers("/preferences/**").hasRole("TEACHER")
                 
                 // Teacher endpoints - only teachers can access
                 .requestMatchers("/course-preferences/**", "/time-preferences/my-assignments/**").hasRole("TEACHER")
