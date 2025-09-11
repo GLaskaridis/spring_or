@@ -127,7 +127,7 @@ public class RoomController {
         return dto;
     }
 
-    @GetMapping("/api")
+    @GetMapping("/api/all")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> getAllRoomsApi() {
         try {

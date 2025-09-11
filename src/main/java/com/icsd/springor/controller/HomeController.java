@@ -34,10 +34,10 @@ public class HomeController {
             !authentication.getName().equals("anonymousUser")) {
             
             
-            
+            System.out.println("AUTHORITY " + authentication.getAuthorities().stream().findFirst().get().getAuthority());
             //analoga me ton rolo
             if (authentication.getAuthorities().stream()
-                    .anyMatch(authority -> authority.getAuthority().equals("ADMIN"))) {
+                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
                 return "redirect:/users/admin_dashboard";
             } else if (authentication.getAuthorities().stream()
                     .anyMatch(authority -> authority.getAuthority().equals("USER"))) {

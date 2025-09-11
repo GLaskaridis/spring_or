@@ -184,7 +184,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">
+            <a class="navbar-brand" href="/users/user_dashboard">
                 <i class="fas fa-graduation-cap me-2"></i>
                 Σύστημα Χρονοπρογραμματισμού
             </a>
@@ -225,11 +225,11 @@
             <div class="col-lg-3 col-md-4 mb-4">
                 <div class="sidebar p-3 fade-in">
                     <nav class="nav flex-column">
-                        <a class="nav-link active" href="#dashboard">
+                        <a class="nav-link active" href="/users/user_dashboard">
                             <i class="fas fa-tachometer-alt"></i>
                             Αρχική Σελίδα
                         </a>
-                        <a class="nav-link" href="users/my-courses">
+                        <a class="nav-link" href="/users/my-courses">
                             <i class="fas fa-book"></i>
                             Τα Μαθήματά μου
                         </a>
@@ -458,9 +458,20 @@
             const navLinks = document.querySelectorAll('.sidebar .nav-link');
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
+                    const href = this.getAttribute('href');
+
+                    // Only prevent default for anchor links (starting with #)
+                    if (href && href.startsWith('#')) {
+                        e.preventDefault();
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    } else {
+                        // For real URLs, let the browser navigate normally
+                        // Just update the active state before navigation
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                        // Don't prevent default - let navigation happen
+                    }
                 });
             });
 

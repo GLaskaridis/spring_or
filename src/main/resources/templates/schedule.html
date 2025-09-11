@@ -28,11 +28,47 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .sidebar {
+            min-height: calc(100vh - 76px);
+            background: white;
+            box-shadow: var(--card-shadow);
+            border-radius: 0.5rem;
+        }
+
+        .sidebar .nav-link {
+            color: var(--secondary-color);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+
         .card {
             border: none;
             border-radius: 1rem;
             box-shadow: var(--card-shadow);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
 
         .card-header {
@@ -151,6 +187,32 @@
             box-shadow: var(--card-shadow);
         }
 
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
         @media (max-width: 768px) {
             .schedule-table {
                 font-size: 0.8rem;
@@ -173,7 +235,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
+            <a class="navbar-brand" href="/users/user_dashboard">
                 <i class="fas fa-graduation-cap me-2"></i>
                 Σύστημα Χρονοπρογραμματισμού
             </a>
@@ -181,37 +243,24 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">
-                            <i class="fas fa-home me-1"></i>Αρχική
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/my-courses">
-                            <i class="fas fa-book me-1"></i>Τα Μαθήματά μου
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/preferences">
-                            <i class="fas fa-sliders-h me-1"></i>Προτιμήσεις
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/schedule">
-                            <i class="fas fa-calendar-alt me-1"></i>Πρόγραμμα
-                        </a>
-                    </li>
-                </ul>
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notificationCount">0</span>
+                        </a>
+                        <ul class="dropdown-menu" id="notificationDropdown">
+                            <li><span class="dropdown-item-text">Δεν υπάρχουν ειδοποιήσεις</span></li>
+                        </ul>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
                             <span id="username-display">Διδάσκων</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
-                            <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
                         </ul>
@@ -222,92 +271,126 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <!-- Header -->
-        <div class="row mb-4 fade-in">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4 class="mb-0">
-                                    <i class="fas fa-calendar-alt me-2"></i>
-                                    Πρόγραμμα Μαθημάτων
-                                </h4>
-                                <small class="opacity-75">Εβδομαδιαίο πρόγραμμα διδασκαλίας</small>
-                            </div>
-                            <div>
-                                <button class="btn btn-light me-2" onclick="exportSchedule()">
-                                    <i class="fas fa-download me-1"></i>
-                                    Εξαγωγή
-                                </button>
-                                <button class="btn btn-light" onclick="refreshSchedule()">
-                                    <i class="fas fa-sync-alt me-1"></i>
-                                    Ανανέωση
-                                </button>
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <div class="sidebar p-3 fade-in">
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="/users/user_dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Αρχική Σελίδα
+                        </a>
+                        <a class="nav-link" href="/users/my-courses">
+                            <i class="fas fa-book"></i>
+                            Τα Μαθήματά μου
+                        </a>
+                        <a class="nav-link" href="/users/preferences">
+                            <i class="fas fa-sliders-h"></i>
+                            Προτιμήσεις Διδασκαλίας
+                        </a>
+                        <a class="nav-link active" href="/users/schedule">
+                            <i class="fas fa-calendar-alt"></i>
+                            Πρόγραμμα Μαθημάτων
+                        </a>
+                        <a class="nav-link" href="/users/rooms">
+                            <i class="fas fa-door-open"></i>
+                            Αίθουσες
+                        </a>
+                        <a class="nav-link" href="/users/availability">
+                            <i class="fas fa-clock"></i>
+                            Διαθεσιμότητα
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-9 col-md-8">
+                <!-- Header -->
+                <div class="row mb-4 fade-in">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <i class="fas fa-calendar-alt me-2"></i>
+                                            Πρόγραμμα Μαθημάτων
+                                        </h4>
+                                        <small class="opacity-75">Εβδομαδιαίο πρόγραμμα διδασκαλίας</small>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-light me-2" onclick="exportSchedule()">
+                                            <i class="fas fa-download me-1"></i>
+                                            Εξαγωγή
+                                        </button>
+                                        <button class="btn btn-light" onclick="refreshSchedule()">
+                                            <i class="fas fa-sync-alt me-1"></i>
+                                            Ανανέωση
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Controls -->
-        <div class="schedule-controls fade-in">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="legend">
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);"></div>
-                            <span>Θεωρία</span>
+                <!-- Controls -->
+                <div class="schedule-controls fade-in">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="legend">
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);"></div>
+                                    <span>Θεωρία</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);"></div>
+                                    <span>Εργαστήριο</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);"></div>
+                                    <span>Εκκρεμότητα</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);"></div>
-                            <span>Εργαστήριο</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);"></div>
-                            <span>Εκκρεμότητα</span>
+                        <div class="col-md-6 text-end">
+                            <select class="form-select d-inline-block w-auto" id="scheduleSelector">
+                                <option value="">Επιλέξτε χρονοπρογραμματισμό...</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 text-end">
-                    <select class="form-select d-inline-block w-auto" id="scheduleSelector">
-                        <option value="">Επιλέξτε χρονοπρογραμματισμό...</option>
-                    </select>
-                </div>
-            </div>
-        </div>
 
-        <!-- Schedule Table -->
-        <div class="row fade-in">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table schedule-table mb-0" id="scheduleTable">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 100px;">Ώρα</th>
-                                        <th>Δευτέρα</th>
-                                        <th>Τρίτη</th>
-                                        <th>Τετάρτη</th>
-                                        <th>Πέμπτη</th>
-                                        <th>Παρασκευή</th>
-                                        <th>Σάββατο</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="scheduleBody">
-                                    <!-- Schedule content will be loaded here -->
-                                    <tr>
-                                        <td colspan="7" class="text-center p-4">
-                                            <div class="spinner-border text-primary" role="status">
-                                                <span class="visually-hidden">Φόρτωση...</span>
-                                            </div>
-                                            <p class="mt-2 mb-0">Φόρτωση προγράμματος...</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <!-- Schedule Table -->
+                <div class="row fade-in">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table schedule-table mb-0" id="scheduleTable">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 100px;">Ώρα</th>
+                                                <th>Δευτέρα</th>
+                                                <th>Τρίτη</th>
+                                                <th>Τετάρτη</th>
+                                                <th>Πέμπτη</th>
+                                                <th>Παρασκευή</th>
+                                                <th>Σάββατο</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="scheduleBody">
+                                            <tr>
+                                                <td colspan="7" class="text-center p-4">
+                                                    <div class="loading-skeleton" style="height: 100px; border-radius: 0.5rem;"></div>
+                                                    <p class="mt-2 mb-0">Φόρτωση προγράμματος...</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -364,6 +447,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthentication();
+            initializeUI();
             loadData();
             
             // Schedule selector change handler
@@ -377,7 +461,7 @@
             const username = localStorage.getItem('username');
             
             if (!userToken) {
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                window.location.href = '/users/login?redirect=' + encodeURIComponent(window.location.pathname);
                 return;
             }
             
@@ -386,8 +470,37 @@
             }
         }
 
+        function initializeUI() {
+            // Animate cards on load
+            const cards = document.querySelectorAll('.fade-in');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Sidebar navigation
+            const navLinks = document.querySelectorAll('.sidebar .nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        e.preventDefault();
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    } else {
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+
+            // Add ripple effect to buttons
+            addRippleEffect();
+        }
+
         async function loadData() {
             try {
+                showAlert('Φόρτωση δεδομένων...', 'info');
+                
                 // Load user assignments and available schedules
                 await Promise.all([
                     loadUserAssignments(),
@@ -397,6 +510,7 @@
                 // Render schedule table
                 renderScheduleTable();
                 
+                hideAlert();
             } catch (error) {
                 console.error('Error loading data:', error);
                 showError();
@@ -404,23 +518,36 @@
         }
 
         async function loadUserAssignments() {
-            const response = await fetch('/assignments/api/my-assignments', {
-                headers: {
-                    'Authorization': 'Bearer ' + userToken,
-                    'Content-Type': 'application/json'
+            try {
+                const response = await fetch('/assignments/api/my-assignments', {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        handleAuthError();
+                        return;
+                    }
+                    if (response.status === 403) {
+                        showAlert('Δεν έχετε δικαίωμα πρόσβασης', 'error');
+                        showEmptyState('scheduleBody', 'lock', 'Δεν έχετε δικαίωμα πρόσβασης');
+                        return;
+                    }
+                    throw new Error('Failed to load assignments');
                 }
-            });
 
-            if (!response.ok) {
-                throw new Error('Failed to load assignments');
+                userAssignments = await response.json();
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+                throw error;
             }
-
-            userAssignments = await response.json();
         }
 
         async function loadAvailableSchedules() {
             try {
-                // Get unique schedules from assignments
                 const uniqueSchedules = userAssignments.reduce((acc, assignment) => {
                     if (assignment.scheduleId && assignment.scheduleName) {
                         acc[assignment.scheduleId] = assignment.scheduleName;
@@ -499,12 +626,11 @@
         }
 
         function generateMockSchedule(assignments) {
-            // Generate some sample schedule data
             const mockData = [];
             
             assignments.forEach((assignment, index) => {
-                const dayIndex = index % 6; // Distribute across 6 days
-                const slotIndex = Math.floor(index / 6) % 4; // Distribute across 4 time slots
+                const dayIndex = index % 6;
+                const slotIndex = Math.floor(index / 6) % 4;
                 
                 mockData.push({
                     id: assignment.id,
@@ -525,6 +651,11 @@
         function renderScheduleTable() {
             const tbody = document.getElementById('scheduleBody');
             tbody.innerHTML = '';
+
+            if (!scheduleData || scheduleData.length === 0) {
+                showEmptyState('scheduleBody', 'calendar-alt', 'Δεν υπάρχει διαθέσιμο πρόγραμμα');
+                return;
+            }
 
             timeSlots.forEach(slot => {
                 const row = document.createElement('tr');
@@ -620,6 +751,21 @@
             showAlert('Η εξαγωγή προγράμματος θα υλοποιηθεί σύντομα', 'warning');
         }
 
+        function showEmptyState(containerId, icon, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center p-4">
+                        <div class="empty-state">
+                            <i class="fas fa-${icon}"></i>
+                            <h5>${message}</h5>
+                            <p class="text-muted">Επικοινωνήστε με τον διαχειριστή για περισσότερες πληροφορίες</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
         function showError() {
             const tbody = document.getElementById('scheduleBody');
             tbody.innerHTML = `
@@ -635,6 +781,13 @@
                     </td>
                 </tr>
             `;
+            showAlert('Σφάλμα κατά τη φόρτωση του προγράμματος', 'error');
+        }
+
+        function handleAuthError() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = '/users/login?session=expired';
         }
 
         function showAlert(message, type = 'info') {
@@ -665,6 +818,58 @@
                 }
             }, 5000);
         }
+
+        function hideAlert() {
+            const alerts = document.querySelectorAll('#alert-container .alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }
+
+        function addRippleEffect() {
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+
+                    ripple.style.cssText = `
+                        position: absolute;
+                        width: ${size}px;
+                        height: ${size}px;
+                        left: ${x}px;
+                        top: ${y}px;
+                        background: rgba(255,255,255,0.3);
+                        border-radius: 50%;
+                        transform: scale(0);
+                        animation: ripple 0.6s linear;
+                        pointer-events: none;
+                    `;
+
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+
+                    setTimeout(() => ripple.remove(), 600);
+                });
+            });
+        }
+
+        // Add CSS for ripple animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

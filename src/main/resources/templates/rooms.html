@@ -28,6 +28,37 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .sidebar {
+            min-height: calc(100vh - 76px);
+            background: white;
+            box-shadow: var(--card-shadow);
+            border-radius: 0.5rem;
+        }
+
+        .sidebar .nav-link {
+            color: var(--secondary-color);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+
         .card {
             border: none;
             border-radius: 1rem;
@@ -147,13 +178,39 @@
         .stat-item.amphitheater {
             background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);
         }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
+            <a class="navbar-brand" href="#">
                 <i class="fas fa-graduation-cap me-2"></i>
                 Σύστημα Χρονοπρογραμματισμού
             </a>
@@ -161,42 +218,24 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">
-                            <i class="fas fa-home me-1"></i>Αρχική
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/my-courses">
-                            <i class="fas fa-book me-1"></i>Τα Μαθήματά μου
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/preferences">
-                            <i class="fas fa-sliders-h me-1"></i>Προτιμήσεις
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/schedule">
-                            <i class="fas fa-calendar-alt me-1"></i>Πρόγραμμα
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/rooms">
-                            <i class="fas fa-door-open me-1"></i>Αίθουσες
-                        </a>
-                    </li>
-                </ul>
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notificationCount">0</span>
+                        </a>
+                        <ul class="dropdown-menu" id="notificationDropdown">
+                            <li><span class="dropdown-item-text">Δεν υπάρχουν ειδοποιήσεις</span></li>
+                        </ul>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
                             <span id="username-display">Διδάσκων</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
-                            <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
                         </ul>
@@ -207,116 +246,150 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <!-- Header -->
-        <div class="row mb-4 fade-in">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4 class="mb-0">
-                                    <i class="fas fa-door-open me-2"></i>
-                                    Αίθουσες
-                                </h4>
-                                <small class="opacity-75">Πληροφορίες διαθέσιμων αιθουσών του τμήματος</small>
-                            </div>
-                            <div>
-                                <button class="btn btn-light" onclick="refreshRooms()">
-                                    <i class="fas fa-sync-alt me-1"></i>
-                                    Ανανέωση
-                                </button>
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <div class="sidebar p-3 fade-in">
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="/users/user_dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Αρχική Σελίδα
+                        </a>
+                        <a class="nav-link" href="/users/my-courses">
+                            <i class="fas fa-book"></i>
+                            Τα Μαθήματά μου
+                        </a>
+                        <a class="nav-link" href="/users/preferences">
+                            <i class="fas fa-sliders-h"></i>
+                            Προτιμήσεις Διδασκαλίας
+                        </a>
+                        <a class="nav-link" href="/users/schedule">
+                            <i class="fas fa-calendar-alt"></i>
+                            Πρόγραμμα Μαθημάτων
+                        </a>
+                        <a class="nav-link active" href="/users/rooms">
+                            <i class="fas fa-door-open"></i>
+                            Αίθουσες
+                        </a>
+                        <a class="nav-link" href="/users/availability">
+                            <i class="fas fa-clock"></i>
+                            Διαθεσιμότητα
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-9 col-md-8">
+                <!-- Header -->
+                <div class="row mb-4 fade-in">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <i class="fas fa-door-open me-2"></i>
+                                            Αίθουσες
+                                        </h4>
+                                        <small class="opacity-75">Πληροφορίες διαθέσιμων αιθουσών του τμήματος</small>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-light" onclick="refreshRooms()">
+                                            <i class="fas fa-sync-alt me-1"></i>
+                                            Ανανέωση
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Statistics -->
-        <div class="stats-row fade-in">
-            <div class="row">
-                <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="stat-item">
-                        <h4 class="mb-0" id="total-rooms">0</h4>
-                        <small>Συνολικές Αίθουσες</small>
+                <!-- Statistics -->
+                <div class="stats-row fade-in">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-item">
+                                <h4 class="mb-0" id="total-rooms">0</h4>
+                                <small>Συνολικές Αίθουσες</small>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-item teaching">
+                                <h4 class="mb-0" id="teaching-rooms">0</h4>
+                                <small>Αίθουσες Διδασκαλίας</small>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-item laboratory">
+                                <h4 class="mb-0" id="lab-rooms">0</h4>
+                                <small>Εργαστήρια</small>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-item amphitheater">
+                                <h4 class="mb-0" id="amphitheater-rooms">0</h4>
+                                <small>Αμφιθέατρα</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="stat-item teaching">
-                        <h4 class="mb-0" id="teaching-rooms">0</h4>
-                        <small>Αίθουσες Διδασκαλίας</small>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="stat-item laboratory">
-                        <h4 class="mb-0" id="lab-rooms">0</h4>
-                        <small>Εργαστήρια</small>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="stat-item amphitheater">
-                        <h4 class="mb-0" id="amphitheater-rooms">0</h4>
-                        <small>Αμφιθέατρα</small>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Filters -->
-        <div class="filter-section fade-in">
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-search me-1"></i>Αναζήτηση
-                    </label>
-                    <input type="text" class="form-control" id="searchInput" placeholder="Όνομα αίθουσας...">
+                <!-- Filters -->
+                <div class="filter-section fade-in">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-search me-1"></i>Αναζήτηση
+                            </label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Όνομα αίθουσας...">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-building me-1"></i>Κτήριο
+                            </label>
+                            <select class="form-select" id="buildingFilter">
+                                <option value="">Όλα τα κτήρια</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-cogs me-1"></i>Τύπος
+                            </label>
+                            <select class="form-select" id="typeFilter">
+                                <option value="">Όλοι οι τύποι</option>
+                                <option value="TEACHING">Διδασκαλίας</option>
+                                <option value="LABORATORY">Εργαστηρίου</option>
+                                <option value="AMPHITHEATER">Αμφιθέατρο</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-users me-1"></i>Ελάχιστη Χωρητικότητα
+                            </label>
+                            <input type="number" class="form-control" id="capacityFilter" placeholder="π.χ. 30" min="1">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <button class="btn btn-primary me-2" onclick="applyFilters()">
+                                <i class="fas fa-filter me-1"></i>Εφαρμογή Φίλτρων
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>Καθαρισμός
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-building me-1"></i>Κτήριο
-                    </label>
-                    <select class="form-select" id="buildingFilter">
-                        <option value="">Όλα τα κτήρια</option>
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-cogs me-1"></i>Τύπος
-                    </label>
-                    <select class="form-select" id="typeFilter">
-                        <option value="">Όλοι οι τύποι</option>
-                        <option value="TEACHING">Διδασκαλίας</option>
-                        <option value="LABORATORY">Εργαστηρίου</option>
-                        <option value="AMPHITHEATER">Αμφιθέατρο</option>
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-users me-1"></i>Ελάχιστη Χωρητικότητα
-                    </label>
-                    <input type="number" class="form-control" id="capacityFilter" placeholder="π.χ. 30" min="1">
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12">
-                    <button class="btn btn-primary me-2" onclick="applyFilters()">
-                        <i class="fas fa-filter me-1"></i>Εφαρμογή Φίλτρων
-                    </button>
-                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
-                        <i class="fas fa-times me-1"></i>Καθαρισμός
-                    </button>
-                </div>
-            </div>
-        </div>
 
-        <!-- Rooms Grid -->
-        <div class="row fade-in" id="rooms-container">
-            <!-- Loading skeleton -->
-            <div class="col-12 text-center p-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Φόρτωση...</span>
+                <!-- Rooms Grid -->
+                <div class="row fade-in" id="rooms-container">
+                    <div class="col-12 text-center p-4">
+                        <div class="loading-skeleton" style="height: 200px; border-radius: 0.5rem;"></div>
+                        <p class="mt-2">Φόρτωση αιθουσών...</p>
+                    </div>
                 </div>
-                <p class="mt-2">Φόρτωση αιθουσών...</p>
             </div>
         </div>
     </div>
@@ -356,6 +429,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthentication();
+            initializeUI();
             loadRooms();
             
             // Add event listeners for real-time filtering
@@ -370,7 +444,7 @@
             const username = localStorage.getItem('username');
             
             if (!userToken) {
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                window.location.href = '/users/login?redirect=' + encodeURIComponent(window.location.pathname);
                 return;
             }
             
@@ -379,9 +453,38 @@
             }
         }
 
+        function initializeUI() {
+            // Animate cards on load
+            const cards = document.querySelectorAll('.fade-in');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Sidebar navigation
+            const navLinks = document.querySelectorAll('.sidebar .nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        e.preventDefault();
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    } else {
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+
+            // Add ripple effect to buttons
+            addRippleEffect();
+        }
+
         async function loadRooms() {
             try {
-                const response = await fetch('/preferences/api/rooms', {
+                showAlert('Φόρτωση δεδομένων...', 'info');
+                
+                const response = await fetch('/api/rooms', {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'
@@ -389,6 +492,15 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        handleAuthError();
+                        return;
+                    }
+                    if (response.status === 403) {
+                        showAlert('Δεν έχετε δικαίωμα πρόσβασης', 'error');
+                        showEmptyState('rooms-container', 'lock', 'Δεν έχετε δικαίωμα πρόσβασης');
+                        return;
+                    }
                     throw new Error('Failed to load rooms');
                 }
 
@@ -398,6 +510,8 @@
                 populateBuildingFilter();
                 renderRooms();
                 updateStatistics();
+                
+                hideAlert();
 
             } catch (error) {
                 console.error('Error loading rooms:', error);
@@ -452,18 +566,7 @@
             const container = document.getElementById('rooms-container');
             
             if (!filteredRooms || filteredRooms.length === 0) {
-                container.innerHTML = `
-                    <div class="col-12">
-                        <div class="empty-state">
-                            <i class="fas fa-door-closed"></i>
-                            <h5>Δεν βρέθηκαν αίθουσες</h5>
-                            <p class="text-muted">Δοκιμάστε να αλλάξετε τα κριτήρια αναζήτησης</p>
-                            <button class="btn btn-outline-primary" onclick="clearFilters()">
-                                <i class="fas fa-times me-1"></i>Καθαρισμός Φίλτρων
-                            </button>
-                        </div>
-                    </div>
-                `;
+                showEmptyState('rooms-container', 'door-closed', 'Δεν βρέθηκαν αίθουσες');
                 return;
             }
 
@@ -607,14 +710,10 @@
         }
 
         function useRoomForPreferences(room) {
-            // Close modal and redirect to preferences with room pre-selected
             bootstrap.Modal.getInstance(document.getElementById('roomModal')).hide();
             
-            // Store room selection for preferences page
             localStorage.setItem('selectedRoom', JSON.stringify(room));
-            
-            // Redirect to preferences
-            window.location.href = '/preferences?preselect=room';
+            window.location.href = '/users/preferences?preselect=room';
             
             showAlert(`Η αίθουσα "${room.name}" θα προεπιλεγεί στις προτιμήσεις σας`, 'success');
         }
@@ -636,6 +735,22 @@
             showAlert('Ανανέωση δεδομένων αιθουσών...', 'info');
         }
 
+        function showEmptyState(containerId, icon, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="empty-state">
+                        <i class="fas fa-${icon}"></i>
+                        <h5>${message}</h5>
+                        <p class="text-muted">Δοκιμάστε να αλλάξετε τα κριτήρια αναζήτησης</p>
+                        <button class="btn btn-outline-primary" onclick="clearFilters()">
+                            <i class="fas fa-times me-1"></i>Καθαρισμός Φίλτρων
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         function showError() {
             const container = document.getElementById('rooms-container');
             container.innerHTML = `
@@ -649,6 +764,13 @@
                     </div>
                 </div>
             `;
+            showAlert('Σφάλμα κατά τη φόρτωση των αιθουσών', 'error');
+        }
+
+        function handleAuthError() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = '/users/login?session=expired';
         }
 
         function showAlert(message, type = 'info') {
@@ -679,6 +801,58 @@
                 }
             }, 5000);
         }
+
+        function hideAlert() {
+            const alerts = document.querySelectorAll('#alert-container .alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }
+
+        function addRippleEffect() {
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+
+                    ripple.style.cssText = `
+                        position: absolute;
+                        width: ${size}px;
+                        height: ${size}px;
+                        left: ${x}px;
+                        top: ${y}px;
+                        background: rgba(255,255,255,0.3);
+                        border-radius: 50%;
+                        transform: scale(0);
+                        animation: ripple 0.6s linear;
+                        pointer-events: none;
+                    `;
+
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+
+                    setTimeout(() => ripple.remove(), 600);
+                });
+            });
+        }
+
+        // Add CSS for ripple animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

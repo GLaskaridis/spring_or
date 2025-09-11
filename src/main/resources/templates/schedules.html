@@ -578,379 +578,410 @@
         <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
         <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
-        <script>
-                            let schedulesTable;
-                            let currentScheduleId = null;
+       <script>
+    let schedulesTable;
+    let currentScheduleId = null;
 
-                            // Initialize DataTable
-                            $(document).ready(function () {
-                                schedulesTable = $('#schedulesTable').DataTable({
-                                    responsive: true,
-                                    pageLength: 10,
-                                    processing: true,
-                                    ajax: {
-                                        url: '/admin/api/schedules',
-                                        type: 'GET',
-                                        dataSrc: function (json) {
-                                            updateStatistics(json);
-                                            return json;
-                                        }
-                                    },
-                                    columns: [
-                                        {data: 'id'},
-                                        {
-                                            data: 'name',
-                                            render: function (data, type, row) {
-                                                return `<div>
-                                <strong>${data}</strong>
-                                <br><small class="text-muted">${row.description || 'Χωρίς περιγραφή'}</small>
-                            </div>`;
-                                            }
-                                        },
-                                        {data: 'semester'},
-                                        {data: 'year'},
-                                        {
-                                            data: 'status',
-                                            render: function (data, type, row) {
-                                                return getStatusBadge(data);
-                                            }
-                                        },
-                                        {
-                                            data: 'assignmentCount',
-                                            render: function (data, type, row) {
-                                                const count = data || 0;
-                                                return `<span class="badge bg-info">${count} αναθέσεις</span>`;
-                                            }
-                                        },
-                                        {
-                                            data: 'createdDate',
-                                            render: function (data, type, row) {
-                                                if (data) {
-                                                    return new Date(data).toLocaleDateString('el-GR');
-                                                }
-                                                return new Date().toLocaleDateString('el-GR');
-                                            }
-                                        },
-                                        {
-                                            data: null,
-                                            orderable: false,
-                                            render: function (data, type, row) {
-                                                return `<div class="btn-group" role="group">
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewSchedule(${row.id})" title="Προβολή">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-warning" onclick="editSchedule(${row.id})" title="Επεξεργασία">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-info" onclick="changeStatus(${row.id})" title="Αλλαγή Κατάστασης">
-                                    <i class="fas fa-exchange-alt"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${row.id})" title="Διαγραφή">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>`;
-                                            }
-                                        }
-                                    ],
-                                    language: {
-                                        url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/el.json'
-                                    }
-                                });
+    // Initialize DataTable
+    $(document).ready(function () {
+        schedulesTable = $('#schedulesTable').DataTable({
+            responsive: true,
+            pageLength: 10,
+            processing: true,
+            ajax: {
+                url: '/admin/api/schedules',
+                type: 'GET',
+                dataSrc: function (json) {
+                    updateStatistics(json);
+                    return json;
+                }
+            },
+            columns: [
+                {data: 'name'},
+                {data: 'semester'},
+                {data: 'year'},
+                {
+                    data: 'status',
+                    render: function (data, type, row) {
+                        return getStatusBadge(data);
+                    }
+                },
+                {
+                    data: 'active',
+                    render: function (data, type, row) {
+                        return data ? '<span class="badge bg-success">Ενεργό</span>' : '<span class="badge bg-secondary">Ανενεργό</span>';
+                    }
+                },
+                {
+                    data: 'createdAt',
+                    render: function (data, type, row) {
+                        if (data) {
+                            return new Date(data).toLocaleDateString('el-GR');
+                        }
+                        return new Date().toLocaleDateString('el-GR');
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    render: function (data, type, row) {
+                        // Conditional buttons based on status
+                        let executeButton = '';
+                        if (row.status === 'EXECUTION_PHASE') {
+                            executeButton = `<button class="btn btn-sm btn-warning me-1" onclick="executeSchedule(${row.id})" title="Εκτέλεση Αλγορίθμου">
+                                <i class="fas fa-play"></i>
+                            </button>`;
+                        }
+                        
+                        let resultsButton = '';
+                        if (row.status === 'SOLUTION_FOUND' || row.status === 'SOLUTION_APPROVED') {
+                            resultsButton = `<button class="btn btn-sm btn-success me-1" onclick="viewResults(${row.id})" title="Προβολή Αποτελεσμάτων">
+                                <i class="fas fa-chart-bar"></i>
+                            </button>`;
+                        }
 
-                                // Set current year as default
-                                $('#scheduleYear').val(new Date().getFullYear());
-                            });
+                        return `<div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewSchedule(${row.id})" title="Προβολή">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="editSchedule(${row.id})" title="Επεξεργασία">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="changeStatus(${row.id})" title="Αλλαγή Κατάστασης">
+                                <i class="fas fa-exchange-alt"></i>
+                            </button>
+                            ${executeButton}
+                            ${resultsButton}
+                            <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${row.id})" title="Διαγραφή">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>`;
+                    }
+                }
+            ],
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/el.json'
+            }
+        });
 
-                            // Add new schedule button
-                            $('#addScheduleBtn').click(function () {
-                                resetForm();
-                                $('#scheduleModalTitle').html('<i class="fas fa-calendar-plus me-2"></i>Νέος Χρονοπρογραμματισμός');
-                                currentScheduleId = null;
-                            });
+        // Load schedules on page load
+        loadSchedules();
+    });
 
-                            // Reset form
-                            function resetForm() {
-                                $('#scheduleForm')[0].reset();
-                                $('#scheduleId').val('');
-                                $('#scheduleYear').val(new Date().getFullYear());
-                                currentScheduleId = null;
-                            }
+    // Save schedule (create or update)
+    function saveSchedule() {
+        const form = document.getElementById('scheduleForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
 
-                            function saveSchedule() {
-                                console.log('Save schedule function called');
+        const formData = new FormData(form);
+        const isNewSchedule = !currentScheduleId;
 
-                                const form = document.getElementById('scheduleForm');
-                                if (!form.checkValidity()) {
-                                    console.log('Form validation failed');
-                                    form.reportValidity();
-                                    return;
-                                }
+        const scheduleData = {
+            name: formData.get('name'),
+            semester: formData.get('semester'),
+            year: parseInt(formData.get('year'))
+        };
 
-                                const formData = new FormData(form);
-                                const scheduleData = Object.fromEntries(formData.entries());
+        const url = isNewSchedule ? '/admin/api/schedules' : `/admin/api/schedules/${currentScheduleId}`;
+        const method = isNewSchedule ? 'POST' : 'PUT';
 
-                                // Add checkbox value
-                                scheduleData.active = document.getElementById('scheduleActive').checked;
+        console.log('Making request to:', url, 'with method:', method);
 
-                                console.log('Schedule data to send:', scheduleData);
+        // Show loading state
+        const submitBtn = document.querySelector('#scheduleModal button[onclick="saveSchedule()"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Αποθήκευση...';
+        submitBtn.disabled = true;
 
-                                const isNewSchedule = !currentScheduleId;
-                                const url = isNewSchedule ? '/admin/api/schedules' : `/admin/api/schedules/${currentScheduleId}`;
-                                const method = isNewSchedule ? 'POST' : 'PUT';
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(scheduleData)
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Failed to parse JSON:', text);
+                    throw new Error('Server returned invalid JSON: ' + text);
+                }
+            });
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                showAlert('schedules-alert', data.message, 'success');
 
-                                console.log('Making request to:', url, 'with method:', method);
+                // Close modal and reload table
+                bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
 
-                                // Show loading state
-                                const submitBtn = document.querySelector('#scheduleModal button[onclick="saveSchedule()"]');
-                                const originalText = submitBtn.innerHTML;
-                                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Αποθήκευση...';
-                                submitBtn.disabled = true;
+                if (typeof schedulesTable !== 'undefined') {
+                    schedulesTable.ajax.reload();
+                }
+            } else {
+                showAlert('schedules-alert', data.message || 'Άγνωστο σφάλμα', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showAlert('schedules-alert', 'Σφάλμα κατά την αποθήκευση: ' + error.message, 'danger');
+        })
+        .finally(() => {
+            // Restore button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    }
 
-                                fetch(url, {
-                                    method: method,
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded',
-                                    },
-                                    body: new URLSearchParams(scheduleData)
-                                })
-                                        .then(response => {
-                                            console.log('Response status:', response.status);
-                                            console.log('Response headers:', response.headers);
-                                            return response.text().then(text => {
-                                                try {
-                                                    return JSON.parse(text);
-                                                } catch (e) {
-                                                    console.error('Failed to parse JSON:', text);
-                                                    throw new Error('Server returned invalid JSON: ' + text);
-                                                }
-                                            });
-                                        })
-                                        .then(data => {
-                                            console.log('Response data:', data);
-                                            if (data.success) {
-                                                showAlert('schedules-alert', data.message, 'success');
+    // View schedule details
+    function viewSchedule(id) {
+        window.location.href = `/admin/assignments?scheduleId=${id}`;
+    }
 
-                                                // Close modal and reload table
-                                                bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+    // Edit schedule
+    function editSchedule(id) {
+        currentScheduleId = id;
 
-                                                // Reload the table data
-                                                if (typeof schedulesTable !== 'undefined') {
-                                                    schedulesTable.ajax.reload();
-                                                }
+        // Get schedule data from the table
+        const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
 
-                                            } else {
-                                                showAlert('schedules-alert', data.message || 'Άγνωστο σφάλμα', 'danger');
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.error('Fetch error:', error);
-                                            showAlert('schedules-alert', 'Σφάλμα κατά την αποθήκευση: ' + error.message, 'danger');
-                                        })
-                                        .finally(() => {
-                                            // Restore button state
-                                            submitBtn.innerHTML = originalText;
-                                            submitBtn.disabled = false;
-                                        });
-                            }
+        if (row) {
+            $('#scheduleId').val(id);
+            $('#scheduleName').val(row.name);
+            $('#scheduleSemester').val(row.semester);
+            $('#scheduleYear').val(row.year);
 
-                            // View schedule
-                            function viewSchedule(id) {
-                                window.location.href = `/admin/assignments?scheduleId=${id}`;
-                            }
+            // Update modal title
+            $('#scheduleModalLabel').text('Επεξεργασία Χρονοπρογραμματισμού');
 
-                            // Edit schedule
-                            function editSchedule(id) {
-                                currentScheduleId = id;
+            // Show modal
+            new bootstrap.Modal(document.getElementById('scheduleModal')).show();
+        }
+    }
 
-                                // Get schedule data from the table
-                                const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
+    // Create new schedule
+    function createSchedule() {
+        currentScheduleId = null;
 
-                                if (row) {
-                                    $('#scheduleId').val(id);
-                                    $('#scheduleName').val(row.name);
-                                    $('#scheduleSemester').val(row.semester);
-                                    $('#scheduleYear').val(row.year);
-                                    $('#scheduleDescription').val(row.description || '');
-                                    $('#scheduleStartTime').val(row.startTime || '08:00');
-                                    $('#scheduleEndTime').val(row.endTime || '21:00');
-                                    $('#maxHoursPerDay').val(row.maxHoursPerDay || 9);
-                                    $('#maxDistanceKm').val(row.maxDistanceKm || 1.0);
-                                    $('#scheduleActive').prop('checked', row.active !== false);
+        // Reset form
+        document.getElementById('scheduleForm').reset();
 
-                                    $('#scheduleModalTitle').html('<i class="fas fa-edit me-2"></i>Επεξεργασία Χρονοπρογραμματισμού');
+        // Update modal title
+        $('#scheduleModalLabel').text('Νέος Χρονοπρογραμματισμός');
 
-                                    new bootstrap.Modal(document.getElementById('scheduleModal')).show();
-                                }
-                            }
+        // Show modal
+        new bootstrap.Modal(document.getElementById('scheduleModal')).show();
+    }
 
-                            // Change status
-                            function changeStatus(id) {
-                                currentScheduleId = id;
+    // Change schedule status
+    function changeStatus(id) {
+        currentScheduleId = id;
 
-                                // Get current status
-                                const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
-                                if (row) {
-                                    $('#newStatus').val(row.status);
-                                    new bootstrap.Modal(document.getElementById('statusChangeModal')).show();
-                                }
-                            }
+        // Get current schedule data
+        const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
 
-                            // Change schedule status
-                            function changeScheduleStatus() {
-                                const newStatus = $('#newStatus').val();
+        if (row) {
+            $('#statusScheduleId').val(id);
+            $('#statusScheduleName').text(row.name);
+            $('#currentStatus').text(getStatusText(row.status));
+            $('#newStatus').val('');
 
-                                if (currentScheduleId && newStatus) {
-                                    fetch(`/admin/api/schedules/${currentScheduleId}/status`, {
-                                        method: 'PUT',
-                                        headers: {
-                                            'Content-Type': 'application/x-www-form-urlencoded',
-                                        },
-                                        body: new URLSearchParams({status: newStatus})
-                                    })
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                if (data.success) {
-                                                    showAlert('schedules-alert', data.message, 'success');
+            // Show status change modal
+            new bootstrap.Modal(document.getElementById('statusModal')).show();
+        }
+    }
 
-                                                    // Close modal
-                                                    bootstrap.Modal.getInstance(document.getElementById('statusChangeModal')).hide();
+    // Execute schedule algorithm
+    function executeSchedule(scheduleId) {
+        if (confirm('Είστε σίγουροι ότι θέλετε να εκτελέσετε τον αλγόριθμο χρονοπρογραμματισμού για αυτό το χρονοδιάγραμμα;')) {
+            showAlert('schedules-alert', 'Εκτέλεση αλγορίθμου σε εξέλιξη...', 'info');
+            window.location.href = `/schedule-execution/execute/${scheduleId}`;
+        }
+    }
 
-                                                    // Reload table
-                                                    schedulesTable.ajax.reload();
-                                                } else {
-                                                    showAlert('schedules-alert', data.message, 'danger');
-                                                }
+    // View algorithm results
+    function viewResults(scheduleId) {
+        window.location.href = `/schedule-execution/results/${scheduleId}`;
+    }
 
-                                                currentScheduleId = null;
-                                            })
-                                            .catch(error => {
-                                                console.error('Error:', error);
-                                                showAlert('schedules-alert', 'Σφάλμα κατά την αλλαγή κατάστασης', 'danger');
-                                                currentScheduleId = null;
-                                            });
-                                }
-                            }
+    // Change schedule status function
+    function changeScheduleStatus() {
+        const scheduleId = $('#statusScheduleId').val();
+        const newStatus = $('#newStatus').val();
 
-                            // Delete schedule
-                            function deleteSchedule(id) {
-                                currentScheduleId = id;
+        if (!newStatus) {
+            showAlert('schedules-alert', 'Παρακαλώ επιλέξτε νέα κατάσταση', 'warning');
+            return;
+        }
 
-                                // Get schedule details for confirmation
-                                const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
+        fetch(`/admin/api/schedules/${scheduleId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('schedules-alert', data.message, 'success');
 
-                                if (row) {
-                                    $('#deleteScheduleDetails').html(`
-                    <strong>Χρονοπρογραμματισμός:</strong> ${row.name}<br>
-                    <strong>Εξάμηνο:</strong> ${row.semester} ${row.year}<br>
-                    <strong>Κατάσταση:</strong> ${getStatusText(row.status)}<br>
-                    <strong>Αναθέσεις:</strong> ${row.assignmentCount || 0}
-                `);
+                // Close modal and reload table
+                bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+                schedulesTable.ajax.reload();
+            } else {
+                showAlert('schedules-alert', data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('schedules-alert', 'Σφάλμα κατά την αλλαγή κατάστασης', 'danger');
+        });
+    }
 
-                                    new bootstrap.Modal(document.getElementById('deleteScheduleModal')).show();
-                                }
-                            }
+    // Delete schedule
+    function deleteSchedule(id) {
+        currentScheduleId = id;
 
-                            // Confirm delete
-                            $('#confirmDeleteScheduleBtn').click(function () {
-                                if (currentScheduleId) {
-                                    fetch(`/admin/api/schedules/${currentScheduleId}`, {
-                                        method: 'DELETE'
-                                    })
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                if (data.success) {
-                                                    showAlert('schedules-alert', data.message, 'success');
+        // Get schedule data for confirmation
+        const row = schedulesTable.rows().data().toArray().find(r => r.id === id);
 
-                                                    // Close modal
-                                                    bootstrap.Modal.getInstance(document.getElementById('deleteScheduleModal')).hide();
+        if (row) {
+            $('#deleteScheduleDetails').html(`
+                <strong>Όνομα:</strong> ${row.name}<br>
+                <strong>Εξάμηνο:</strong> ${row.semester}<br>
+                <strong>Έτος:</strong> ${row.year}<br>
+                <strong>Αναθέσεις:</strong> ${row.assignmentCount || 0}
+            `);
 
-                                                    // Reload table
-                                                    schedulesTable.ajax.reload();
-                                                } else {
-                                                    showAlert('schedules-alert', data.message, 'danger');
-                                                }
+            new bootstrap.Modal(document.getElementById('deleteScheduleModal')).show();
+        }
+    }
 
-                                                currentScheduleId = null;
-                                            })
-                                            .catch(error => {
-                                                console.error('Error:', error);
-                                                showAlert('schedules-alert', 'Σφάλμα κατά τη διαγραφή', 'danger');
-                                                currentScheduleId = null;
-                                            });
-                                }
-                            });
+    // Confirm delete
+    $('#confirmDeleteScheduleBtn').click(function () {
+        if (currentScheduleId) {
+            fetch(`/admin/api/schedules/${currentScheduleId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('schedules-alert', data.message, 'success');
 
-                            // Update statistics
-                            function updateStatistics(data) {
-                                const total = data.length;
-                                const active = data.filter(s => s.active !== false).length;
-                                const inProgress = data.filter(s =>
-                                    s.status === 'ASSIGNMENT_PHASE' ||
-                                            s.status === 'REQUIREMENTS_PHASE' ||
-                                            s.status === 'EXECUTION_PHASE'
-                                ).length;
-                                const completed = data.filter(s =>
-                                    s.status === 'SOLUTION_APPROVED'
-                                ).length;
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('deleteScheduleModal')).hide();
 
-                                $('#totalSchedules').text(total);
-                                $('#activeSchedules').text(active);
-                                $('#inProgressSchedules').text(inProgress);
-                                $('#completedSchedules').text(completed);
-                            }
+                    // Reload table
+                    schedulesTable.ajax.reload();
+                } else {
+                    showAlert('schedules-alert', data.message, 'danger');
+                }
 
-                            // Get status badge HTML
-                            function getStatusBadge(status) {
-                                const statusConfig = {
-                                    'ASSIGNMENT_PHASE': {class: 'bg-primary', text: 'Ανάθεση Μαθημάτων', icon: 'phase-assignment'},
-                                    'REQUIREMENTS_PHASE': {class: 'bg-warning', text: 'Παροχή Προτιμήσεων', icon: 'phase-requirements'},
-                                    'EXECUTION_PHASE': {class: 'bg-info', text: 'Εκτέλεση', icon: 'phase-execution'},
-                                    'SOLUTION_FOUND': {class: 'bg-success', text: 'Εύρεση Λύσης', icon: 'phase-solution'},
-                                    'NO_SOLUTION_FOUND': {class: 'bg-danger', text: 'Μη Εύρεση Λύσης', icon: 'phase-no-solution'},
-                                    'SOLUTION_APPROVED': {class: 'bg-success', text: 'Έγκριση Λύσης', icon: 'phase-approved'},
-                                    'TERMINATED': {class: 'bg-dark', text: 'Λήξη', icon: 'phase-terminated'}
-                                };
+                currentScheduleId = null;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('schedules-alert', 'Σφάλμα κατά τη διαγραφή', 'danger');
+                currentScheduleId = null;
+            });
+        }
+    });
 
-                                const config = statusConfig[status] || {class: 'bg-secondary', text: status, icon: 'phase-completed'};
+    // Update statistics
+    function updateStatistics(data) {
+        const total = data.length;
+        const active = data.filter(s => s.active !== false).length;
+        const inProgress = data.filter(s =>
+            s.status === 'ASSIGNMENT_PHASE' ||
+            s.status === 'REQUIREMENTS_PHASE' ||
+            s.status === 'EXECUTION_PHASE'
+        ).length;
+        const completed = data.filter(s =>
+            s.status === 'SOLUTION_APPROVED'
+        ).length;
 
-                                return `<span class="badge ${config.class} badge-status">
-                <span class="phase-indicator ${config.icon}"></span>
-                ${config.text}
-            </span>`;
-                            }
+        $('#totalSchedules').text(total);
+        $('#activeSchedules').text(active);
+        $('#inProgressSchedules').text(inProgress);
+        $('#completedSchedules').text(completed);
+    }
 
-                            // Get status text
-                            function getStatusText(status) {
-                                const statusTexts = {
-                                    'ASSIGNMENT_PHASE': 'Ανάθεση Μαθημάτων',
-                                    'REQUIREMENTS_PHASE': 'Παροχή Προτιμήσεων',
-                                    'EXECUTION_PHASE': 'Εκτέλεση',
-                                    'SOLUTION_FOUND': 'Εύρεση Λύσης',
-                                    'NO_SOLUTION_FOUND': 'Μη Εύρεση Λύσης',
-                                    'SOLUTION_APPROVED': 'Έγκριση Λύσης',
-                                    'TERMINATED': 'Λήξη'
-                                };
-                                return statusTexts[status] || status;
-                            }
+    // Get status badge HTML
+    function getStatusBadge(status) {
+        const statusConfig = {
+            'ASSIGNMENT_PHASE': {class: 'bg-primary', text: 'Ανάθεση Μαθημάτων', icon: 'phase-assignment'},
+            'REQUIREMENTS_PHASE': {class: 'bg-warning', text: 'Παροχή Προτιμήσεων', icon: 'phase-requirements'},
+            'EXECUTION_PHASE': {class: 'bg-info', text: 'Εκτέλεση', icon: 'phase-execution'},
+            'SOLUTION_FOUND': {class: 'bg-success', text: 'Εύρεση Λύσης', icon: 'phase-solution'},
+            'NO_SOLUTION_FOUND': {class: 'bg-danger', text: 'Μη Εύρεση Λύσης', icon: 'phase-no-solution'},
+            'SOLUTION_APPROVED': {class: 'bg-success', text: 'Έγκριση Λύσης', icon: 'phase-approved'},
+            'TERMINATED': {class: 'bg-dark', text: 'Λήξη', icon: 'phase-terminated'}
+        };
 
-                            // Show alert
-                            function showAlert(containerId, message, type) {
-                                const alertContainer = document.getElementById(containerId);
-                                alertContainer.innerHTML = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-                                alertContainer.scrollIntoView({behavior: 'smooth'});
+        const config = statusConfig[status] || {class: 'bg-secondary', text: status, icon: 'phase-completed'};
+        return `<span class="badge ${config.class}">${config.text}</span>`;
+    }
 
-                                // Auto-close after 5 seconds
-                                setTimeout(() => {
-                                    const alert = alertContainer.querySelector('.alert');
-                                    if (alert) {
-                                        const bsAlert = new bootstrap.Alert(alert);
-                                        bsAlert.close();
-                                    }
-                                }, 5000);
-                            }
-        </script>
+    // Get status text (without HTML)
+    function getStatusText(status) {
+        const statusMap = {
+            'ASSIGNMENT_PHASE': 'Ανάθεση Μαθημάτων',
+            'REQUIREMENTS_PHASE': 'Παροχή Προτιμήσεων',
+            'EXECUTION_PHASE': 'Εκτέλεση',
+            'SOLUTION_FOUND': 'Εύρεση Λύσης',
+            'NO_SOLUTION_FOUND': 'Μη Εύρεση Λύσης',
+            'SOLUTION_APPROVED': 'Έγκριση Λύσης',
+            'TERMINATED': 'Λήξη'
+        };
+        return statusMap[status] || status;
+    }
+
+    // Load schedules function
+    function loadSchedules() {
+        if (schedulesTable) {
+            schedulesTable.ajax.reload();
+        }
+    }
+
+    // Show alert function
+    function showAlert(containerId, message, type) {
+        const alertContainer = document.getElementById(containerId);
+        if (!alertContainer) return;
+
+        const alertClass = {
+            'info': 'alert-info',
+            'success': 'alert-success',
+            'danger': 'alert-danger',
+            'warning': 'alert-warning'
+        }[type] || 'alert-info';
+
+        const alertId = 'alert-' + Date.now();
+        const alertHTML = `
+            <div id="${alertId}" class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+</script>

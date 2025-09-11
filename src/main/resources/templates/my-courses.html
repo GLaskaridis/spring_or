@@ -28,6 +28,37 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .sidebar {
+            min-height: calc(100vh - 76px);
+            background: white;
+            box-shadow: var(--card-shadow);
+            border-radius: 0.5rem;
+        }
+
+        .sidebar .nav-link {
+            color: var(--secondary-color);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+
         .card {
             border: none;
             border-radius: 1rem;
@@ -72,6 +103,12 @@
             margin-top: 1rem;
         }
 
+        .stats-card {
+            background: linear-gradient(135deg, var(--accent-color) 0%, #5dade2 100%);
+            color: white;
+            border-radius: 1rem;
+        }
+
         .fade-in {
             animation: fadeIn 0.6s ease-in;
         }
@@ -79,6 +116,32 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         .empty-state {
@@ -93,10 +156,10 @@
             opacity: 0.5;
         }
 
-        .stats-card {
-            background: linear-gradient(135deg, var(--accent-color) 0%, #5dade2 100%);
-            color: white;
-            border-radius: 1rem;
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-bottom: 2rem;
+            }
         }
     </style>
 </head>
@@ -104,7 +167,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
+            <a class="navbar-brand" href="/users/user_dashboard">
                 <i class="fas fa-graduation-cap me-2"></i>
                 Σύστημα Χρονοπρογραμματισμού
             </a>
@@ -112,37 +175,24 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">
-                            <i class="fas fa-home me-1"></i>Αρχική
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/my-courses">
-                            <i class="fas fa-book me-1"></i>Τα Μαθήματά μου
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/preferences">
-                            <i class="fas fa-sliders-h me-1"></i>Προτιμήσεις
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/schedule">
-                            <i class="fas fa-calendar-alt me-1"></i>Πρόγραμμα
-                        </a>
-                    </li>
-                </ul>
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notificationCount">0</span>
+                        </a>
+                        <ul class="dropdown-menu" id="notificationDropdown">
+                            <li><span class="dropdown-item-text">Δεν υπάρχουν ειδοποιήσεις</span></li>
+                        </ul>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
                             <span id="username-display">Διδάσκων</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
-                            <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
                         </ul>
@@ -153,67 +203,100 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <!-- Header -->
-        <div class="row mb-4 fade-in">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4 class="mb-0">
-                                    <i class="fas fa-book me-2"></i>
-                                    Τα Μαθήματά μου
-                                </h4>
-                                <small class="opacity-75">Επισκόπηση των μαθημάτων που διδάσκετε</small>
-                            </div>
-                            <div>
-                                <button class="btn btn-light" onclick="refreshCourses()">
-                                    <i class="fas fa-sync-alt me-1"></i>
-                                    Ανανέωση
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <div class="stats-card p-3 text-center">
-                                    <h4 class="mb-0" id="total-courses">0</h4>
-                                    <small>Συνολικά Μαθήματα</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="stats-card p-3 text-center" style="background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);">
-                                    <h4 class="mb-0" id="theory-courses">0</h4>
-                                    <small>Θεωρία</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="stats-card p-3 text-center" style="background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);">
-                                    <h4 class="mb-0" id="lab-courses">0</h4>
-                                    <small>Εργαστήρια</small>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="stats-card p-3 text-center" style="background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);">
-                                    <h4 class="mb-0" id="total-hours">0</h4>
-                                    <small>Ώρες/Εβδομάδα</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <div class="sidebar p-3 fade-in">
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="/users/user_dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Αρχική Σελίδα
+                        </a>
+                        <a class="nav-link active" href="/users/my-courses">
+                            <i class="fas fa-book"></i>
+                            Τα Μαθήματά μου
+                        </a>
+                        <a class="nav-link" href="/users/preferences">
+                            <i class="fas fa-sliders-h"></i>
+                            Προτιμήσεις Διδασκαλίας
+                        </a>
+                        <a class="nav-link" href="/users/schedule">
+                            <i class="fas fa-calendar-alt"></i>
+                            Πρόγραμμα Μαθημάτων
+                        </a>
+                        <a class="nav-link" href="/users/rooms">
+                            <i class="fas fa-door-open"></i>
+                            Αίθουσες
+                        </a>
+                        <a class="nav-link" href="/users/availability">
+                            <i class="fas fa-clock"></i>
+                            Διαθεσιμότητα
+                        </a>
+                    </nav>
                 </div>
             </div>
-        </div>
 
-        <!-- Courses Grid -->
-        <div class="row fade-in" id="courses-container">
-            <!-- Loading skeleton -->
-            <div class="col-12 text-center p-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Φόρτωση...</span>
+            <!-- Main Content -->
+            <div class="col-lg-9 col-md-8">
+                <!-- Header -->
+                <div class="row mb-4 fade-in">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <i class="fas fa-book me-2"></i>
+                                            Τα Μαθήματά μου
+                                        </h4>
+                                        <small class="opacity-75">Επισκόπηση των μαθημάτων που διδάσκετε</small>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-light" onclick="refreshCourses()">
+                                            <i class="fas fa-sync-alt me-1"></i>
+                                            Ανανέωση
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <div class="stats-card p-3 text-center">
+                                            <h4 class="mb-0" id="total-courses">0</h4>
+                                            <small>Συνολικά Μαθήματα</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="stats-card p-3 text-center" style="background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);">
+                                            <h4 class="mb-0" id="theory-courses">0</h4>
+                                            <small>Θεωρία</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="stats-card p-3 text-center" style="background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);">
+                                            <h4 class="mb-0" id="lab-courses">0</h4>
+                                            <small>Εργαστήρια</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="stats-card p-3 text-center" style="background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);">
+                                            <h4 class="mb-0" id="total-hours">0</h4>
+                                            <small>Ώρες/Εβδομάδα</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <p class="mt-2">Φόρτωση μαθημάτων...</p>
+
+                <!-- Courses Grid -->
+                <div class="row fade-in" id="courses-container">
+                    <div class="col-12 text-center p-4 loading-skeleton" style="height: 200px; border-radius: 0.5rem;">
+                        <p class="mt-2">Φόρτωση μαθημάτων...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -253,25 +336,55 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthentication();
+            initializeUI();
             loadCourses();
         });
 
         function checkAuthentication() {
             userToken = localStorage.getItem('token');
             const username = localStorage.getItem('username');
-            
+
             if (!userToken) {
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                window.location.href = '/users/login?redirect=' + encodeURIComponent(window.location.pathname);
                 return;
             }
-            
+
             if (username) {
                 document.getElementById('username-display').textContent = username;
             }
         }
 
+        function initializeUI() {
+            // Animate cards on load
+            const cards = document.querySelectorAll('.fade-in');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Sidebar navigation
+            const navLinks = document.querySelectorAll('.sidebar .nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        e.preventDefault();
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    } else {
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+
+            // Add ripple effect to buttons
+            addRippleEffect();
+        }
+
         async function loadCourses() {
             try {
+                showAlert('Φόρτωση μαθημάτων...', 'info');
+
                 const response = await fetch('/assignments/api/my-assignments', {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
@@ -280,12 +393,22 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        handleAuthError();
+                        return;
+                    }
+                    if (response.status === 403) {
+                        showAlert('Δεν έχετε δικαίωμα πρόσβασης', 'error');
+                        showEmptyState('courses-container', 'lock', 'Δεν έχετε δικαίωμα πρόσβασης');
+                        return;
+                    }
                     throw new Error('Failed to load courses');
                 }
 
                 userAssignments = await response.json();
                 renderCourses();
                 updateStatistics();
+                hideAlert();
 
             } catch (error) {
                 console.error('Error loading courses:', error);
@@ -297,15 +420,7 @@
             const container = document.getElementById('courses-container');
             
             if (!userAssignments || userAssignments.length === 0) {
-                container.innerHTML = `
-                    <div class="col-12">
-                        <div class="empty-state">
-                            <i class="fas fa-book-open"></i>
-                            <h5>Δεν έχετε αναθέσεις μαθημάτων</h5>
-                            <p class="text-muted">Επικοινωνήστε με τον διαχειριστή για αναθέσεις μαθημάτων</p>
-                        </div>
-                    </div>
-                `;
+                showEmptyState('courses-container', 'book-open', 'Δεν έχετε αναθέσεις μαθημάτων');
                 return;
             }
 
@@ -334,7 +449,7 @@
                                     <div class="row">
                                         <div class="col-6">
                                             <small class="text-muted">Εξάμηνο:</small>
-                                            <div class="fw-bold">${assignment.courseYear}ο</div>
+                                            <div class="fw-bold">${assignment.courseYear || 'N/A'}ο</div>
                                         </div>
                                         <div class="col-6">
                                             <small class="text-muted">Πρόγραμμα:</small>
@@ -397,7 +512,7 @@
                         <table class="table table-sm">
                             <tr><td><strong>Κωδικός:</strong></td><td>${assignment.courseCode}</td></tr>
                             <tr><td><strong>Τύπος:</strong></td><td>${componentText}</td></tr>
-                            <tr><td><strong>Εξάμηνο:</strong></td><td>${assignment.courseYear}ο</td></tr>
+                            <tr><td><strong>Εξάμηνο:</strong></td><td>${assignment.courseYear || 'N/A'}ο</td></tr>
                             <tr><td><strong>Κατάσταση:</strong></td><td>
                                 <span class="badge ${assignment.active ? 'bg-success' : 'bg-secondary'}">
                                     ${assignment.active ? 'Ενεργό' : 'Ανενεργό'}
@@ -426,12 +541,26 @@
         }
 
         function managePreferences(assignmentId) {
-            window.location.href = `/preferences#assignment-${assignmentId}`;
+            showAlert('Ανακατεύθυνση στις προτιμήσεις...', 'info');
+            window.location.href = `/users/preferences#assignment-${assignmentId}`;
         }
 
         function refreshCourses() {
             loadCourses();
             showAlert('Ανανέωση δεδομένων...', 'info');
+        }
+
+        function showEmptyState(containerId, icon, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="empty-state">
+                        <i class="fas fa-${icon}"></i>
+                        <h5>${message}</h5>
+                        <p class="text-muted">Επικοινωνήστε με τον διαχειριστή για αναθέσεις μαθημάτων</p>
+                    </div>
+                </div>
+            `;
         }
 
         function showError() {
@@ -447,6 +576,13 @@
                     </div>
                 </div>
             `;
+            showAlert('Σφάλμα κατά τη φόρτωση των μαθημάτων', 'error');
+        }
+
+        function handleAuthError() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = '/users/login?session=expired';
         }
 
         function showAlert(message, type = 'info') {
@@ -477,6 +613,58 @@
                 }
             }, 5000);
         }
+
+        function hideAlert() {
+            const alerts = document.querySelectorAll('#alert-container .alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }
+
+        function addRippleEffect() {
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+
+                    ripple.style.cssText = `
+                        position: absolute;
+                        width: ${size}px;
+                        height: ${size}px;
+                        left: ${x}px;
+                        top: ${y}px;
+                        background: rgba(255,255,255,0.3);
+                        border-radius: 50%;
+                        transform: scale(0);
+                        animation: ripple 0.6s linear;
+                        pointer-events: none;
+                    `;
+
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+
+                    setTimeout(() => ripple.remove(), 600);
+                });
+            });
+        }
+
+        // Add CSS for ripple animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

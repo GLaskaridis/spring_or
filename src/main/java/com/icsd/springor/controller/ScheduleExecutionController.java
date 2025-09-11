@@ -21,9 +21,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.DayOfWeek;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 
@@ -189,7 +191,6 @@ public class ScheduleExecutionController {
         return "redirect:/schedules/admin/all";
     }
     
-    // Reject a generated schedule and go back to execution
     @PostMapping("/reject/{scheduleId}")
     public String rejectSchedule(@PathVariable Long scheduleId,
                                RedirectAttributes redirectAttributes) {
@@ -201,5 +202,119 @@ public class ScheduleExecutionController {
         }
         
         return "redirect:/schedules/admin/all";
+    }
+    
+   
+    @GetMapping("/results/{scheduleId}")
+    public String viewScheduleResults(@PathVariable Long scheduleId, Model model) {
+        try {
+            CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
+
+            // Check if schedule has results to show
+            if (schedule.getStatus() != CourseSchedule.ScheduleStatus.SOLUTION_FOUND && 
+                schedule.getStatus() != CourseSchedule.ScheduleStatus.SOLUTION_APPROVED) {
+                model.addAttribute("error", "Δεν υπάρχουν αποτελέσματα για αυτό το χρονοδιάγραμμα");
+                return "error";
+            }
+
+           List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
+            List<TeacherPreferenceDTO> preferences = preferenceService.getPreferencesBySchedule(scheduleId);
+
+            // Convert assignments to courses with preferences
+            List<Course> coursesWithPreferences = prepareCoursesWithPreferences(assignments, preferences);
+
+            // Get rooms
+            List<Room> rooms = roomService.getAllRooms();
+
+            // Re-execute or load saved results
+            CourseScheduler scheduler = new CourseScheduler();
+            List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(coursesWithPreferences, rooms);
+
+            model.addAttribute("schedule", schedule);
+            model.addAttribute("assignments", result);
+            model.addAttribute("coursesData", coursesWithPreferences);
+            model.addAttribute("roomsData", rooms);
+            model.addAttribute("success", true);
+
+            return "schedule-execution-result";
+
+        } catch (Exception e) {
+            model.addAttribute("error", "Σφάλμα κατά τη φόρτωση των αποτελεσμάτων: " + e.getMessage());
+            return "error";
+        }
+    }
+
+    @GetMapping("/debug/{scheduleId}")
+    public String debugScheduleExecution(@PathVariable Long scheduleId, Model model) {
+        try {
+            CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
+
+            // Get all data for debugging
+            List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
+            List<TeacherPreferenceDTO> preferences = preferenceService.getPreferencesBySchedule(scheduleId);
+            List<Course> courses = courseService.getAllCourses();
+            List<Room> rooms = roomService.getAllRooms();
+
+            // Prepare courses with preferences
+            List<Course> coursesWithPreferences = prepareCoursesWithPreferences(assignments, preferences);
+
+            // Debug information
+            model.addAttribute("schedule", schedule);
+            model.addAttribute("assignments", assignments);
+            model.addAttribute("preferences", preferences);
+            model.addAttribute("courses", courses);
+            model.addAttribute("coursesWithPreferences", coursesWithPreferences);
+            model.addAttribute("rooms", rooms);
+
+            // Try to execute algorithm
+            try {
+                CourseScheduler scheduler = new CourseScheduler();
+                List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(coursesWithPreferences, rooms);
+                model.addAttribute("algorithmResult", result);
+                model.addAttribute("algorithmSuccess", result != null && !result.isEmpty());
+            } catch (Exception e) {
+                model.addAttribute("algorithmError", e.getMessage());
+                model.addAttribute("algorithmSuccess", false);
+            }
+
+            return "schedule-debug";
+
+        } catch (Exception e) {
+            model.addAttribute("error", "Σφάλμα κατά το debug: " + e.getMessage());
+            return "error";
+        }
+    }
+
+    // REST API endpoint to get results as JSON
+    @GetMapping("/api/results/{scheduleId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getScheduleResultsAPI(@PathVariable Long scheduleId) {
+        try {
+            CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
+            List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
+            List<TeacherPreferenceDTO> preferences = preferenceService.getPreferencesBySchedule(scheduleId);
+
+            List<Course> coursesWithPreferences = prepareCoursesWithPreferences(assignments, preferences);
+            List<Room> rooms = roomService.getAllRooms();
+
+            CourseScheduler scheduler = new CourseScheduler();
+            List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(coursesWithPreferences, rooms);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("schedule", schedule);
+            response.put("assignments", result);
+            response.put("totalAssignments", result != null ? result.size() : 0);
+            response.put("coursesProcessed", coursesWithPreferences.size());
+            response.put("roomsAvailable", rooms.size());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Σφάλμα: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 }

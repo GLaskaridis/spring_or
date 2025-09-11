@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.icsd.springor.model.User;
 import com.icsd.springor.model.UserRole;
+import com.icsd.springor.service.CourseScheduleService;
+import com.icsd.springor.service.CourseService;
 import com.icsd.springor.service.UserService;
 import com.icsd.springor.utilities.JwtUtils;
 import jakarta.servlet.http.Cookie;
@@ -50,6 +52,12 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private CourseService courseService;
+    
+     @Autowired
+    private CourseScheduleService courseScheduleService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -136,6 +144,7 @@ public class UserController {
             //elegxos authentikopoiisi me to token
             Authentication authentication = authenticationManager.authenticate(authToken);
             
+            System.out.println("AUTHORITY " + authentication.getAuthorities().stream().findFirst().get().getAuthority());
              //anaktisi antikeimenou user
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             
@@ -305,23 +314,24 @@ public class UserController {
     public String adminDashboard(Model model, Authentication authentication) {
         logger.info("Admin dashboard accessed by: {}", 
                    authentication != null ? authentication.getName() : "anonymous");
-        
-        // Add admin information to the model for the template
+
         if (authentication != null) {
             model.addAttribute("username", authentication.getName());
             model.addAttribute("userRole", "ADMIN");
-            
-            // Add admin authorities for template logic
-            boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-            model.addAttribute("isAdmin", isAdmin);
-            
-            logger.debug("Admin {} accessing admin dashboard with authorities: {}", 
-                        authentication.getName(), authentication.getAuthorities());
+            model.addAttribute("isAdmin", true);
+
+            // Add dashboard data
+            try {
+                model.addAttribute("totalUsers", userService.countAllUsers());
+                model.addAttribute("totalCourses", courseService.countAllCourses());
+                model.addAttribute("activeSchedules", courseScheduleService.countActiveSchedules());
+            } catch (Exception e) {
+                model.addAttribute("error", "Σφάλμα κατά τη φόρτωση δεδομένων");
+            }
         }
-        
-        // Return the admin dashboard template
-        return "redirect:/admin/dashboard";
+
+        // Return template directly - NO REDIRECT!
+        return "admin_dashboard";
     }
 
 

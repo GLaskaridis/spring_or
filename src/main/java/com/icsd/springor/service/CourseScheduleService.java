@@ -188,6 +188,10 @@ public class CourseScheduleService {
 
         return scheduleRepository.save(schedule);
     }
+    
+    public CourseSchedule saveSchedule(CourseSchedule schedule) {
+        return scheduleRepository.save(schedule);
+    }
 
 
     private boolean isStatusChangeAllowed(CourseSchedule.ScheduleStatus currentStatus, CourseSchedule.ScheduleStatus newStatus) {

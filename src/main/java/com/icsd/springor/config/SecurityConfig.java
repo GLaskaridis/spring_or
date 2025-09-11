@@ -25,11 +25,7 @@ import static org.springframework.security.web.header.writers.ClearSiteDataHeade
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // Constructor to verify this config is loaded
     public SecurityConfig() {
-        System.out.println("====================================");
-        System.out.println("SECURITY CONFIG LOADED");
-        System.out.println("====================================");
     }
 
     @Autowired
@@ -52,21 +48,18 @@ public class SecurityConfig {
                 .requestMatchers("/assignments/api/my-assignments").hasRole("TEACHER")
             
                 .requestMatchers("/preferences/**").hasRole("TEACHER")
+                    
+                .requestMatchers("/users/**").hasAnyRole("TEACHER", "ADMIN")
                 
-                // Teacher endpoints - only teachers can access
                 .requestMatchers("/course-preferences/**", "/time-preferences/my-assignments/**").hasRole("TEACHER")
                 
-                // Program Manager endpoints - can manage assignments and execute scheduling
                 .requestMatchers("/admin/assignments/**", "/schedules/admin/**", 
                                 "/schedule-execution/**", "/assignments/**").hasAnyRole("PROGRAM_MANAGER", "ADMIN")
                 
-                // Admin-only endpoints - user management
                 .requestMatchers("/teachers/**", "/users/manage_users").hasRole("ADMIN")
                 
-                // Mixed access - both teachers and managers can view
                 .requestMatchers("/schedules/dashboard", "/rooms/list", "/courses/list").hasAnyRole("TEACHER", "PROGRAM_MANAGER", "ADMIN")
                 
-                // All other requests need authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

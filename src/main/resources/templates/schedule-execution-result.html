@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="el" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Αποτελέσματα Αλγορίθμου Χρονοπρογραμματισμού</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: white;
+            border-radius: 1rem 1rem 0 0 !important;
+            border: none;
+            padding: 1.25rem;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 120px repeat(6, 1fr);
+            gap: 1px;
+            background-color: #dee2e6;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .schedule-cell {
+            background-color: white;
+            padding: 0.75rem;
+            min-height: 80px;
+            border: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .schedule-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .time-header {
+            background-color: var(--secondary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        .assignment-card {
+            background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            font-size: 0.875rem;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .assignment-card:hover {
+            transform: scale(1.05);
+        }
+
+        .stats-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .assignment-details {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .room-info {
+            background: #f8f9fa;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .constraint-satisfied {
+            color: var(--success-color);
+        }
+
+        .constraint-violated {
+            color: var(--danger-color);
+        }
+
+        .action-buttons {
+            position: sticky;
+            bottom: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Αποτελέσματα Χρονοπρογραμματισμού
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="/schedules/admin/all">
+                    <i class="fas fa-arrow-left me-1"></i>Επιστροφή
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    Αποτελέσματα Αλγορίθμου
+                                </h4>
+                                <small class="opacity-75" th:text="'Χρονοδιάγραμμα: ' + ${schedule?.name ?: 'N/A'}">
+                                    Χρονοδιάγραμμα: Test Schedule
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Επιτυχής Εκτέλεση
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Row -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card stats-card">
+                    <div class="stats-number" th:text="${assignments?.size() ?: 0}">0</div>
+                    <div class="stats-label">Συνολικές Αναθέσεις</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card stats-card">
+                    <div class="stats-number" id="total-rooms">0</div>
+                    <div class="stats-label">Χρησιμοποιούμενες Αίθουσες</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card stats-card">
+                    <div class="stats-number" id="time-slots-used">0</div>
+                    <div class="stats-label">Χρονικά Κελιά</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card stats-card">
+                    <div class="stats-number" id="constraints-satisfied">0%</div>
+                    <div class="stats-label">Ικανοποίηση Περιορισμών</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Grid -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table me-2"></i>
+                            Εβδομαδιαίο Πρόγραμμα
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="schedule-grid" id="schedule-grid">
+                            <!-- Grid will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Assignment List -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Λεπτομερές Πρόγραμμα
+                        </h5>
+                    </div>
+                    <div class="card-body" id="assignments-details">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="exportSchedule()">
+                        <i class="fas fa-download me-1"></i>Εξαγωγή
+                    </button>
+                    <button class="btn btn-outline-info me-2" onclick="printSchedule()">
+                        <i class="fas fa-print me-1"></i>Εκτύπωση
+                    </button>
+                </div>
+                <div>
+                    <button class="btn btn-outline-danger me-2" onclick="rejectSchedule()">
+                        <i class="fas fa-times me-1"></i>Απόρριψη
+                    </button>
+                    <button class="btn btn-success" onclick="approveSchedule()">
+                        <i class="fas fa-check me-1"></i>Έγκριση
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        // Get data from Thymeleaf
+        const assignments = /*[[${assignments}]]*/ [];
+        const schedule = /*[[${schedule}]]*/ {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Assignments:', assignments);
+            console.log('Schedule:', schedule);
+            
+            if (assignments && assignments.length > 0) {
+                renderScheduleGrid();
+                renderAssignmentDetails();
+                updateStatistics();
+            } else {
+                showEmptyState();
+            }
+        });
+
+        function renderScheduleGrid() {
+            const grid = document.getElementById('schedule-grid');
+            const days = ['', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'];
+            const timeSlots = [
+                '09:00-12:00',
+                '12:00-15:00', 
+                '15:00-18:00',
+                '18:00-21:00'
+            ];
+
+            // Create header row
+            days.forEach(day => {
+                const cell = document.createElement('div');
+                cell.className = 'schedule-cell schedule-header';
+                cell.textContent = day;
+                grid.appendChild(cell);
+            });
+
+            // Create time slot rows
+            timeSlots.forEach((timeSlot, slotIndex) => {
+                // Time header
+                const timeCell = document.createElement('div');
+                timeCell.className = 'schedule-cell time-header';
+                timeCell.textContent = timeSlot;
+                grid.appendChild(timeCell);
+
+                // Day cells
+                for (let dayIndex = 1; dayIndex <= 6; dayIndex++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'schedule-cell';
+                    
+                    // Find assignments for this day and time slot
+                    const dayAssignments = assignments.filter(assignment => {
+                        // Convert day number to day name for comparison
+                        const dayName = days[dayIndex];
+                        return assignment.day === dayName && assignment.timeSlot === slotIndex;
+                    });
+
+                    dayAssignments.forEach(assignment => {
+                        const assignmentDiv = document.createElement('div');
+                        assignmentDiv.className = 'assignment-card';
+                        assignmentDiv.innerHTML = `
+                            <div><strong>${assignment.course?.name || 'N/A'}</strong></div>
+                            <div>${assignment.room?.name || 'N/A'}</div>
+                        `;
+                        assignmentDiv.onclick = () => showAssignmentDetails(assignment);
+                        cell.appendChild(assignmentDiv);
+                    });
+
+                    grid.appendChild(cell);
+                }
+            });
+        }
+
+        function renderAssignmentDetails() {
+            const container = document.getElementById('assignments-details');
+            
+            if (!assignments || assignments.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Δεν υπάρχουν αναθέσεις για εμφάνιση</p>';
+                return;
+            }
+
+            const assignmentsHTML = assignments.map(assignment => `
+                <div class="assignment-details">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-book me-2"></i>${assignment.course?.name || 'Άγνωστο Μάθημα'}</h6>
+                            <p class="mb-1"><strong>Κωδικός:</strong> ${assignment.course?.code || 'N/A'}</p>
+                            <p class="mb-1"><strong>Διδάσκων:</strong> ${assignment.teacher?.name || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Ημέρα:</strong> ${assignment.day || 'N/A'}</p>
+                            <p class="mb-1"><strong>Ώρα:</strong> ${assignment.timeSlot !== undefined ? getTimeSlotText(assignment.timeSlot) : 'N/A'}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="room-info">
+                                <p class="mb-1"><strong>Αίθουσα:</strong> ${assignment.room?.name || 'N/A'}</p>
+                                <p class="mb-0"><strong>Χωρητικότητα:</strong> ${assignment.room?.capacity || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = assignmentsHTML;
+        }
+
+        function updateStatistics() {
+            // Count unique rooms
+            const uniqueRooms = new Set(assignments.map(a => a.room?.name).filter(Boolean));
+            document.getElementById('total-rooms').textContent = uniqueRooms.size;
+
+            // Count time slots used
+            const uniqueTimeSlots = new Set(assignments.map(a => `${a.day}-${a.timeSlot}`));
+            document.getElementById('time-slots-used').textContent = uniqueTimeSlots.size;
+
+            // For now, assume 100% constraint satisfaction
+            document.getElementById('constraints-satisfied').textContent = '100%';
+        }
+
+        function getTimeSlotText(slot) {
+            const slots = {
+                0: '09:00-12:00',
+                1: '12:00-15:00',
+                2: '15:00-18:00', 
+                3: '18:00-21:00'
+            };
+            return slots[slot] || `Slot ${slot}`;
+        }
+
+        function showAssignmentDetails(assignment) {
+            alert(`Μάθημα: ${assignment.course?.name || 'N/A'}\n` +
+                  `Αίθουσα: ${assignment.room?.name || 'N/A'}\n` +
+                  `Ημέρα: ${assignment.day || 'N/A'}\n` +
+                  `Ώρα: ${assignment.timeSlot !== undefined ? getTimeSlotText(assignment.timeSlot) : 'N/A'}`);
+        }
+
+        function showEmptyState() {
+            document.getElementById('schedule-grid').innerHTML = 
+                '<div class="text-center p-5"><h5>Δεν υπάρχουν αποτελέσματα για εμφάνιση</h5></div>';
+            document.getElementById('assignments-details').innerHTML = 
+                '<div class="text-center p-3"><p>Δεν βρέθηκαν αναθέσεις</p></div>';
+        }
+
+        function approveSchedule() {
+            if (confirm('Είστε σίγουροι ότι θέλετε να εγκρίνετε αυτό το χρονοδιάγραμμα;')) {
+                fetch(`/schedule-execution/approve/${schedule.id}`, {
+                    method: 'POST'
+                }).then(() => {
+                    alert('Το χρονοδιάγραμμα εγκρίθηκε επιτυχώς!');
+                    window.location.href = '/schedules/admin/all';
+                }).catch(error => {
+                    alert('Σφάλμα κατά την έγκριση: ' + error.message);
+                });
+            }
+        }
+
+        function rejectSchedule() {
+            if (confirm('Είστε σίγουροι ότι θέλετε να απορρίψετε αυτό το χρονοδιάγραμμα;')) {
+                fetch(`/schedule-execution/reject/${schedule.id}`, {
+                    method: 'POST'
+                }).then(() => {
+                    alert('Το χρονοδιάγραμμα απορρίφθηκε!');
+                    window.location.href = '/schedules/admin/all';
+                }).catch(error => {
+                    alert('Σφάλμα κατά την απόρριψη: ' + error.message);
+                });
+            }
+        }
+
+        function exportSchedule() {
+            alert('Η λειτουργία εξαγωγής θα υλοποιηθεί σύντομα');
+        }
+
+        function printSchedule() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
