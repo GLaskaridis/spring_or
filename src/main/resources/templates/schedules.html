@@ -613,8 +613,8 @@
                     }
                 },
                 {
-                    data: 'createdAt',
-                    render: function (data, type, row) {
+                    data: 'createdDate',  // Change from 'createdAt' to 'createdDate'
+                    render: function(data, type, row) {
                         if (data) {
                             return new Date(data).toLocaleDateString('el-GR');
                         }
@@ -798,13 +798,47 @@
         }
     }
 
-    // Execute schedule algorithm
     function executeSchedule(scheduleId) {
-        if (confirm('Είστε σίγουροι ότι θέλετε να εκτελέσετε τον αλγόριθμο χρονοπρογραμματισμού για αυτό το χρονοδιάγραμμα;')) {
-            showAlert('schedules-alert', 'Εκτέλεση αλγορίθμου σε εξέλιξη...', 'info');
-            window.location.href = `/schedule-execution/execute/${scheduleId}`;
-        }
+    console.log('executeSchedule called with ID:', scheduleId);
+    
+    if (confirm('Είστε σίγουροι ότι θέλετε να εκτελέσετε τον αλγόριθμο χρονοπρογραμματισμού για αυτό το χρονοδιάγραμμα;')) {
+        
+        // First, check the schedule status
+        console.log('Checking schedule status...');
+        fetch(`/schedule-execution/debug-status/${scheduleId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Schedule status:', data);
+            
+            if (!data.readyForExecution) {
+                showAlert('schedules-alert', 
+                    `Το χρονοδιάγραμμα δεν είναι έτοιμο για εκτέλεση. Τρέχουσα κατάσταση: ${data.currentStatus}. ` +
+                    `Απαιτείται κατάσταση: EXECUTION_PHASE`, 
+                    'warning');
+                return;
+            }
+            
+            if (data.assignmentsCount === 0) {
+                showAlert('schedules-alert', 'Δεν υπάρχουν αναθέσεις μαθημάτων. Παρακαλώ προσθέστε αναθέσεις πρώτα.', 'warning');
+                return;
+            }
+            
+            if (data.roomsCount === 0) {
+                showAlert('schedules-alert', 'Δεν υπάρχουν διαθέσιμες αίθουσες. Παρακαλώ προσθέστε αίθουσες πρώτα.', 'warning');
+                return;
+            }
+            
+            // Status is OK, proceed with execution
+            console.log('Status check passed, executing algorithm...');
+            executeAlgorithm(scheduleId);
+        })
+        .catch(error => {
+            console.error('Error checking status:', error);
+            showAlert('schedules-alert', 'Σφάλμα κατά τον έλεγχο κατάστασης: ' + error.message, 'danger');
+        });
     }
+}
+
 
     // View algorithm results
     function viewResults(scheduleId) {
@@ -867,7 +901,7 @@
         }
     }
 
-    // Confirm delete
+
     $('#confirmDeleteScheduleBtn').click(function () {
         if (currentScheduleId) {
             fetch(`/admin/api/schedules/${currentScheduleId}`, {
@@ -896,6 +930,281 @@
             });
         }
     });
+    
+    function showAlert(elementId, message, type, persistent = false) {
+        const alertContainer = document.getElementById(elementId);
+
+        // Choose icon based on type
+        let icon = 'info-circle';
+        if (type === 'success') icon = 'check-circle';
+        else if (type === 'danger' || type === 'error') icon = 'exclamation-triangle';
+        else if (type === 'warning') icon = 'exclamation-circle';
+
+        // Create alert with better formatting for multi-line messages
+        const formattedMessage = message.replace(/\n/g, '<br>');
+
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <i class="fas fa-${icon} me-2"></i>
+                <div>${formattedMessage}</div>
+                ${!persistent ? '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' : ''}
+            </div>
+        `;
+
+        alertContainer.innerHTML = alertHtml;
+
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success' && !persistent) {
+            setTimeout(() => {
+                const alert = alertContainer.querySelector('.alert');
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+    }
+
+
+    function executeSchedule(scheduleId) {
+        console.log('executeSchedule called with ID:', scheduleId);
+
+        if (confirm('Είστε σίγουροι ότι θέλετε να εκτελέσετε τον αλγόριθμο χρονοπρογραμματισμού για αυτό το χρονοδιάγραμμα;')) {
+
+            // Show loading message
+            showAlert('schedules-alert', 
+                '🔄 Εκτέλεση αλγορίθμου σε εξέλιξη...<br><small>Αυτό μπορεί να διαρκέσει μερικά δευτερόλεπτα</small>', 
+                'info', true);
+
+            // Disable the execute button
+            const executeBtn = document.querySelector(`[onclick="executeSchedule(${scheduleId})"]`);
+            if (executeBtn) {
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Εκτέλεση...';
+            }
+
+            // Add timeout protection
+            const timeoutId = setTimeout(() => {
+                showAlert('schedules-alert', 
+                    '⏱️ Η εκτέλεση διαρκεί περισσότερο από το αναμενόμενο...<br>' +
+                    '<small>Παρακαλώ περιμένετε ή ανανεώστε τη σελίδα αν δεν υπάρχει απόκριση</small>', 
+                    'warning');
+            }, 10000); // 10 seconds warning
+
+            // Execute the algorithm
+            fetch(`/schedule-execution/execute/${scheduleId}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                clearTimeout(timeoutId);
+
+                if (response.redirected) {
+                    // Check if redirected to results or back to schedules
+                    if (response.url.includes('schedule-execution-result')) {
+                        // Success - go to results
+                        window.location.href = response.url;
+                    } else {
+                        // Redirected back to schedules (probably with error)
+                        window.location.href = response.url;
+                    }
+                } else if (response.ok) {
+                    // Direct success response
+                    return response.text().then(html => {
+                        if (html.includes('schedule-execution-result')) {
+                            // Results page returned
+                            document.open();
+                            document.write(html);
+                            document.close();
+                        } else {
+                            throw new Error('Unexpected response format');
+                        }
+                    });
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+                console.error('Error executing algorithm:', error);
+
+                showAlert('schedules-alert', 
+                    '❌ Σφάλμα κατά την εκτέλεση του αλγορίθμου:<br>' +
+                    `<small>${error.message}</small><br><br>` +
+                    '💡 Παρακαλώ δοκιμάστε ξανά ή επικοινωνήστε με τον διαχειριστή.', 
+                    'danger');
+
+                // Re-enable the button
+                if (executeBtn) {
+                    executeBtn.disabled = false;
+                    executeBtn.innerHTML = '<i class="fas fa-play"></i> Εκτέλεση Αλγορίθμου';
+                }
+            });
+        }
+    }
+
+    // Function to handle no-solution scenarios
+    function handleNoSolutionError(scheduleId, scheduleName) {
+        const errorModal = `
+            <div class="modal fade" id="noSolutionModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Δεν Βρέθηκε Λύση Χρονοπρογραμματισμού
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>Χρονοδιάγραμμα: ${scheduleName}</h6>
+
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>Τι σημαίνει αυτό;</h6>
+                                <p>Ο αλγόριθμος δεν μπόρεσε να βρει έναν έγκυρο χρονοπρογραμματισμό που να ικανοποιεί όλους τους περιορισμούς και τις προτιμήσεις.</p>
+                            </div>
+
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-search me-2"></i>Πιθανές Αιτίες:</h6>
+                                <ul class="mb-0">
+                                    <li>Πολύ περιοριστικές προτιμήσεις καθηγητών</li>
+                                    <li>Ανεπαρκείς αίθουσες για τα μαθήματα</li>
+                                    <li>Συγκρούσεις στα χρονικά διαστήματα</li>
+                                    <li>Υπερβολικός φόρτος εργασίας σε συγκεκριμένες μέρες</li>
+                                </ul>
+                            </div>
+
+                            <div class="alert alert-success">
+                                <h6><i class="fas fa-lightbulb me-2"></i>Προτεινόμενες Ενέργειες:</h6>
+                                <ul class="mb-0">
+                                    <li>Ελέγξτε και τροποποιήστε τις προτιμήσεις των καθηγητών</li>
+                                    <li>Βεβαιωθείτε ότι υπάρχουν αρκετές αίθουσες</li>
+                                    <li>Μειώστε τον αριθμό των περιοριστικών προτιμήσεων</li>
+                                    <li>Δοκιμάστε με πιο ευέλικτες ρυθμίσεις</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Κλείσιμο</button>
+                            <button type="button" class="btn btn-primary" onclick="goToPreferences(${scheduleId})">
+                                <i class="fas fa-cog me-2"></i>Τροποποίηση Προτιμήσεων
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to page and show it
+        document.body.insertAdjacentHTML('beforeend', errorModal);
+        const modal = new bootstrap.Modal(document.getElementById('noSolutionModal'));
+        modal.show();
+
+        // Remove modal when hidden
+        document.getElementById('noSolutionModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }
+
+    // Helper function to navigate to preferences page
+    function goToPreferences(scheduleId) {
+        window.location.href = `/program-manager/preferences/${scheduleId}`;
+    }
+
+    // Check for flash messages when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if there are flash attributes for no solution
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorType = urlParams.get('errorType');
+
+        if (errorType === 'NO_SOLUTION') {
+            const scheduleId = urlParams.get('scheduleId');
+            const scheduleName = urlParams.get('scheduleName');
+
+            if (scheduleId && scheduleName) {
+                setTimeout(() => {
+                    handleNoSolutionError(scheduleId, scheduleName);
+                }, 500);
+            }
+        }
+    });
+    
+    function executeAlgorithmWithFetch(scheduleId) {
+        showAlert('schedules-alert', 'Εκτέλεση αλγορίθμου σε εξέλιξη...', 'info');
+
+        fetch(`/schedule-execution/execute/${scheduleId}`, {
+            method: 'GET',
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+
+            if (response.redirected) {
+                console.log('Redirected to:', response.url);
+                window.location.href = response.url;
+            } else {
+                return response.text().then(text => {
+                    console.log('Response body:', text);
+                    // If we get HTML back, it might be the results page
+                    if (text.includes('schedule-execution-result') || text.includes('Επιτυχής Εκτέλεση')) {
+                        // Parse the response and show results
+                        document.open();
+                        document.write(text);
+                        document.close();
+                    } else {
+                        throw new Error('Unexpected response from server');
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error executing algorithm:', error);
+            showAlert('schedules-alert', 'Σφάλμα κατά την εκτέλεση του αλγορίθμου: ' + error.message, 'danger');
+
+            // Re-enable the button
+            const executeBtn = document.querySelector(`[onclick="executeSchedule(${scheduleId})"]`);
+            if (executeBtn) {
+                executeBtn.disabled = false;
+                executeBtn.innerHTML = '<i class="fas fa-play"></i> Εκτέλεση Αλγορίθμου';
+            }
+        });
+    }
+
+    // Add this function to manually check a schedule's status
+    function checkScheduleStatus(scheduleId) {
+        fetch(`/schedule-execution/debug-status/${scheduleId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Schedule Status Debug:', data);
+            alert(`Schedule: ${data.scheduleName}
+    Status: ${data.currentStatus}
+    Assignments: ${data.assignmentsCount}
+    Preferences: ${data.preferencesCount}
+    Rooms: ${data.roomsCount}
+    Ready for Execution: ${data.readyForExecution}`);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error checking status: ' + error.message);
+        });
+    }
+    
+    function executeAlgorithm(scheduleId) {
+        showAlert('schedules-alert', 'Εκτέλεση αλγορίθμου σε εξέλιξη...', 'info');
+
+        // Disable the execute button to prevent multiple clicks
+        const executeBtn = document.querySelector(`[onclick="executeSchedule(${scheduleId})"]`);
+        if (executeBtn) {
+            executeBtn.disabled = true;
+            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Εκτέλεση...';
+        }
+
+        console.log('Making request to execute endpoint...');
+
+        // Execute the algorithm
+        window.location.href = `/schedule-execution/execute/${scheduleId}`;
+    }
 
     // Update statistics
     function updateStatistics(data) {

@@ -42,7 +42,7 @@ public class CourseScheduler {
 
     private static final int SLOTS_PER_DAY = 4; // 4 slots of 3 hours each
     private static final int DAYS_PER_WEEK = 5;  // Monday to Friday
-    private static final int MAX_HOURS_PER_YEAR = 2;  //wres gia ti xronia gia mia imera
+    private static final int MAX_HOURS_PER_YEAR = 3;  //wres gia ti xronia gia mia imera
     private static final int HOURS_PER_SLOT = 3;  // 
     private static final int TOTAL_SLOTS = SLOTS_PER_DAY * DAYS_PER_WEEK;
     private static final int PREFERENCE_MULTIPLIER = 100; // Weight for preferences
@@ -94,7 +94,7 @@ public class CourseScheduler {
         System.out.println("Starting schedule creation...");
         System.out.println("Courses: " + (courses != null ? courses.size() : 0));
         System.out.println("Rooms: " + (rooms != null ? rooms.size() : 0));
-        
+
         try {
             CpModel model = new CpModel();
             System.out.println("CpModel created successfully");
@@ -186,6 +186,7 @@ public class CourseScheduler {
                         }
                     }
                     if (!timeSlotVars.isEmpty()) {
+                        //Μέγιστο 1 μάθημα ίδιου εξαμήνου ταυτόχρονα
                         model.addLessOrEqual(
                                 LinearExpr.sum(timeSlotVars.toArray(new IntVar[0])),
                                 1
@@ -200,7 +201,16 @@ public class CourseScheduler {
                 Course course = courses.get(c);
                 int semester = course.getSemester();
                 // Calculate the year: (semester + 1) / 2
-                int year = (semester + 1) / 2;
+                //int year = (semester + 1) / 2;
+                
+                Integer courseYear = course.getYear();
+                int year;
+                if (courseYear != null) {
+                    year = courseYear;
+                } else {
+                    year = (course.getSemester() + 1) / 2;
+                }
+                
                 coursesByYear
                         .computeIfAbsent(year, k -> new ArrayList<>())
                         .add(course);
@@ -226,15 +236,15 @@ public class CourseScheduler {
                     }
 
                     if (!daySlotVars.isEmpty()) {
-                        // Convert hours to slots
-                        // int maxSlotsPerDay = (MAX_HOURS_PER_YEAR + HOURS_PER_SLOT - 1) / HOURS_PER_SLOT;
                         int maxSlotsPerDay = MAX_HOURS_PER_YEAR;
-                        // Add both upper and lower bounds
-                        model.addLessOrEqual(LinearExpr.sum(daySlotVars.toArray(new IntVar[0])), maxSlotsPerDay);
-                        if (maxSlotsPerDay > 1) {
-                            model.addGreaterOrEqual(LinearExpr.sum(daySlotVars.toArray(new IntVar[0])), maxSlotsPerDay - 1);
-                        }
 
+                        //Μέχρι 3 μαθήματα ίδιου έτους σε μία ημέρα
+                        model.addLessOrEqual(LinearExpr.sum(daySlotVars.toArray(new IntVar[0])), maxSlotsPerDay);
+
+                        //προβληματικό minimum constraint
+                        // if (maxSlotsPerDay > 1) {
+                        //     model.addGreaterOrEqual(LinearExpr.sum(daySlotVars.toArray(new IntVar[0])), maxSlotsPerDay - 1);
+                        // }
                         System.out.println("Max slots per day: " + maxSlotsPerDay);
                         System.out.println("Year " + entry.getKey() + " courses: " + entry.getValue().size());
                     }
@@ -323,7 +333,7 @@ public class CourseScheduler {
             }
 
             return assignments;
-            
+
         } catch (Exception e) {
             System.err.println("Error in createSchedule: " + e.getMessage());
             e.printStackTrace();
@@ -332,7 +342,6 @@ public class CourseScheduler {
     }
 
     // Rest of your methods remain the same...
-    
     private void printScheduleByDay(List<CourseAssignment> assignments) {
         System.out.println("\n=== Schedule By Day ===");
         Map<DayOfWeek, List<CourseAssignment>> byDay = new TreeMap<>();
@@ -384,15 +393,16 @@ public class CourseScheduler {
     }
 
     private boolean isRoomAvailable(Room room, int timeSlot) {
-        DayOfWeek day = getDayFromSlot(timeSlot);
-        LocalTime startTime = getSlotStartTime(timeSlot % SLOTS_PER_DAY);
-        LocalTime endTime = getSlotEndTime(timeSlot % SLOTS_PER_DAY);
-
-        return room.getAvailability().stream()
-                .anyMatch(availability
-                        -> availability.getDay() == day
-                && !startTime.isBefore(availability.getStartTime())
-                && !endTime.isAfter(availability.getEndTime()));
+        return true;
+//        DayOfWeek day = getDayFromSlot(timeSlot);
+//        LocalTime startTime = getSlotStartTime(timeSlot % SLOTS_PER_DAY);
+//        LocalTime endTime = getSlotEndTime(timeSlot % SLOTS_PER_DAY);
+//
+//        return room.getAvailability().stream()
+//                .anyMatch(availability
+//                        -> availability.getDay() == day
+//                && !startTime.isBefore(availability.getStartTime())
+//                && !endTime.isAfter(availability.getEndTime()));
     }
 
     private DayOfWeek getDayFromSlot(int timeSlot) {

@@ -48,15 +48,14 @@ public class ScheduleSelectionController {
         }
     }
     
-    // Admin interface - Show all schedules with their status
     @GetMapping("/admin/all")
     public String showAllSchedulesAdmin(Model model) {
         try {
             List<CourseSchedule> allSchedules = scheduleService.getAllSchedules();
             model.addAttribute("schedules", allSchedules);
             model.addAttribute("statusValues", CourseSchedule.ScheduleStatus.values());
-            
-            return "admin-schedule-overview";
+
+            return "schedules"; // <- Change to match the existing template
         } catch (Exception e) {
             model.addAttribute("error", "Error loading schedules: " + e.getMessage());
             return "error";
