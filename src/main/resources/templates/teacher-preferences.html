@@ -746,10 +746,20 @@
                                     showEmptyState('assignments-container', 'book-open', 'Σφάλμα κατά τη φόρτωση των δεδομένων');
                                 }
                             }
+                            
+                            let teacherId = null;
+
+                        async function getCurrentUserId() {
+                            const response = await fetch('/users/api/current', {
+                                headers: { 'Authorization': 'Bearer ' + userToken }
+                            });
+                            const user = await response.json();
+                            teacherId = user.id;
+                        }
 
                             async function loadUserAssignments() {
                                 try {
-                                    const response = await fetch('/assignments/api/my-assignments', {
+                                    const response = await fetch('/api/assignments/teacher/' + teacherId, {
                                         headers: {
                                             'Authorization': 'Bearer ' + userToken,
                                             'Content-Type': 'application/json'
@@ -779,7 +789,7 @@
                             async function loadUserPreferences() {
                                 const promises = userAssignments.map(async (assignment) => {
                                     try {
-                                        const response = await fetch(`/preferences/api/assignments/${assignment.id}/preferences`, {
+                                        const response = await fetch(`/api/preferences/assignment/${assignment.id}/preferences`, {
                                             headers: {
                                                 'Authorization': 'Bearer ' + userToken,
                                                 'Content-Type': 'application/json'
@@ -1071,7 +1081,7 @@
 
                             async function editPreference(preferenceId, assignmentId) {
                                 try {
-                                    const response = await fetch(`/preferences/api/preferences/${preferenceId}`, {
+                                    const response = await fetch(`/api/preferences/${preferenceId}`, {
                                         headers: {
                                             'Authorization': 'Bearer ' + userToken,
                                             'Content-Type': 'application/json'
@@ -1178,7 +1188,7 @@
                                         method = 'PUT';
                                     } else {
                                         // Create new preference
-                                        url = `/preferences/api/assignments/${assignmentId}/preferences`;
+                                        url = '/api/preferences';
                                         method = 'POST';
                                     }
 
@@ -1239,7 +1249,7 @@
                                 }
 
                                 try {
-                                    const response = await fetch(`/preferences/api/preferences/${preferenceId}`, {
+                                    const response = await fetch(`/api/preferences/${preferenceId}`, {
                                         method: 'DELETE',
                                         headers: {
                                             'Authorization': 'Bearer ' + userToken,

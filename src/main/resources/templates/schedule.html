@@ -516,10 +516,20 @@
                 showError();
             }
         }
+        
+        let teacherId = null;
+
+        async function getCurrentUserId() {
+            const response = await fetch('/users/api/current', {
+                headers: { 'Authorization': 'Bearer ' + userToken }
+            });
+            const user = await response.json();
+            teacherId = user.id;
+        }
 
         async function loadUserAssignments() {
             try {
-                const response = await fetch('/assignments/api/my-assignments', {
+                const response = await fetch('/api/assignments/teacher/' + teacherId, {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'
@@ -600,7 +610,7 @@
                 );
 
                 // Try to load actual schedule data from API
-                const response = await fetch(`/api/schedules/${selectedScheduleId}/classes`, {
+                const response = await fetch(fetch(`/api/assignments/schedule/${selectedScheduleId}`, {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'

@@ -380,12 +380,22 @@
             // Add ripple effect to buttons
             addRippleEffect();
         }
+        
+        let teacherId = null;
+
+        async function getCurrentUserId() {
+            const response = await fetch('/users/api/current', {
+                headers: { 'Authorization': 'Bearer ' + userToken }
+            });
+            const user = await response.json();
+            teacherId = user.id;
+        }
 
         async function loadCourses() {
             try {
                 showAlert('Φόρτωση μαθημάτων...', 'info');
 
-                const response = await fetch('/assignments/api/my-assignments', {
+                const response = await fetch('/api/assignments/teacher/' + teacherId, {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'

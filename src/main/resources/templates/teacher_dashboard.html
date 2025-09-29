@@ -499,6 +499,16 @@
                 handleAuthError(error);
             }
         }
+        
+        let teacherId = null;
+
+        async function getCurrentUserId() {
+            const response = await fetch('/users/api/current', {
+                headers: { 'Authorization': 'Bearer ' + userToken }
+            });
+            const user = await response.json();
+            teacherId = user.id;
+        }
 
        async function loadUserAssignments() {
             try {
@@ -506,7 +516,7 @@
                 console.log('Token exists:', !!userToken);
                 console.log('Token preview:', userToken ? userToken.substring(0, 20) + '...' : 'NO TOKEN');
 
-                const response = await fetch('/assignments/api/my-assignments', {
+                const response = await fetch('/api/assignments/teacher/' + teacherId, {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'
