@@ -138,13 +138,6 @@
                                         <small class="text-muted">Χειμερινό εξάμηνο 2025-26</small>
                                     </div>
                                 </div>
-                                <div class="col-md-12">
-                                    <div class="preset-btn" onclick="usePreset('general')">
-                                        <i class="fas fa-cog fa-2x mb-2 text-warning"></i>
-                                        <h6>Γενικές Αναθέσεις</h6>
-                                        <small class="text-muted">Για γενική διαχείριση αναθέσεων χωρίς συγκεκριμένο εξάμηνο</small>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -170,8 +163,7 @@
                                     <select class="form-select" id="scheduleSemester" name="semester" required>
                                         <option value="">Επιλέξτε εξάμηνο...</option>
                                         <option value="Χειμερινό">Χειμερινό</option>
-                                        <option value="Θερινό">Θερινό</option>
-                                        <option value="Γενικό">Γενικό</option>
+                                        <option value="Εαρινό">Εαρινό</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -255,12 +247,6 @@
                 semester: 'Θερινό',
                 year: new Date().getFullYear() + 1,
                 description: 'Χρονοπρογραμματισμός μαθημάτων για το θερινό εξάμηνο'
-            },
-            general: {
-                name: 'Γενικές Αναθέσεις Μαθημάτων',
-                semester: 'Γενικό',
-                year: new Date().getFullYear(),
-                description: 'Γενικός χρονοπρογραμματισμός για διαχείριση όλων των αναθέσεων μαθημάτων χωρίς συγκεκριμένο εξάμηνο'
             }
         };
 

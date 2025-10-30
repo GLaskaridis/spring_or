@@ -237,18 +237,18 @@
                             <i class="fas fa-sliders-h"></i>
                             Προτιμήσεις Διδασκαλίας
                         </a>
-                        <a class="nav-link" href="users/schedule">
+                        <a class="nav-link" href="/users/schedule">
                             <i class="fas fa-calendar-alt"></i>
                             Πρόγραμμα Μαθημάτων
                         </a>
-                        <a class="nav-link" href="users/rooms">
+                        <a class="nav-link" href="/users/rooms">
                             <i class="fas fa-door-open"></i>
                             Αίθουσες
                         </a>
-                        <a class="nav-link" href="users/availability">
+<!--                        <a class="nav-link" href="teacher-preferences">
                             <i class="fas fa-clock"></i>
                             Διαθεσιμότητα
-                        </a>
+                        </a>-->
                     </nav>
                 </div>
             </div>
@@ -482,7 +482,8 @@
         async function loadDashboardData() {
             try {
                 showAlert('Φόρτωση δεδομένων...', 'info');
-
+                await getCurrentUserId();
+                
                 // Load user assignments
                 await loadUserAssignments();
 
@@ -503,20 +504,64 @@
         let teacherId = null;
 
         async function getCurrentUserId() {
-            const response = await fetch('/users/api/current', {
-                headers: { 'Authorization': 'Bearer ' + userToken }
-            });
-            const user = await response.json();
-            teacherId = user.id;
+            try {
+                const response = await fetch('/users/api/current', {
+                    headers: { 'Authorization': 'Bearer ' + userToken }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        handleAuthError();
+                        return;
+                    }
+                    throw new Error('Failed to get current user');
+                }
+
+                const user = await response.json();
+                teacherId = user.id;
+                console.log('Current user ID:', teacherId);
+            } catch (error) {
+                console.error('Error getting current user:', error);
+                throw error;
+            }
         }
 
        async function loadUserAssignments() {
             try {
-                console.log('Loading user assignments...');
+                console.log('=== DEBUGGING AUTHENTICATION ===');
+                console.log('Teacher ID:', teacherId);
                 console.log('Token exists:', !!userToken);
-                console.log('Token preview:', userToken ? userToken.substring(0, 20) + '...' : 'NO TOKEN');
+                console.log('Full token:', userToken);
 
-                const response = await fetch('/api/assignments/teacher/' + teacherId, {
+                // Check if teacherId is valid
+                if (!teacherId) {
+                    throw new Error('Teacher ID is not set');
+                }
+
+                // Test the /users/api/current endpoint first
+                console.log('Testing /users/api/current endpoint...');
+                const currentUserResponse = await fetch('/users/api/current', {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log('Current user response status:', currentUserResponse.status);
+                console.log('Current user response URL:', currentUserResponse.url);
+
+                if (currentUserResponse.ok) {
+                    const userData = await currentUserResponse.json();
+                    console.log('Current user data:', userData);
+                } else {
+                    console.error('Current user endpoint failed');
+                    const errorText = await currentUserResponse.text();
+                    console.error('Error response:', errorText);
+                }
+
+                const requestUrl = '/api/assignments/teacher/' + teacherId;
+                console.log('Request URL:', requestUrl);
+
+                const response = await fetch(requestUrl, {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'
@@ -528,8 +573,13 @@
                 console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
                 // Check if we got redirected (common sign of auth failure)
-                if (response.url && !response.url.includes('/assignments/api/my-assignments')) {
+                if (response.url && !response.url.includes('/api/assignments/teacher/')) {
                     console.error('Request was redirected to:', response.url);
+
+                    // Try to see what the redirected response contains
+                    const redirectedContent = await response.text();
+                    console.log('Redirected content preview:', redirectedContent.substring(0, 500));
+
                     throw new Error('Authentication failed - request was redirected');
                 }
 
@@ -568,8 +618,7 @@
 
             } catch (error) {
                 console.error('Error loading assignments:', error);
-
-               
+                throw error;
             }
         }
 

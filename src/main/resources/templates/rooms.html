@@ -271,10 +271,10 @@
                             <i class="fas fa-door-open"></i>
                             Αίθουσες
                         </a>
-                        <a class="nav-link" href="/users/availability">
+                      <!--                        <a class="nav-link" href="teacher-preferences">
                             <i class="fas fa-clock"></i>
                             Διαθεσιμότητα
-                        </a>
+                        </a>-->
                     </nav>
                 </div>
             </div>
@@ -406,7 +406,6 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="modal-room-content">
-                    <!-- Room details will be loaded here -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Κλείσιμο</button>
@@ -418,7 +417,6 @@
         </div>
     </div>
 
-    <!-- Alert Container -->
     <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -454,13 +452,11 @@
         }
 
         function initializeUI() {
-            // Animate cards on load
             const cards = document.querySelectorAll('.fade-in');
             cards.forEach((card, index) => {
                 card.style.animationDelay = `${index * 0.1}s`;
             });
 
-            // Sidebar navigation
             const navLinks = document.querySelectorAll('.sidebar .nav-link');
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
@@ -476,7 +472,6 @@
                 });
             });
 
-            // Add ripple effect to buttons
             addRippleEffect();
         }
 
@@ -484,7 +479,7 @@
             try {
                 showAlert('Φόρτωση δεδομένων...', 'info');
                 
-                const response = await fetch('/api/rooms', {
+                const response = await fetch('/rooms/api/all', {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'
@@ -701,7 +696,6 @@
                 </div>
             `;
 
-            // Show use button
             const useButton = document.getElementById('use-room-btn');
             useButton.style.display = 'inline-block';
             useButton.onclick = () => useRoomForPreferences(room);
@@ -709,13 +703,32 @@
             new bootstrap.Modal(document.getElementById('roomModal')).show();
         }
 
-        function useRoomForPreferences(room) {
+        async function useRoomForPreferences(room) {
+            //elegxos ean o xristis exei energa assignment
+            try {
+                const response = await fetch(`/api/assignments/teacher/${localStorage.getItem('userId')}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const assignments = await response.json();
+
+                    if (!assignments || assignments.length === 0) {
+                        bootstrap.Modal.getInstance(document.getElementById('roomModal')).hide();
+                        showAlert('Δεν υπάρχουν διαθέσιμα μαθήματα για να ορίσετε προτιμήσεις. Παρακαλώ επικοινωνήστε με τον διαχειριστή.', 'warning');
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking assignments:', error);
+            }
+
             bootstrap.Modal.getInstance(document.getElementById('roomModal')).hide();
-            
             localStorage.setItem('selectedRoom', JSON.stringify(room));
             window.location.href = '/users/preferences?preselect=room';
-            
-            showAlert(`Η αίθουσα "${room.name}" θα προεπιλεγεί στις προτιμήσεις σας`, 'success');
         }
 
         function updateStatistics() {
@@ -842,7 +855,6 @@
             });
         }
 
-        // Add CSS for ripple animation
         const style = document.createElement('style');
         style.textContent = `
             @keyframes ripple {

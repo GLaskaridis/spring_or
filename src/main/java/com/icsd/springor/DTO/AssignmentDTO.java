@@ -23,15 +23,16 @@ public class AssignmentDTO {
     private Long scheduleId;
     private String scheduleName;
     private boolean active;
+    private String scheduleStatus;
     
     // Constructors
     public AssignmentDTO() {}
     
-    public AssignmentDTO(Long id, Long courseId, String courseName, String courseCode,
-                        Integer courseYear, Integer courseSemester,
-                        Long teacherId, String teacherName, String teacherRank,
-                        Course.TeachingHours.CourseComponent courseComponent,
-                        Long scheduleId, String scheduleName, boolean active) {
+   public AssignmentDTO(Long id, Long courseId, String courseName, String courseCode,
+                    Integer courseYear, Integer courseSemester,
+                    Long teacherId, String teacherName, String teacherRank,
+                    Course.TeachingHours.CourseComponent courseComponent,
+                    Long scheduleId, String scheduleName, String scheduleStatus, boolean active){
         this.id = id;
         this.courseId = courseId;
         this.courseName = courseName;
@@ -45,5 +46,7 @@ public class AssignmentDTO {
         this.scheduleId = scheduleId;
         this.scheduleName = scheduleName;
         this.active = active;
+        this.scheduleStatus = scheduleStatus;
+                
     }
 }

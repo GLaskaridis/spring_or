@@ -336,7 +336,9 @@ public class AssignmentService {
         
         if (assignment.getSchedule() != null) {
             dto.setScheduleName(assignment.getSchedule().getName());
+            dto.setScheduleStatus(assignment.getSchedule().getStatus().toString());
         }
+        
 
         dto.setActive(assignment.isActive());
         

@@ -31,6 +31,9 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -40,32 +43,36 @@ public class SecurityConfig {
             )
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
-                // Public endpoints
                 .requestMatchers("/users/login", "/users/register", "/logout", "/login", 
                                 "/css/**", "/js/**", "/images/**", "/error").permitAll()
+
+                // API endpoints for teachers
+                .requestMatchers("/api/assignments/teacher/**").hasAnyRole("TEACHER", "ADMIN", "PROGRAM_MANAGER")
+                .requestMatchers("/users/api/**").hasAnyRole("TEACHER", "ADMIN", "PROGRAM_MANAGER")
+               .requestMatchers("/assignments/api/my-assignments", "/api/assignments/teacher/**").hasRole("TEACHER")
                     
-                
-                .requestMatchers("/assignments/api/my-assignments").hasRole("TEACHER")
-            
                 .requestMatchers("/preferences/**").hasRole("TEACHER")
-                    
                 .requestMatchers("/users/**").hasAnyRole("TEACHER", "ADMIN")
-                
                 .requestMatchers("/course-preferences/**", "/time-preferences/my-assignments/**").hasRole("TEACHER")
-                
+
                 .requestMatchers("/admin/assignments/**", "/schedules/admin/**", 
-                                "/schedule-execution/**", "/assignments/**").hasAnyRole("PROGRAM_MANAGER", "ADMIN")
-                
+                                "/schedule-execution/**").hasAnyRole("PROGRAM_MANAGER", "ADMIN")
+
                 .requestMatchers("/teachers/**", "/users/manage_users").hasRole("ADMIN")
-                
                 .requestMatchers("/schedules/dashboard", "/rooms/list", "/courses/list").hasAnyRole("TEACHER", "PROGRAM_MANAGER", "ADMIN")
-                
+                .requestMatchers("/users/preferences").hasAnyRole("TEACHER", "ADMIN", "PROGRAM_MANAGER")
+                    
+                .requestMatchers("/preferences/**", "/api/preferences/**").hasRole("TEACHER")
+                .requestMatchers("/users/preferences").hasAnyRole("TEACHER", "ADMIN", "PROGRAM_MANAGER")
+                .requestMatchers("/rooms/**").hasAnyRole("TEACHER", "ADMIN")
+                    
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
             )
             .formLogin(form -> form.disable())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(handling -> handling
                 .authenticationEntryPoint((request, response, exception) -> {
                     String accept = request.getHeader("Accept");

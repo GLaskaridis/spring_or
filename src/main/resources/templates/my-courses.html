@@ -228,10 +228,10 @@
                             <i class="fas fa-door-open"></i>
                             Αίθουσες
                         </a>
-                        <a class="nav-link" href="/users/availability">
+<!--                        <a class="nav-link" href="teacher-preferences">
                             <i class="fas fa-clock"></i>
                             Διαθεσιμότητα
-                        </a>
+                        </a>-->
                     </nav>
                 </div>
             </div>
@@ -337,8 +337,18 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthentication();
             initializeUI();
-            loadCourses();
+               initializeData();
         });
+
+        async function initializeData() {
+            try {
+                await getCurrentUserId();
+                await loadCourses();
+            } catch (error) {
+                console.error('Error initializing data:', error);
+                showError();
+            }
+        }
 
         function checkAuthentication() {
             userToken = localStorage.getItem('token');
@@ -384,11 +394,26 @@
         let teacherId = null;
 
         async function getCurrentUserId() {
-            const response = await fetch('/users/api/current', {
-                headers: { 'Authorization': 'Bearer ' + userToken }
-            });
-            const user = await response.json();
-            teacherId = user.id;
+            try {
+                const response = await fetch('/users/api/current', {
+                    headers: { 'Authorization': 'Bearer ' + userToken }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        handleAuthError();
+                        return;
+                    }
+                    throw new Error('Failed to get current user');
+                }
+
+                const user = await response.json();
+                teacherId = user.id;
+                console.log('Current user ID:', teacherId);
+            } catch (error) {
+                console.error('Error getting current user:', error);
+                throw error;
+            }
         }
 
         async function loadCourses() {

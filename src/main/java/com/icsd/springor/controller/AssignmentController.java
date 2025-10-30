@@ -17,7 +17,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/assignments")
-@PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
 public class AssignmentController {
 
     @Autowired
@@ -28,6 +27,7 @@ public class AssignmentController {
      * Χρησιμοποιεί: assignmentService.getAllAssignments()
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
     public ResponseEntity<List<AssignmentDTO>> getAllAssignments() {
         return ResponseEntity.ok(assignmentService.getAllAssignments());
     }
@@ -36,7 +36,8 @@ public class AssignmentController {
      * GET /api/assignments/schedule/{scheduleId} - Αναθέσεις για πρόγραμμα
      * Χρησιμοποιεί: assignmentService.getAssignmentsBySchedule(scheduleId)
      */
-    @GetMapping("/schedule/{scheduleId}")
+      @GetMapping("/schedule/{scheduleId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
     public ResponseEntity<List<AssignmentDTO>> getAssignmentsBySchedule(
             @PathVariable Long scheduleId) {
         return ResponseEntity.ok(
@@ -47,7 +48,8 @@ public class AssignmentController {
      * GET /api/assignments/{id} - Συγκεκριμένη ανάθεση
      * ΔΕΝ υπάρχει getAssignmentById() - χρησιμοποιούμε search
      */
-    @GetMapping("/{id}")
+      @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
     public ResponseEntity<AssignmentDTO> getAssignment(@PathVariable Long id) {
         // Fallback: search through all assignments
         List<AssignmentDTO> all = assignmentService.getAllAssignments();
@@ -62,7 +64,8 @@ public class AssignmentController {
      * POST /api/assignments - Δημιουργία νέας ανάθεσης
      * Χρησιμοποιεί: assignmentService.createAssignment(courseId, teacherId, component, scheduleId)
      */
-    @PostMapping
+        @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
     public ResponseEntity<AssignmentDTO> createAssignment(
             @RequestParam Long courseId,
             @RequestParam Long teacherId,
@@ -77,12 +80,12 @@ public class AssignmentController {
         
         return ResponseEntity.ok(assignment);
     }
-
     /**
      * PUT /api/assignments/{id} - Ενημέρωση ανάθεσης (αλλαγή καθηγητή)
      * Χρησιμοποιεί: assignmentService.updateAssignment(id, newTeacherId)
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
     public ResponseEntity<AssignmentDTO> updateAssignment(
             @PathVariable Long id,
             @RequestParam Long teacherId) {
@@ -95,7 +98,8 @@ public class AssignmentController {
      * DELETE /api/assignments/{id} - Διαγραφή ανάθεσης
      * Χρησιμοποιεί: assignmentService.deleteAssignment(id)
      */
-    @DeleteMapping("/{id}")
+      @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
     public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
         assignmentService.deleteAssignment(id);
         return ResponseEntity.noContent().build();
@@ -105,7 +109,8 @@ public class AssignmentController {
      * GET /api/assignments/teacher/{teacherId} - Αναθέσεις καθηγητή
      * Χρησιμοποιεί: assignmentService.getAssignmentsByTeacher(teacherId)
      */
-    @GetMapping("/teacher/{teacherId}")
+     @GetMapping("/teacher/{teacherId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER', 'TEACHER')")
     public ResponseEntity<List<AssignmentDTO>> getTeacherAssignments(
             @PathVariable Long teacherId) {
         return ResponseEntity.ok(
@@ -117,6 +122,7 @@ public class AssignmentController {
      * Χρησιμοποιεί: assignmentService.getAssignmentsByTeacherAndSchedule(teacherId, scheduleId)
      */
     @GetMapping("/teacher/{teacherId}/schedule/{scheduleId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER', 'TEACHER')")
     public ResponseEntity<List<AssignmentDTO>> getTeacherScheduleAssignments(
             @PathVariable Long teacherId,
             @PathVariable Long scheduleId) {
@@ -201,4 +207,28 @@ public class AssignmentController {
         return ResponseEntity.ok(
             assignmentService.areAllCoursesAssigned(scheduleId));
     }
+    
+    @RestController
+    @RequestMapping("/assignments/api")
+    class TeacherAssignmentController {
+
+        @Autowired
+        private AssignmentService assignmentService;
+
+        @Autowired
+        private com.icsd.springor.service.UserService userService;
+
+        /**
+         * GET /assignments/api/my-assignments - Οι αναθέσεις του τρέχοντος καθηγητή
+         */
+        @GetMapping("/my-assignments")
+        @PreAuthorize("hasRole('TEACHER')")
+        public ResponseEntity<List<AssignmentDTO>> getMyAssignments(
+                org.springframework.security.core.Authentication authentication) {
+            Long teacherId = userService.getCurrentUserId(authentication);
+            return ResponseEntity.ok(assignmentService.getAssignmentsByTeacher(teacherId));
+        }
+    }
+    
+    
 }

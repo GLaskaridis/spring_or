@@ -296,10 +296,10 @@
                             <i class="fas fa-door-open"></i>
                             Αίθουσες
                         </a>
-                        <a class="nav-link" href="/users/availability">
+<!--                        <a class="nav-link" href="teacher-preferences">
                             <i class="fas fa-clock"></i>
                             Διαθεσιμότητα
-                        </a>
+                        </a>-->
                     </nav>
                 </div>
             </div>
@@ -500,12 +500,13 @@
         async function loadData() {
             try {
                 showAlert('Φόρτωση δεδομένων...', 'info');
+                await getCurrentUserId();
                 
                 // Load user assignments and available schedules
-                await Promise.all([
-                    loadUserAssignments(),
-                    loadAvailableSchedules()
-                ]);
+                
+                await loadUserAssignments(),
+                await loadAvailableSchedules()
+                
                 
                 // Render schedule table
                 renderScheduleTable();
@@ -520,11 +521,26 @@
         let teacherId = null;
 
         async function getCurrentUserId() {
-            const response = await fetch('/users/api/current', {
-                headers: { 'Authorization': 'Bearer ' + userToken }
-            });
-            const user = await response.json();
-            teacherId = user.id;
+            try {
+                const response = await fetch('/users/api/current', {
+                    headers: { 'Authorization': 'Bearer ' + userToken }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        handleAuthError();
+                        return;
+                    }
+                    throw new Error('Failed to get current user');
+                }
+
+                const user = await response.json();
+                teacherId = user.id;
+                console.log('Current user ID:', teacherId);
+            } catch (error) {
+                console.error('Error getting current user:', error);
+                throw error;
+            }
         }
 
         async function loadUserAssignments() {
@@ -558,22 +574,58 @@
 
         async function loadAvailableSchedules() {
             try {
+                console.log('Loading available schedules...');
+                console.log('User assignments:', userAssignments);
+
                 const uniqueSchedules = userAssignments.reduce((acc, assignment) => {
-                    if (assignment.scheduleId && assignment.scheduleName) {
-                        acc[assignment.scheduleId] = assignment.scheduleName;
+                    const scheduleId = assignment.scheduleId || assignment.schedule_id || assignment.schedule?.id;
+                    const scheduleName = assignment.scheduleName || assignment.schedule_name || assignment.schedule?.name;
+
+                    if (scheduleId && scheduleName) {
+                        acc[scheduleId] = scheduleName;
+                        console.log(`Found schedule: ${scheduleId} - ${scheduleName}`);
                     }
                     return acc;
                 }, {});
 
-                availableSchedules = Object.entries(uniqueSchedules).map(([id, name]) => ({
-                    id: parseInt(id),
-                    name: name
-                }));
+                // If no schedules found, try loading all schedules
+                if (Object.keys(uniqueSchedules).length === 0) {
+                    console.log('No schedules in assignments, loading all schedules...');
+                    const response = await fetch('/api/schedules', {
+                        headers: {
+                            'Authorization': 'Bearer ' + userToken,
+                            'Content-Type': 'application/json'
+                        }
+                    });
 
+                    if (response.ok) {
+                        const allSchedules = await response.json();
+                        availableSchedules = allSchedules.map(schedule => ({
+                            id: schedule.id,
+                            name: schedule.name
+                        }));
+                    } else {
+                        availableSchedules = [{
+                            id: 1,
+                            name: 'Πρόγραμμα Χειμερινού Εξαμήνου 2024-2025'
+                        }];
+                    }
+                } else {
+                    availableSchedules = Object.entries(uniqueSchedules).map(([id, name]) => ({
+                        id: parseInt(id),
+                        name: name
+                    }));
+                }
+
+                console.log('Available schedules:', availableSchedules);
                 populateScheduleSelector();
             } catch (error) {
                 console.warn('Error loading schedules:', error);
-                availableSchedules = [];
+                availableSchedules = [{
+                    id: 1,
+                    name: 'Πρόγραμμα Χειμερινού Εξαμήνου 2024-2025'
+                }];
+                populateScheduleSelector();
             }
         }
 
@@ -610,7 +662,7 @@
                 );
 
                 // Try to load actual schedule data from API
-                const response = await fetch(fetch(`/api/assignments/schedule/${selectedScheduleId}`, {
+                const response = await fetch(`/api/assignments/schedule/${selectedScheduleId}`, {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'

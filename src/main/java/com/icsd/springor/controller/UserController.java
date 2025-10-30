@@ -387,7 +387,7 @@ public class UserController {
     
     @GetMapping("/preferences")
     public String redirectToPreferences() {
-        return "redirect:/preferences";
+        return "teacher-preferences";
     }
 
    @GetMapping("/my-courses")
@@ -404,5 +404,35 @@ public class UserController {
     public String rooms() {
         return "rooms";
     }
+    
+    @GetMapping("/api/current")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            User currentUser = userService.getCurrentUser(authentication);
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", currentUser.getId());
+            userInfo.put("username", currentUser.getUsername());
+            userInfo.put("firstName", currentUser.getFullName());
+            userInfo.put("email", currentUser.getEmail());
+            userInfo.put("role", currentUser.getRole().toString());
+
+            return ResponseEntity.ok(userInfo);
+        } catch (Exception e) {
+            logger.error("Error getting current user info", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    @GetMapping("/teacher-preferences")
+    public String teacherPreferences() {
+        return "teacher-preferences";
+    }
+
+   
 
 }

@@ -324,11 +324,10 @@
                                 <i class="fas fa-door-open"></i>
                                 Αίθουσες
                             </a>
-                            <a class="nav-link" href="/users/availability">
-                                <i class="fas fa-clock"></i>
-                                Διαθεσιμότητα
-                            </a>
-                        </nav>
+                           <!--                        <a class="nav-link" href="teacher-preferences">
+                            <i class="fas fa-clock"></i>
+                            Διαθεσιμότητα
+                        </a>-->
                     </div>
                 </div>
 
@@ -577,11 +576,10 @@
                             });
 
 
-// Add this function to check schedule status
                             async function checkScheduleStatus() {
                                 try {
-                                    // Check current schedules and their status
-                                    const response = await fetch('/schedules/api/current', {
+                                    // Get schedules through user assignments
+                                    const response = await fetch('/assignments/api/my-assignments', {
                                         headers: {
                                             'Authorization': 'Bearer ' + userToken,
                                             'Content-Type': 'application/json'
@@ -589,15 +587,30 @@
                                     });
 
                                     if (response.ok) {
-                                        const schedules = await response.json();
-                                        console.log('Current schedules:', schedules);
+                                        const assignments = await response.json();
+                                        console.log('User assignments:', assignments);
+
+                                        // Extract unique schedules from assignments
+                                        const scheduleMap = new Map();
+                                        assignments.forEach(assignment => {
+                                            if (assignment.scheduleId && assignment.scheduleName && assignment.scheduleStatus) {
+                                                scheduleMap.set(assignment.scheduleId, {
+                                                    id: assignment.scheduleId,
+                                                    name: assignment.scheduleName,
+                                                    status: assignment.scheduleStatus
+                                                });
+                                            }
+                                        });
+
+                                        const schedules = Array.from(scheduleMap.values());
+                                        console.log('Extracted schedules:', schedules);
 
                                         // Update UI based on schedule status
                                         updateScheduleStatusUI(schedules);
 
                                         return schedules;
                                     } else {
-                                        console.warn('Failed to load schedule status');
+                                        console.warn('Failed to load user assignments');
                                         return [];
                                     }
                                 } catch (error) {
@@ -662,6 +675,7 @@
                             async function loadPageDataWithScheduleCheck() {
                                 try {
                                     showAlert('Φόρτωση δεδομένων...', 'info');
+                                    await getCurrentUserId();
 
                                     // Load all data including schedule status
                                     await Promise.all([
@@ -749,13 +763,28 @@
                             
                             let teacherId = null;
 
-                        async function getCurrentUserId() {
-                            const response = await fetch('/users/api/current', {
-                                headers: { 'Authorization': 'Bearer ' + userToken }
-                            });
-                            const user = await response.json();
-                            teacherId = user.id;
-                        }
+                            async function getCurrentUserId() {
+                                try {
+                                    const response = await fetch('/users/api/current', {
+                                        headers: { 'Authorization': 'Bearer ' + userToken }
+                                    });
+
+                                    if (!response.ok) {
+                                        if (response.status === 401) {
+                                            handleAuthError();
+                                            return;
+                                        }
+                                        throw new Error('Failed to get current user');
+                                    }
+
+                                    const user = await response.json();
+                                    teacherId = user.id;
+                                    console.log('Current user ID:', teacherId);
+                                } catch (error) {
+                                    console.error('Error getting current user:', error);
+                                    throw error;
+                                }
+                            }
 
                             async function loadUserAssignments() {
                                 try {
@@ -789,7 +818,7 @@
                             async function loadUserPreferences() {
                                 const promises = userAssignments.map(async (assignment) => {
                                     try {
-                                        const response = await fetch(`/api/preferences/assignment/${assignment.id}/preferences`, {
+                                        const response = await fetch(`/api/preferences/assignment/${assignment.id}`, {
                                             headers: {
                                                 'Authorization': 'Bearer ' + userToken,
                                                 'Content-Type': 'application/json'
@@ -933,7 +962,7 @@
                                     </div>
                                 </div>
                                 <div class="text-end">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="showAddPreferenceModal(${assignment.id})">
+                                    <button class="btn btn-sm btn-light" onclick="showAddPreferenceModal(${assignment.id})">
                                         <i class="fas fa-plus me-1"></i>Νέα Προτίμηση
                                     </button>
                                 </div>
@@ -1053,6 +1082,20 @@
                             }
 
                             function showAddPreferenceModal(assignmentId) {
+                                const schedules = checkScheduleStatus();
+                            const activeSchedule = schedules.find(s => s.status === 'REQUIREMENTS_PHASE');
+
+                            if (!activeSchedule) {
+                                showAlert('Δεν μπορείτε να προσθέσετε προτιμήσεις. Δεν υπάρχει ενεργό χρονοδιάγραμμα σε φάση απαιτήσεων. Επικοινωνήστε με τον διαχειριστή.', 'error');
+                                return;
+                            }
+
+    
+                                if (!userAssignments || userAssignments.length === 0) {
+                                    showAlert('Δεν υπάρχουν διαθέσιμες αναθέσεις μαθημάτων. Επικοινωνήστε με τον διαχειριστή.', 'warning');
+                                    return;
+                                }
+
                                 currentEditingAssignment = userAssignments.find(a => a.id === assignmentId);
 
                                 if (!currentEditingAssignment) {
@@ -1147,6 +1190,10 @@
                                     // Convert FormData to JSON with proper data types
                                     const preferenceData = {};
 
+                                    if (assignmentId) {
+                                        preferenceData.assignmentId = parseInt(assignmentId);
+                                    }
+
                                     // Handle string fields
                                     if (formData.get('type'))
                                         preferenceData.type = formData.get('type');
@@ -1184,7 +1231,7 @@
                                     let url, method;
                                     if (preferenceId) {
                                         // Update existing preference
-                                        url = `/preferences/api/preferences/${preferenceId}`;
+                                        url = `/api/preferences/${preferenceId}`;
                                         method = 'PUT';
                                     } else {
                                         // Create new preference

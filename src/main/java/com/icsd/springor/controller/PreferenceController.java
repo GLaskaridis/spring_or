@@ -84,6 +84,12 @@ public class PreferenceController {
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<TeacherPreferenceDTO> createPreference(
             @RequestBody TeacherPreferenceDTO preferenceDTO) {
+
+        // Validate that assignmentId is provided
+        if (preferenceDTO.getAssignmentId() == null) {
+            throw new RuntimeException("Assignment ID is required for creating preferences");
+        }
+
         return ResponseEntity.ok(preferenceService.createPreference(preferenceDTO));
     }
 

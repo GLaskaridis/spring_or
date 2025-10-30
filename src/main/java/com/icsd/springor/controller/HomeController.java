@@ -63,10 +63,10 @@ public class HomeController {
         return "redirect:/schedule-execution/test";
     }
     
-//    @GetMapping("/preferences")
-//    public String redirectToPreferences() {
-//        return "redirect:/preferences";
-//    }
+    @GetMapping("/preferences")
+    public String preferences() {
+        return "teacher-preferences";
+    }
 
 //    @GetMapping("/users/admin_dashboard")
 //    public String adminDashboardRedirect() {
