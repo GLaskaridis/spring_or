@@ -219,9 +219,8 @@
             }
             
             .schedule-table td {
+                min-width: 100px;
                 height: 80px;
-                min-width: 120px;
-                padding: 0.25rem;
             }
             
             .class-item {
@@ -229,168 +228,155 @@
                 padding: 0.25rem;
             }
         }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-state h5 {
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/users/user_dashboard">
+            <a class="navbar-brand" href="/dashboard">
                 <i class="fas fa-graduation-cap me-2"></i>
                 Σύστημα Χρονοπρογραμματισμού
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge" id="notificationCount">0</span>
-                        </a>
-                        <ul class="dropdown-menu" id="notificationDropdown">
-                            <li><span class="dropdown-item-text">Δεν υπάρχουν ειδοποιήσεις</span></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>
-                            <span id="username-display">Διδάσκων</span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
-                        </ul>
-                    </li>
-                </ul>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user me-1"></i>
+                    <span id="username-display">Χρήστης</span>
+                </span>
+                <a href="/users/logout" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt me-1"></i>Αποσύνδεση
+                </a>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid mt-4">
+    <div class="container-fluid p-3">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-lg-3 col-md-4 mb-4">
-                <div class="sidebar p-3 fade-in">
+            <div class="col-lg-2 mb-3">
+                <div class="sidebar p-3">
                     <nav class="nav flex-column">
-                        <a class="nav-link" href="/users/user_dashboard">
-                            <i class="fas fa-tachometer-alt"></i>
-                            Αρχική Σελίδα
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
                         </a>
-                        <a class="nav-link" href="/users/my-courses">
-                            <i class="fas fa-book"></i>
-                            Τα Μαθήματά μου
+                        <a class="nav-link" href="/courses">
+                            <i class="fas fa-book"></i>Μαθήματα
                         </a>
-                        <a class="nav-link" href="/users/preferences">
-                            <i class="fas fa-sliders-h"></i>
-                            Προτιμήσεις Διδασκαλίας
+                        <a class="nav-link" href="/rooms">
+                            <i class="fas fa-door-open"></i>Αίθουσες
                         </a>
-                        <a class="nav-link active" href="/users/schedule">
-                            <i class="fas fa-calendar-alt"></i>
-                            Πρόγραμμα Μαθημάτων
+                        <a class="nav-link" href="/teachers">
+                            <i class="fas fa-users"></i>Διδάσκοντες
                         </a>
-                        <a class="nav-link" href="/users/rooms">
-                            <i class="fas fa-door-open"></i>
-                            Αίθουσες
+                        <a class="nav-link" href="/assignments">
+                            <i class="fas fa-tasks"></i>Αναθέσεις
                         </a>
-<!--                        <a class="nav-link" href="teacher-preferences">
-                            <i class="fas fa-clock"></i>
-                            Διαθεσιμότητα
-                        </a>-->
+                        <a class="nav-link" href="/schedules">
+                            <i class="fas fa-calendar"></i>Χρονοπρογραμματισμοί
+                        </a>
+                        <a class="nav-link active" href="/schedule">
+                            <i class="fas fa-calendar-week"></i>Πρόγραμμα
+                        </a>
+                        <a class="nav-link" href="/preferences">
+                            <i class="fas fa-cog"></i>Προτιμήσεις
+                        </a>
                     </nav>
                 </div>
             </div>
 
             <!-- Main Content -->
-            <div class="col-lg-9 col-md-8">
-                <!-- Header -->
-                <div class="row mb-4 fade-in">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h4 class="mb-0">
-                                            <i class="fas fa-calendar-alt me-2"></i>
-                                            Πρόγραμμα Μαθημάτων
-                                        </h4>
-                                        <small class="opacity-75">Εβδομαδιαίο πρόγραμμα διδασκαλίας</small>
-                                    </div>
-                                    <div>
-                                        <button class="btn btn-light me-2" onclick="exportSchedule()">
-                                            <i class="fas fa-download me-1"></i>
-                                            Εξαγωγή
-                                        </button>
-                                        <button class="btn btn-light" onclick="refreshSchedule()">
-                                            <i class="fas fa-sync-alt me-1"></i>
-                                            Ανανέωση
-                                        </button>
-                                    </div>
-                                </div>
+            <div class="col-lg-10">
+                <!-- Schedule Controls -->
+                <div class="schedule-controls fade-in">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h4 class="mb-0">
+                                <i class="fas fa-calendar-week me-2 text-primary"></i>
+                                Πρόγραμμα Μαθημάτων
+                            </h4>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2 justify-content-md-end">
+                                <select id="scheduleSelector" class="form-select form-select-sm" style="max-width: 300px;">
+                                    <option value="">Επιλέξτε χρονοπρογραμματισμό...</option>
+                                </select>
+                                <button class="btn btn-sm btn-primary" onclick="refreshSchedule()">
+                                    <i class="fas fa-sync-alt me-1"></i>Ανανέωση
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="exportSchedule()">
+                                    <i class="fas fa-download me-1"></i>Εξαγωγή
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Controls -->
-                <div class="schedule-controls fade-in">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <div class="legend">
-                                <div class="legend-item">
-                                    <div class="legend-color" style="background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);"></div>
-                                    <span>Θεωρία</span>
-                                </div>
-                                <div class="legend-item">
-                                    <div class="legend-color" style="background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);"></div>
-                                    <span>Εργαστήριο</span>
-                                </div>
-                                <div class="legend-item">
-                                    <div class="legend-color" style="background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);"></div>
-                                    <span>Εκκρεμότητα</span>
-                                </div>
+                <!-- Legend -->
+                <div class="card fade-in mb-3">
+                    <div class="card-body">
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: linear-gradient(135deg, var(--primary-color) 0%, #764ba2 100%);"></div>
+                                <span>Θεωρία</span>
                             </div>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <select class="form-select d-inline-block w-auto" id="scheduleSelector">
-                                <option value="">Επιλέξτε χρονοπρογραμματισμό...</option>
-                            </select>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: linear-gradient(135deg, var(--success-color) 0%, #2ecc71 100%);"></div>
+                                <span>Εργαστήριο</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);"></div>
+                                <span>Εκκρεμότητα</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Schedule Table -->
-                <div class="row fade-in">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table schedule-table mb-0" id="scheduleTable">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 100px;">Ώρα</th>
-                                                <th>Δευτέρα</th>
-                                                <th>Τρίτη</th>
-                                                <th>Τετάρτη</th>
-                                                <th>Πέμπτη</th>
-                                                <th>Παρασκευή</th>
-                                                <th>Σάββατο</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="scheduleBody">
-                                            <tr>
-                                                <td colspan="7" class="text-center p-4">
-                                                    <div class="loading-skeleton" style="height: 100px; border-radius: 0.5rem;"></div>
-                                                    <p class="mt-2 mb-0">Φόρτωση προγράμματος...</p>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table me-2"></i>
+                            Εβδομαδιαίο Πρόγραμμα
+                        </h5>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table schedule-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Ώρα</th>
+                                        <th>Δευτέρα</th>
+                                        <th>Τρίτη</th>
+                                        <th>Τετάρτη</th>
+                                        <th>Πέμπτη</th>
+                                        <th>Παρασκευή</th>
+                                        <th>Σάββατο</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduleBody">
+                                    <!-- Schedule content will be loaded here -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -400,17 +386,14 @@
 
     <!-- Class Details Modal -->
     <div class="modal fade" id="classModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modal-class-title">
-                        <i class="fas fa-book me-2"></i>
-                        Λεπτομέρειες Μαθήματος
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="modal-class-title">Λεπτομέρειες Μαθήματος</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="modal-class-content">
-                    <!-- Class details will be loaded here -->
+                    <!-- Content will be loaded dynamically -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Κλείσιμο</button>
@@ -499,84 +482,96 @@
 
         async function loadData() {
             try {
-                showAlert('Φόρτωση δεδομένων...', 'info');
-                await getCurrentUserId();
+                console.log('Loading user assignments...');
                 
-                // Load user assignments and available schedules
-                
-                await loadUserAssignments(),
-                await loadAvailableSchedules()
-                
-                
-                // Render schedule table
-                renderScheduleTable();
-                
-                hideAlert();
-            } catch (error) {
-                console.error('Error loading data:', error);
-                showError();
-            }
-        }
-        
-        let teacherId = null;
-
-        async function getCurrentUserId() {
-            try {
-                const response = await fetch('/users/api/current', {
-                    headers: { 'Authorization': 'Bearer ' + userToken }
-                });
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        handleAuthError();
-                        return;
-                    }
-                    throw new Error('Failed to get current user');
-                }
-
-                const user = await response.json();
-                teacherId = user.id;
-                console.log('Current user ID:', teacherId);
-            } catch (error) {
-                console.error('Error getting current user:', error);
-                throw error;
-            }
-        }
-
-        async function loadUserAssignments() {
-            try {
-                const response = await fetch('/api/assignments/teacher/' + teacherId, {
+                // Try to load assignments for current user
+                const response = await fetch('/api/assignments/my', {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
                         'Content-Type': 'application/json'
                     }
                 });
 
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        handleAuthError();
-                        return;
-                    }
-                    if (response.status === 403) {
-                        showAlert('Δεν έχετε δικαίωμα πρόσβασης', 'error');
-                        showEmptyState('scheduleBody', 'lock', 'Δεν έχετε δικαίωμα πρόσβασης');
-                        return;
-                    }
-                    throw new Error('Failed to load assignments');
+                if (response.ok) {
+                    userAssignments = await response.json();
+                    console.log('Loaded assignments:', userAssignments);
+                } else if (response.status === 401) {
+                    handleAuthError();
+                    return;
+                } else {
+                    console.warn('Failed to load assignments, using demo data');
+                    userAssignments = generateDemoAssignments();
                 }
 
-                userAssignments = await response.json();
+                await loadAvailableSchedules();
+                
             } catch (error) {
-                console.error('Error loading assignments:', error);
-                throw error;
+                console.warn('Error loading data:', error);
+                userAssignments = generateDemoAssignments();
+                await loadAvailableSchedules();
             }
+        }
+
+        function generateDemoAssignments() {
+            return [
+                {
+                    id: 1,
+                    courseName: 'Προγραμματισμός I',
+                    courseCode: 'CS101',
+                    courseComponent: 'THEORY',
+                    teacherName: 'Δρ. Παπαδόπουλος',
+                    scheduleId: 1,
+                    scheduleName: 'Χειμερινό Εξάμηνο 2024-25',
+                    active: true
+                },
+                {
+                    id: 2,
+                    courseName: 'Προγραμματισμός I',
+                    courseCode: 'CS101',
+                    courseComponent: 'LABORATORY',
+                    teacherName: 'Δρ. Παπαδόπουλος',
+                    scheduleId: 1,
+                    scheduleName: 'Χειμερινό Εξάμηνο 2024-25',
+                    active: true
+                },
+                {
+                    id: 3,
+                    courseName: 'Μαθηματικά I',
+                    courseCode: 'MATH101',
+                    courseComponent: 'THEORY',
+                    teacherName: 'Δρ. Κωνσταντινίδου',
+                    scheduleId: 1,
+                    scheduleName: 'Χειμερινό Εξάμηνο 2024-25',
+                    active: true
+                },
+                {
+                    id: 4,
+                    courseName: 'Δομές Δεδομένων',
+                    courseCode: 'CS201',
+                    courseComponent: 'THEORY',
+                    teacherName: 'Δρ. Νικολαΐδης',
+                    scheduleId: 1,
+                    scheduleName: 'Χειμερινό Εξάμηνο 2024-25',
+                    active: true
+                },
+                {
+                    id: 5,
+                    courseName: 'Δομές Δεδομένων',
+                    courseCode: 'CS201',
+                    courseComponent: 'LABORATORY',
+                    teacherName: 'Δρ. Νικολαΐδης',
+                    scheduleId: 1,
+                    scheduleName: 'Χειμερινό Εξάμηνο 2024-25',
+                    active: true
+                }
+            ];
         }
 
         async function loadAvailableSchedules() {
             try {
                 console.log('Loading available schedules...');
-                console.log('User assignments:', userAssignments);
-
+                
+                // Extract unique schedules from assignments
                 const uniqueSchedules = userAssignments.reduce((acc, assignment) => {
                     const scheduleId = assignment.scheduleId || assignment.schedule_id || assignment.schedule?.id;
                     const scheduleName = assignment.scheduleName || assignment.schedule_name || assignment.schedule?.name;
@@ -647,6 +642,8 @@
             }
         }
 
+        
+        
         async function loadScheduleData() {
             const selectedScheduleId = document.getElementById('scheduleSelector').value;
             
@@ -656,12 +653,87 @@
             }
 
             try {
-                // Filter assignments for selected schedule
-                const scheduleAssignments = userAssignments.filter(a => 
-                    a.scheduleId && a.scheduleId.toString() === selectedScheduleId
-                );
+                console.log('Loading schedule data for ID:', selectedScheduleId);
+                
+                // ΔΙΟΡΘΩΣΗ: Πρώτα ελέγχουμε αν υπάρχουν αποτελέσματα στη βάση
+                const checkResponse = await fetch(`/api/schedules/${selectedScheduleId}/results/exists`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (checkResponse.ok) {
+                    const checkData = await checkResponse.json();
+                    console.log('Schedule check response:', checkData);
+                    
+                    if (checkData.hasResults) {
+                        // ΔΙΟΡΘΩΣΗ: Φόρτωση πραγματικών αποτελεσμάτων από τη βάση δεδομένων
+                        console.log('Loading REAL results from database...');
+                        
+                        const resultsResponse = await fetch(`/api/schedules/${selectedScheduleId}/results`, {
+                            headers: {
+                                'Authorization': 'Bearer ' + userToken,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (resultsResponse.ok) {
+                            const results = await resultsResponse.json();
+                            console.log('Loaded REAL results from database:', results);
+                            
+                            // Μετατροπή από τη μορφή της βάσης στη μορφή του frontend
+                            scheduleData = results.map(result => ({
+                                id: result.id,
+                                courseName: result.courseName,
+                                courseCode: result.courseCode,
+                                courseComponent: result.courseComponent,
+                                teacherName: result.teacherName,
+                                day: result.day,
+                                timeSlot: result.timeSlot,
+                                room: result.roomName, // ΠΡΑΓΜΑΤΙΚΟ ονομα αιθουσας!
+                                status: result.status || 'CONFIRMED'
+                            }));
+                            
+                            // Ενημέρωση UI με ένδειξη ότι τα δεδομένα είναι από τη βάση
+                            showAlert('Τα δεδομένα φορτώθηκαν από αποθηκευμένα αποτελέσματα χρονοπρογραμματισμού', 'success');
+                            
+                        } else {
+                            console.warn('Failed to load results from database, using fallback');
+                            scheduleData = await loadFallbackData(selectedScheduleId);
+                        }
+                    } else {
+                        console.log('No saved results found, using assignments data');
+                        scheduleData = await loadFallbackData(selectedScheduleId);
+                        
+                        // Ενημέρωση UI ότι δεν υπάρχουν αποτελέσματα
+                        if (checkData.canExecute) {
+                            showAlert('Δεν υπάρχουν αποτελέσματα χρονοπρογραμματισμού. Παρακαλώ εκτελέστε πρώτα τον αλγόριθμο.', 'warning');
+                        } else {
+                            showAlert('Εμφάνιση προσωρινού προγράμματος βασισμένου σε αναθέσεις', 'info');
+                        }
+                    }
+                } else {
+                    console.warn('Failed to check schedule status, using fallback');
+                    scheduleData = await loadFallbackData(selectedScheduleId);
+                }
 
-                // Try to load actual schedule data from API
+                renderScheduleTable();
+
+            } catch (error) {
+                console.error('Error loading schedule data:', error);
+                scheduleData = await loadFallbackData(selectedScheduleId);
+                renderScheduleTable();
+                showAlert('Σφάλμα κατά τη φόρτωση δεδομένων', 'error');
+            }
+        }
+        
+        /**
+         * Φόρτωση δεδομένων fallback από assignments (παλιά λογική)
+         */
+        async function loadFallbackData(selectedScheduleId) {
+            try {
+                // Προσπάθεια φόρτωσης από API assignments
                 const response = await fetch(`/api/assignments/schedule/${selectedScheduleId}`, {
                     headers: {
                         'Authorization': 'Bearer ' + userToken,
@@ -670,29 +742,91 @@
                 });
 
                 if (response.ok) {
-                    scheduleData = await response.json();
+                    const apiData = await response.json();
+                    console.log('Loaded fallback data from assignments API');
+                    return apiData;
                 } else {
-                    // Generate mock schedule data if API not available
-                    scheduleData = generateMockSchedule(scheduleAssignments);
+                    // Fallback στα mock δεδομένα
+                    const scheduleAssignments = userAssignments.filter(a => 
+                        a.scheduleId && a.scheduleId.toString() === selectedScheduleId
+                    );
+                    console.log('Using mock data as final fallback');
+                    return generateMockSchedule(scheduleAssignments);
                 }
-
-                renderScheduleTable();
-
             } catch (error) {
-                console.warn('Error loading schedule data, using assignments only:', error);
-                scheduleData = generateMockSchedule(userAssignments.filter(a => 
+                console.warn('Fallback data loading failed, using mock data');
+                const scheduleAssignments = userAssignments.filter(a => 
                     a.scheduleId && a.scheduleId.toString() === selectedScheduleId
-                ));
-                renderScheduleTable();
+                );
+                return generateMockSchedule(scheduleAssignments);
+            }
+        }
+        
+        /**
+         * Φόρτωση δεδομένων fallback από assignments (παλιά λογική)
+         */
+        async function loadFallbackData(selectedScheduleId) {
+            try {
+                // Προσπάθεια φόρτωσης από API assignments
+                const response = await fetch(`/api/assignments/schedule/${selectedScheduleId}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + userToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const apiData = await response.json();
+                    return apiData;
+                } else {
+                    // Fallback στα mock δεδομένα
+                    const scheduleAssignments = userAssignments.filter(a => 
+                        a.scheduleId && a.scheduleId.toString() === selectedScheduleId
+                    );
+                    return generateMockSchedule(scheduleAssignments);
+                }
+            } catch (error) {
+                console.warn('Fallback data loading failed, using mock data');
+                const scheduleAssignments = userAssignments.filter(a => 
+                    a.scheduleId && a.scheduleId.toString() === selectedScheduleId
+                );
+                return generateMockSchedule(scheduleAssignments);
             }
         }
 
         function generateMockSchedule(assignments) {
             const mockData = [];
             
+            // Βελτιωμένη λογική για καλύτερη κατανομή μαθημάτων
+            const usedSlots = new Set(); // Για αποφυγή διπλών καταχωρήσεων
+            let currentDayIndex = 0;
+            let currentTimeSlot = 0;
+            
             assignments.forEach((assignment, index) => {
-                const dayIndex = index % 6;
-                const slotIndex = Math.floor(index / 6) % 4;
+                // Προσπαθούμε να βρούμε ένα κενό slot
+                let attempts = 0;
+                let slotKey;
+                
+                do {
+                    slotKey = `${daysOfWeek[currentDayIndex].id}-${currentTimeSlot}`;
+                    
+                    if (!usedSlots.has(slotKey) || attempts > 20) {
+                        break;
+                    }
+                    
+                    // Μετάβαση στο επόμενο slot
+                    currentTimeSlot++;
+                    if (currentTimeSlot >= timeSlots.length) {
+                        currentTimeSlot = 0;
+                        currentDayIndex = (currentDayIndex + 1) % daysOfWeek.length;
+                    }
+                    attempts++;
+                } while (attempts < 30);
+                
+                // Καταχώρηση του μαθήματος
+                if (attempts < 30) {
+                    usedSlots.add(slotKey);
+                }
                 
                 mockData.push({
                     id: assignment.id,
@@ -700,11 +834,18 @@
                     courseCode: assignment.courseCode,
                     courseComponent: assignment.courseComponent,
                     teacherName: assignment.teacherName,
-                    day: daysOfWeek[dayIndex].id,
-                    timeSlot: slotIndex,
-                    room: 'Αίθουσα ' + (index + 1),
+                    day: daysOfWeek[currentDayIndex].id,
+                    timeSlot: currentTimeSlot,
+                    room: 'Αίθουσα ' + (Math.floor(index / 2) + 1),
                     status: assignment.active ? 'CONFIRMED' : 'PENDING'
                 });
+                
+                // Μετάβαση στο επόμενο slot για το επόμενο μάθημα
+                currentTimeSlot++;
+                if (currentTimeSlot >= timeSlots.length) {
+                    currentTimeSlot = 0;
+                    currentDayIndex = (currentDayIndex + 1) % daysOfWeek.length;
+                }
             });
 
             return mockData;

@@ -18,13 +18,13 @@ public class DashboardController {
     @Autowired
     private UserService userService;
     
-    @GetMapping("/dashboard")
+      @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
         try {
             if (userService.isCurrentUserAdmin(authentication)) {
                 return "redirect:/teachers/list";
             } else if (userService.isCurrentUserProgramManager(authentication)) {
-                return "redirect:/schedules/admin/all";
+                return "redirect:/schedules";
             } else if (userService.isCurrentUserTeacher(authentication)) {
                 return "redirect:/schedules/teacher/available";
             } else {

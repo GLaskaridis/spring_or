@@ -11,9 +11,11 @@ import com.icsd.springor.CourseScheduler;
 import com.icsd.springor.CourseScheduler.CourseAssignment;
 import com.icsd.springor.DTO.AssignmentDTO;
 import com.icsd.springor.DTO.TeacherPreferenceDTO;
+import com.icsd.springor.model.Assignment;
 import com.icsd.springor.model.Course;
 import com.icsd.springor.model.CourseSchedule;
 import com.icsd.springor.model.Room;
+import com.icsd.springor.model.ScheduleResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -50,6 +52,9 @@ public class ScheduleExecutionController {
     @Autowired
     private RoomService roomService;
 
+    @Autowired
+    private ScheduleResultService scheduleResultService;
+
     @GetMapping("/execute/{scheduleId}")
     public String executeScheduling(@PathVariable Long scheduleId,
             Model model,
@@ -68,7 +73,7 @@ public class ScheduleExecutionController {
                 String errorMsg = "Wrong status: " + schedule.getStatus();
                 System.out.println("ERROR: " + errorMsg);
                 redirectAttributes.addFlashAttribute("error", errorMsg);
-                return "redirect:/schedules/admin/all";
+                return "redirect:/schedules";
             }
             System.out.println("✓ Status check passed");
 
@@ -83,21 +88,21 @@ public class ScheduleExecutionController {
             System.out.println("✓ Rooms loaded: " + rooms.size());
 
             // Prepare courses
-            System.out.println("🔄 Preparing courses with preferences...");
+            System.out.println("?Preparing courses with preferences...");
             List<Course> coursesWithPreferences = prepareCoursesWithPreferences(assignments, preferences);
             System.out.println("✓ Courses prepared: " + coursesWithPreferences.size());
 
             // Execute algorithm
-            System.out.println("🚀 Starting algorithm execution...");
+            System.out.println("Starting algorithm execution...");
             CourseScheduler scheduler = new CourseScheduler();
 
             long startTime = System.currentTimeMillis();
             List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(coursesWithPreferences, rooms);
             long endTime = System.currentTimeMillis();
 
-            System.out.println("⏱️ Algorithm completed in: " + (endTime - startTime) + "ms");
-            System.out.println("🔍 Result analysis:");
-            System.out.println("  - Result is null: " + (result == null));
+            System.out.println("Algorithm completed in: " + (endTime - startTime) + "ms");
+            System.out.println(" Result analysis:");
+            System.out.println(" Result is null: " + (result == null));
 
             if (result != null) {
                 System.out.println("  - Result size: " + result.size());
@@ -105,15 +110,15 @@ public class ScheduleExecutionController {
             }
 
             if (result != null && !result.isEmpty()) {
-                System.out.println("✅ SUCCESS: Solution found with " + result.size() + " assignments");
+                System.out.println("SUCCESS: Solution found with " + result.size() + " assignments");
 
                 try {
                     // Update status
-                    System.out.println("🔄 Updating schedule status to SOLUTION_FOUND...");
+                    System.out.println("Updating schedule status to SOLUTION_FOUND...");
                     scheduleService.changeScheduleStatus(scheduleId, CourseSchedule.ScheduleStatus.SOLUTION_FOUND);
-                    System.out.println("✓ Status updated");
+                    System.out.println("Status updated");
                 } catch (Exception statusException) {
-                    System.out.println("⚠️ Warning: Could not update status but solution found: " + statusException.getMessage());
+                    System.out.println("Warning: Could not update status but solution found: " + statusException.getMessage());
                     // Continue anyway since we have a solution
                 }
 
@@ -124,30 +129,30 @@ public class ScheduleExecutionController {
                 model.addAttribute("roomsData", rooms);
                 model.addAttribute("success", true);
 
-                System.out.println("🎯 Returning to schedule-execution-result view");
+                System.out.println("Returning to schedule-execution-result view");
                 return "schedule-execution-result";
 
             } else {
-                System.out.println("❌ FAILURE: No solution found (INFEASIBLE)");
+                System.out.println("FAILURE: No solution found (INFEASIBLE)");
 
                 try {
                     // Try to update status to NO_SOLUTION_FOUND
-                    System.out.println("🔄 Attempting to update schedule status to NO_SOLUTION_FOUND...");
+                    System.out.println("Attempting to update schedule status to NO_SOLUTION_FOUND...");
                     scheduleService.changeScheduleStatus(scheduleId, CourseSchedule.ScheduleStatus.NO_SOLUTION_FOUND);
-                    System.out.println("✓ Status updated");
+                    System.out.println("Status updated");
                 } catch (Exception statusException) {
-                    System.out.println("⚠️ Warning: Could not update status: " + statusException.getMessage());
+                    System.out.println("Warning: Could not update status: " + statusException.getMessage());
                     // Continue to show error message to user even if status update fails
                 }
 
                 // Create detailed error message
                 String errorMsg = "⚠️ Δεν βρέθηκε λύση για τον χρονοπρογραμματισμό!\n\n"
-                        + "🔍 Πιθανές αιτίες:\n"
+                        + "?Πιθανές αιτίες:\n"
                         + "• Πολύ περιοριστικές προτιμήσεις καθηγητών\n"
                         + "• Ανεπαρκείς αίθουσες για τα μαθήματα\n"
                         + "• Συγκρούσεις στα χρονικά διαστήματα\n"
                         + "• Υπερβολικός φόρτος εργασίας σε συγκεκριμένες μέρες\n\n"
-                        + "💡 Προτεινόμενες ενέργειες:\n"
+                        + " Προτεινόμενες ενέργειες:\n"
                         + "• Ελέγξτε και τροποποιήστε τις προτιμήσεις των καθηγητών\n"
                         + "• Βεβαιωθείτε ότι υπάρχουν αρκετές αίθουσες\n"
                         + "• Μειώστε τον αριθμό των περιοριστικών προτιμήσεων";
@@ -157,12 +162,12 @@ public class ScheduleExecutionController {
                 redirectAttributes.addFlashAttribute("scheduleId", scheduleId);
                 redirectAttributes.addFlashAttribute("scheduleName", schedule.getName());
 
-                System.out.println("🔙 Redirecting to schedules list with detailed error message");
-                return "redirect:/schedules/admin/all";
+                System.out.println("Redirecting to schedules list with detailed error message");
+                return "redirect:/schedules";
             }
 
         } catch (Exception e) {
-            System.out.println("💥 EXCEPTION in executeScheduling:");
+            System.out.println("EXCEPTION in executeScheduling:");
             System.out.println("Exception type: " + e.getClass().getSimpleName());
             System.out.println("Exception message: " + e.getMessage());
             e.printStackTrace();
@@ -172,7 +177,7 @@ public class ScheduleExecutionController {
             redirectAttributes.addFlashAttribute("errorType", "SYSTEM_ERROR");
 
             System.out.println("🔙 Redirecting to schedules list due to exception");
-            return "redirect:/schedules/admin/all";
+            return "redirect:/schedules";
         }
     }
 
@@ -528,12 +533,12 @@ public class ScheduleExecutionController {
                     "Επανάληψη με χαλαρότερους περιορισμούς δεν είναι ακόμη υλοποιημένη. "
                     + "Παρακαλώ τροποποιήστε τις προτιμήσεις μη αυτόματα.");
 
-            return "redirect:/schedules/admin/all";
+            return "redirect:/schedules";
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error",
                     "Σφάλμα κατά την επανάληψη: " + e.getMessage());
-            return "redirect:/schedules/admin/all";
+            return "redirect:/schedules";
         }
     }
 
@@ -1315,7 +1320,7 @@ public class ScheduleExecutionController {
             redirectAttributes.addFlashAttribute("error", "Error approving schedule: " + e.getMessage());
         }
 
-        return "redirect:/schedules/admin/all";
+        return "redirect:/schedules";
     }
 
     @PostMapping("/reject/{scheduleId}")
@@ -1328,12 +1333,10 @@ public class ScheduleExecutionController {
             redirectAttributes.addFlashAttribute("error", "Error rejecting schedule: " + e.getMessage());
         }
 
-        return "redirect:/schedules/admin/all";
+        return "redirect:/schedules";
     }
 
-    
-    
-    @GetMapping("/results/{scheduleId}")
+    @GetMapping("/re-execute-results/{scheduleId}")
     public String viewScheduleResults(@PathVariable Long scheduleId, Model model) {
         try {
             CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
@@ -1368,6 +1371,7 @@ public class ScheduleExecutionController {
 
                     Map<String, Object> enhanced = new HashMap<>();
                     enhanced.put("course", Map.of(
+                            "id", ca.course.getId(),
                             "name", ca.course.getName(),
                             "code", ca.course.getCode(),
                             "teacherName", originalAssignment != null ? originalAssignment.getTeacherName() : "Άγνωστος",
@@ -1377,7 +1381,8 @@ public class ScheduleExecutionController {
                             "name", ca.room.getName()
                     ));
                     enhanced.put("day", ca.day);
-                    enhanced.put("timeSlot", ca.slot % 4); // Convert to 0-3 range for template
+                    enhanced.put("slot", ca.slot);
+                    enhanced.put("timeSlot", ca.slot % 4);
                     enhanced.put("startTime", ca.startTime);
                     enhanced.put("endTime", ca.endTime);
 
@@ -1478,4 +1483,57 @@ public class ScheduleExecutionController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
+    @GetMapping("/results/{scheduleId}")
+    public String viewResults(@PathVariable Long scheduleId, Model model) {
+        CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
+
+        if (!scheduleResultService.hasScheduleResults(scheduleId)) {
+            model.addAttribute("error", "");
+            model.addAttribute("schedule", schedule);
+            model.addAttribute("assignments", null);  // Πρόσθεσα αυτό
+            model.addAttribute("success", false);
+            return "schedule-execution-result";
+        }
+
+        List<ScheduleResult> results = scheduleResultService.getScheduleResults(scheduleId);
+        List<Map<String, Object>> assignmentMaps = new ArrayList<>();
+
+        for (ScheduleResult result : results) {
+            Map<String, Object> assignmentMap = new HashMap<>();
+
+            //πληροφορίες μαθήματος από το assignment
+            Assignment assignment = result.getAssignment();
+            Course course = assignment.getCourse();
+
+            assignmentMap.put("course", Map.of(
+                    "id", course.getId(),
+                    "name", course.getName(),
+                    "code", course.getCode()
+            ));
+
+            assignmentMap.put("room", Map.of(
+                    "id", result.getRoom().getId(),
+                    "name", result.getRoom().getName(),
+                    "building", result.getRoom().getBuilding() != null ? result.getRoom().getBuilding() : "",
+                    "capacity", result.getRoom().getCapacity()
+            ));
+
+            assignmentMap.put("day", result.getDayOfWeek().name());
+            assignmentMap.put("slot", result.getSlotNumber());
+            assignmentMap.put("timeSlot", result.getSlotNumber());
+            assignmentMap.put("startTime", result.getStartTime().toString());
+            assignmentMap.put("endTime", result.getEndTime().toString());
+
+            assignmentMaps.add(assignmentMap);
+        }
+
+        model.addAttribute("schedule", schedule);
+        model.addAttribute("assignments", assignmentMaps);
+        model.addAttribute("success", true);
+        model.addAttribute("message", "βρέθηκε λύση με " + results.size() + " αναθέσεις");
+
+        return "schedule-execution-result";
+    }
+
 }

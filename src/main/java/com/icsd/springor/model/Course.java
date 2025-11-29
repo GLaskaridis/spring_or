@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.DayOfWeek;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -58,6 +59,13 @@ public class Course {
     @Column(nullable = false)
     private boolean active = true;
 
+    // Transient field για το ενεργό component (δεν αποθηκεύεται στη βάση)
+    @Transient
+    private TeachingHours.CourseComponent activeComponent;
+
+    // Transient field για τις προτιμήσεις χρόνου
+    @Transient
+    private TimePreference timePreference;
 
     public enum CourseType {
         BASIC, ELECTIVE
@@ -67,8 +75,6 @@ public class Course {
         this.name = name;
         this.code = code;
     }
-    
-    
 
     @Embeddable
     @Getter
@@ -114,9 +120,8 @@ public class Course {
         public int getWeight() {
             return weight;
         }
-        
-        
     }
+    
     
     public boolean isActive() {
         return this.active;
@@ -160,8 +165,75 @@ public class Course {
     public boolean hasLab() {
         return getLabHours() > 0;
     }
-    
-    private TimePreference timePreference;
-    
-   
+
+    /**
+     * Επιστρέφει το ενεργό component για χρήση στον αλγόριθμο
+     */
+    public TeachingHours.CourseComponent getActiveComponent() {
+        if (activeComponent != null) {
+            return activeComponent;
+        }
+        
+        // Default logic: αν έχει θεωρία, επέστρεψε θεωρία, αλλιώς εργαστήριο
+        if (hasTheory()) {
+            return TeachingHours.CourseComponent.THEORY;
+        } else if (hasLab()) {
+            return TeachingHours.CourseComponent.LABORATORY;
+        }
+        
+        // Fallback: θεωρία
+        return TeachingHours.CourseComponent.THEORY;
+    }
+
+    /**
+     * Ορίζει το ενεργό component
+     */
+    public void setActiveComponent(TeachingHours.CourseComponent activeComponent) {
+        this.activeComponent = activeComponent;
+    }
+
+    /**
+     * Επιστρέφει τις ώρες για το ενεργό component
+     */
+    public int getActiveComponentHours() {
+        TeachingHours.CourseComponent active = getActiveComponent();
+        if (active == TeachingHours.CourseComponent.THEORY) {
+            return getTheoryHours();
+        } else if (active == TeachingHours.CourseComponent.LABORATORY) {
+            return getLabHours();
+        }
+        return 0;
+    }
+
+    public TimePreference getTimePreference() {
+        return timePreference;
+    }
+
+    public void setTimePreference(TimePreference timePreference) {
+        this.timePreference = timePreference;
+    }
+
+    public boolean hasTimePreference() {
+        return timePreference != null;
+    }
+
+
+    @Override
+    public String toString() {
+        return String.format("Course{id=%d, code='%s', name='%s', type=%s, year=%d, semester=%d, active=%s}", 
+            id, code, name, type, year, semester, active);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Course course = (Course) o;
+        return code != null ? code.equals(course.code) : course.code == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return code != null ? code.hashCode() : 0;
+    }
 }

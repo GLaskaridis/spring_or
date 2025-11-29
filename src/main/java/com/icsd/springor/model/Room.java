@@ -47,6 +47,14 @@ public class Room {
 
     @Column(nullable = false)
     private String location;
+    
+    //πεδία για τις συντεταγμένες της αίθουσας
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")  
+    private Double longitude;
+
 
     @Column(nullable = false)
     private boolean active = true;

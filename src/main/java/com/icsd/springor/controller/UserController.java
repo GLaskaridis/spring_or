@@ -6,7 +6,7 @@ package com.icsd.springor.controller;
 
 import com.icsd.springor.DTO.LoginRequest;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.List;
 import com.icsd.springor.model.User;
 import com.icsd.springor.model.UserRole;
 import com.icsd.springor.service.CourseScheduleService;
@@ -431,6 +431,226 @@ public class UserController {
     @GetMapping("/teacher-preferences")
     public String teacherPreferences() {
         return "teacher-preferences";
+    }
+    
+    //api endpoints για διαχείριση καθηγητών
+    
+    /**
+     * επιστρέφει λίστα με όλους τους καθηγητές σε μορφή json
+     * καλείται από το users_manage.html στη συνάρτηση loadTeachersData()
+     * url: GET /users/api/teachers
+     * χρησιμοποιείται για να φορτώσει τον πίνακα με τους καθηγητές
+     */
+    @GetMapping("/api/teachers")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getAllTeachersApi() {
+        try {
+            //ανάκτηση όλων των καθηγητών από τη βάση
+            List<User> teachers = userService.findAllTeachers();
+            
+            //μετατροπή των user objects σε maps για json response
+            List<Map<String, Object>> teacherData = teachers.stream()
+                .map(teacher -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("id", teacher.getId());
+                    data.put("fullName", teacher.getFullName());
+                    data.put("username", teacher.getUsername());
+                    data.put("email", teacher.getEmail());
+                    data.put("teacherType", teacher.getTeacherType() != null ? teacher.getTeacherType().name() : "");
+                    data.put("teacherRank", teacher.getTeacherRank());
+                    data.put("active", teacher.isActive());
+                    return data;
+                })
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(teacherData);
+        } catch (Exception e) {
+            logger.error("Error fetching teachers", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * επιστρέφει τα στοιχεία ενός συγκεκριμένου καθηγητή
+     * καλείται από το users_manage.html στη συνάρτηση editTeacher(id)
+     * url: GET /users/api/teachers/{id}
+     * χρησιμοποιείται για να φορτώσει τα στοιχεία στη φόρμα επεξεργασίας
+     */
+    @GetMapping("/api/teachers/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getTeacherByIdApi(@PathVariable Long id) {
+        try {
+            //αναζήτηση καθηγητή με βάση το id
+            User teacher = userService.getUserById(id);
+            if (teacher == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            //δημιουργία map με τα στοιχεία του καθηγητή
+            Map<String, Object> data = new HashMap<>();
+            data.put("id", teacher.getId());
+            data.put("fullName", teacher.getFullName());
+            data.put("username", teacher.getUsername());
+            data.put("email", teacher.getEmail());
+            data.put("teacherType", teacher.getTeacherType() != null ? teacher.getTeacherType().name() : "");
+            data.put("teacherRank", teacher.getTeacherRank());
+            data.put("active", teacher.isActive());
+            
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            logger.error("Error fetching teacher with id: " + id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * δημιουργεί νέο καθηγητή στη βάση δεδομένων
+     * καλείται από το users_manage.html στη συνάρτηση saveTeacher() όταν δεν υπάρχει teacherId
+     * url: POST /users/api/teachers
+     * χρησιμοποιείται όταν πατάμε "αποθήκευση" στο modal προσθήκης καθηγητή
+     * παραλαμβάνει json με τα στοιχεία του νέου καθηγητή
+     */
+    @PostMapping("/api/teachers")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> createTeacherApi(@RequestBody Map<String, Object> teacherData) {
+        try {
+            //δημιουργία νέου user object
+            User newTeacher = new User();
+            newTeacher.setFullName((String) teacherData.get("fullName"));
+            newTeacher.setUsername((String) teacherData.get("username"));
+            newTeacher.setEmail((String) teacherData.get("email"));
+            
+            //ρύθμιση τύπου καθηγητή (δεπ, εδιπ, ετεπ)
+            String teacherType = (String) teacherData.get("teacherType");
+            if (teacherType != null && !teacherType.isEmpty()) {
+                newTeacher.setTeacherType(com.icsd.springor.DTO.TeacherType.valueOf(teacherType));
+            }
+            
+            newTeacher.setTeacherRank((String) teacherData.get("teacherRank"));
+            newTeacher.setActive((Boolean) teacherData.getOrDefault("active", true));
+            newTeacher.setRole(UserRole.TEACHER);
+            
+            //κρυπτογράφηση κωδικού πρόσβασης
+            String password = (String) teacherData.get("password");
+            if (password != null && !password.isEmpty()) {
+                newTeacher.setPassword(passwordEncoder.encode(password));
+            }
+            
+            //αποθήκευση στη βάση
+            User savedTeacher = userService.save(newTeacher);
+            
+            //επιστροφή μηνύματος επιτυχίας
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Ο καθηγητής προστέθηκε επιτυχώς");
+            response.put("id", savedTeacher.getId());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error creating teacher", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Σφάλμα κατά την προσθήκη καθηγητή: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * ενημερώνει τα στοιχεία υπάρχοντος καθηγητή
+     * καλείται από το users_manage.html στη συνάρτηση saveTeacher() όταν υπάρχει teacherId
+     * url: PUT /users/api/teachers/{id}
+     * χρησιμοποιείται όταν πατάμε "αποθήκευση" στο modal επεξεργασίας καθηγητή
+     * παραλαμβάνει json με τα νέα στοιχεία του καθηγητή
+     */
+    @PutMapping("/api/teachers/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateTeacherApi(
+            @PathVariable Long id, 
+            @RequestBody Map<String, Object> teacherData) {
+        try {
+            //αναζήτηση του υπάρχοντος καθηγητή
+            User teacher = userService.getUserById(id);
+            if (teacher == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Ο καθηγητής δεν βρέθηκε");
+                return ResponseEntity.notFound().build();
+            }
+            
+            //ενημέρωση των στοιχείων
+            teacher.setFullName((String) teacherData.get("fullName"));
+            teacher.setUsername((String) teacherData.get("username"));
+            teacher.setEmail((String) teacherData.get("email"));
+            
+            //ενημέρωση τύπου καθηγητή
+            String teacherType = (String) teacherData.get("teacherType");
+            if (teacherType != null && !teacherType.isEmpty()) {
+                teacher.setTeacherType(com.icsd.springor.DTO.TeacherType.valueOf(teacherType));
+            }
+            
+            teacher.setTeacherRank((String) teacherData.get("teacherRank"));
+            teacher.setActive((Boolean) teacherData.getOrDefault("active", true));
+            
+            //ενημέρωση κωδικού μόνο αν δόθηκε νέος
+            String password = (String) teacherData.get("password");
+            if (password != null && !password.isEmpty()) {
+                teacher.setPassword(passwordEncoder.encode(password));
+            }
+            
+            //αποθήκευση των αλλαγών
+            userService.save(teacher);
+            
+            //επιστροφή μηνύματος επιτυχίας
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Ο καθηγητής ενημερώθηκε επιτυχώς");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error updating teacher with id: " + id, e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Σφάλμα κατά την ενημέρωση καθηγητή: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * διαγράφει έναν καθηγητή από τη βάση δεδομένων
+     * καλείται από το users_manage.html στη συνάρτηση deleteTeacher()
+     * url: DELETE /users/api/teachers/{id}
+     * χρησιμοποιείται όταν πατάμε "διαγραφή" στο confirmation modal
+     * διαγράφει οριστικά τον καθηγητή με το συγκεκριμένο id
+     */
+    @DeleteMapping("/api/teachers/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteTeacherApi(@PathVariable Long id) {
+        try {
+            //έλεγχος αν υπάρχει ο καθηγητής
+            User teacher = userService.getUserById(id);
+            if (teacher == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Ο καθηγητής δεν βρέθηκε");
+                return ResponseEntity.notFound().build();
+            }
+            
+            //διαγραφή από τη βάση
+            userService.deleteUser(id);
+            
+            //επιστροφή μηνύματος επιτυχίας
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Ο καθηγητής διαγράφηκε επιτυχώς");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error deleting teacher with id: " + id, e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Σφάλμα κατά τη διαγραφή καθηγητή: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
    

@@ -17,6 +17,19 @@
                 --light-bg: #f8f9fa;
                 --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
             }
+            
+            .form-range:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .form-range:disabled::-webkit-slider-thumb {
+                cursor: not-allowed;
+            }
+
+            .form-range:disabled::-moz-range-thumb {
+                cursor: not-allowed;
+            }
 
             body {
                 background-color: var(--light-bg);
@@ -464,6 +477,10 @@
                                         <span id="weight-display" class="fw-bold">5</span>
                                         <small>Υψηλή</small>
                                     </div>
+                                    <div class="form-text" id="weight-help-text">
+                                        Η βαρύτητα ορίζει την προτεραιότητα της προτίμησης. 
+                                        Για απαιτήσεις, ορίζεται αυτόματα σε 10.
+                                    </div>
                                 </div>
                             </div>
 
@@ -575,6 +592,14 @@
                                 loadPageDataWithScheduleCheck();
                             });
 
+
+                            //προσθήκη event listener στο preference type dropdown
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const preferenceTypeSelect = document.getElementById('preferenceType');
+                                if (preferenceTypeSelect) {
+                                    preferenceTypeSelect.addEventListener('change', handlePreferenceTypeChange);
+                                }
+                            });
 
                             async function checkScheduleStatus() {
                                 try {
@@ -1083,12 +1108,12 @@
 
                             function showAddPreferenceModal(assignmentId) {
                                 const schedules = checkScheduleStatus();
-                            const activeSchedule = schedules.find(s => s.status === 'REQUIREMENTS_PHASE');
+                            //const activeSchedule = schedules.find(s => s.status === 'REQUIREMENTS_PHASE');
 
-                            if (!activeSchedule) {
-                                showAlert('Δεν μπορείτε να προσθέσετε προτιμήσεις. Δεν υπάρχει ενεργό χρονοδιάγραμμα σε φάση απαιτήσεων. Επικοινωνήστε με τον διαχειριστή.', 'error');
-                                return;
-                            }
+//                            if (!activeSchedule) {
+//                                showAlert('Δεν μπορείτε να προσθέσετε προτιμήσεις. Δεν υπάρχει ενεργό χρονοδιάγραμμα σε φάση απαιτήσεων. Επικοινωνήστε με τον διαχειριστή.', 'error');
+//                                return;
+//                            }
 
     
                                 if (!userAssignments || userAssignments.length === 0) {
@@ -1116,6 +1141,8 @@
 
                                 // Set default weight
                                 document.getElementById('preferenceWeight').value = '5';
+                                document.getElementById('preferenceWeight').disabled = false; //σιγουρευόμαστε ότι είναι enabled
+
                                 updateWeightDisplay('5');
 
                                 // Show modal
@@ -1162,6 +1189,10 @@
                                             currentEditingAssignment.courseComponent === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο';
 
                                     updateWeightDisplay(preference.preferenceWeight || 5);
+                                    
+                                    //έλεγχος και ρύθμιση του weight slider βάσει του τύπου προτίμησης
+                                    handlePreferenceTypeChange();
+
 
                                     // Show modal
                                     new bootstrap.Modal(document.getElementById('preferenceModal')).show();
@@ -1339,6 +1370,30 @@
                     </div>
                 `;
                             }
+                            
+                            //συνάρτηση που καλείται όταν αλλάζει ο τύπος προτίμησης
+                            function handlePreferenceTypeChange() {
+                                const preferenceType = document.getElementById('preferenceType').value;
+                                const weightInput = document.getElementById('preferenceWeight');
+                                const weightDisplay = document.getElementById('weight-display');
+
+                                if (preferenceType === 'REQUIREMENT') {
+                                    //όταν είναι απαιτητική, θέτουμε βαρύτητα 10 και κάνουμε disable
+                                    weightInput.value = 10;
+                                    weightInput.disabled = true;
+                                    weightDisplay.textContent = '10';
+                                } else {
+                                    //όταν είναι προτίμηση, ενεργοποιούμε το slider
+                                    weightInput.disabled = false;
+                                    //αν η τιμή είναι 10, την αλλάζουμε σε 5 (default)
+                                    if (weightInput.value === '10') {
+                                        weightInput.value = 5;
+                                        weightDisplay.textContent = '5';
+                                    }
+                                }
+                            }
+                            
+    
 
                             function handleAuthError() {
                                 localStorage.removeItem('token');

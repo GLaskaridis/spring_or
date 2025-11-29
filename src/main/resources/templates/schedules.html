@@ -366,7 +366,6 @@
                                             <th>Εξάμηνο</th>
                                             <th>Έτος</th>
                                             <th>Κατάσταση</th>
-                                            <th>Αναθέσεις</th>
                                             <th>Ημερομηνία Δημιουργίας</th>
                                             <th>Ενέργειες</th>
                                         </tr>
@@ -539,16 +538,34 @@
                     </div>
                     <div class="modal-body">
                         <p>Επιλέξτε τη νέα κατάσταση για τον χρονοπρογραμματισμό:</p>
+                            
+                        <input type="hidden" id="statusScheduleId">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Χρονοπρογραμματισμός</label>
+                            <div class="alert alert-secondary">
+                                <strong id="statusScheduleName"></strong>
+                            </div>
+                        </div>
 
+                        <!-- Εμφάνιση τρέχουσας κατάστασης -->
+                        <div class="mb-3">
+                            <label class="form-label">Τρέχουσα Κατάσταση</label>
+                            <div class="alert alert-info">
+                                <span id="currentStatus"></span>
+                            </div>
+                        </div>
+                        
                         <div class="mb-3">
                             <label for="newStatus" class="form-label">Νέα Κατάσταση</label>
                             <select class="form-select" id="newStatus">
+                                <option value="">Επιλέξτε κατάσταση...</option>
                                 <option value="ASSIGNMENT_PHASE">Φάση Ανάθεσης Μαθημάτων</option>
                                 <option value="REQUIREMENTS_PHASE">Φάση Παροχής Απαιτήσεων</option>
-                                <option value="EXECUTION">Εκτέλεση Αλγορίθμου</option>
+                                <option value="EXECUTION_PHASE">Εκτέλεση Αλγορίθμου</option> <!-- ΔΙΟΡΘΩΣΗ -->
                                 <option value="SOLUTION_FOUND">Λύση Βρέθηκε</option>
                                 <option value="SOLUTION_APPROVED">Λύση Εγκρίθηκε</option>
-                                <option value="COMPLETED">Ολοκληρώθηκε</option>
+                                <option value="TERMINATED">Ολοκληρώθηκε</option>
                             </select>
                         </div>
 
@@ -663,7 +680,7 @@
         });
 
         // Load schedules on page load
-        loadSchedules();
+        ///loadSchedules();
     });
 
     // Save schedule (create or update)
@@ -792,7 +809,7 @@
             $('#newStatus').val('');
 
             // Show status change modal
-            new bootstrap.Modal(document.getElementById('statusModal')).show();
+            new bootstrap.Modal(document.getElementById('statusChangeModal')).show();
         }
     }
 
@@ -868,7 +885,7 @@
                 showAlert('schedules-alert', data.message, 'success');
 
                 // Close modal and reload table
-                bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+                bootstrap.Modal.getInstance(document.getElementById('statusChangeModal')).hide();
                 schedulesTable.ajax.reload();
             } else {
                 showAlert('schedules-alert', data.message, 'danger');
@@ -989,55 +1006,58 @@
                     'warning');
             }, 10000); // 10 seconds warning
 
+            window.location.href = `/schedule-execution/execute/${scheduleId}`;
+       
+
             // Execute the algorithm
-            fetch(`/schedule-execution/execute/${scheduleId}`, {
-                method: 'GET',
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                clearTimeout(timeoutId);
-
-                if (response.redirected) {
-                    // Check if redirected to results or back to schedules
-                    if (response.url.includes('schedule-execution-result')) {
-                        // Success - go to results
-                        window.location.href = response.url;
-                    } else {
-                        // Redirected back to schedules (probably with error)
-                        window.location.href = response.url;
-                    }
-                } else if (response.ok) {
-                    // Direct success response
-                    return response.text().then(html => {
-                        if (html.includes('schedule-execution-result')) {
-                            // Results page returned
-                            document.open();
-                            document.write(html);
-                            document.close();
-                        } else {
-                            throw new Error('Unexpected response format');
-                        }
-                    });
-                } else {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-            })
-            .catch(error => {
-                clearTimeout(timeoutId);
-                console.error('Error executing algorithm:', error);
-
-                showAlert('schedules-alert', 
-                    '❌ Σφάλμα κατά την εκτέλεση του αλγορίθμου:<br>' +
-                    `<small>${error.message}</small><br><br>` +
-                    '💡 Παρακαλώ δοκιμάστε ξανά ή επικοινωνήστε με τον διαχειριστή.', 
-                    'danger');
-
-                // Re-enable the button
-                if (executeBtn) {
-                    executeBtn.disabled = false;
-                    executeBtn.innerHTML = '<i class="fas fa-play"></i> Εκτέλεση Αλγορίθμου';
-                }
-            });
+//            fetch(`/schedule-execution/execute/${scheduleId}`, {
+//                method: 'GET',
+//                credentials: 'same-origin'
+//            })
+//            .then(response => {
+//                clearTimeout(timeoutId);
+//
+//                if (response.redirected) {
+//                    // Check if redirected to results or back to schedules
+//                    if (response.url.includes('schedule-execution-result')) {
+//                        // Success - go to results
+//                        window.location.href = response.url;
+//                    } else {
+//                        // Redirected back to schedules (probably with error)
+//                        window.location.href = response.url;
+//                    }
+//                } else if (response.ok) {
+//                    // Direct success response
+//                    return response.text().then(html => {
+//                        if (html.includes('schedule-execution-result')) {
+//                            // Results page returned
+//                            document.open();
+//                            document.write(html);
+//                            document.close();
+//                        } else {
+//                            throw new Error('Unexpected response format');
+//                        }
+//                    });
+//                } else {
+//                    throw new Error(`Server error: ${response.status}`);
+//                }
+//            })
+//            .catch(error => {
+//                clearTimeout(timeoutId);
+//                console.error('Error executing algorithm:', error);
+//
+//                showAlert('schedules-alert', 
+//                    '❌ Σφάλμα κατά την εκτέλεση του αλγορίθμου:<br>' +
+//                    `<small>${error.message}</small><br><br>` +
+//                    '💡 Παρακαλώ δοκιμάστε ξανά ή επικοινωνήστε με τον διαχειριστή.', 
+//                    'danger');
+//
+//                // Re-enable the button
+//                if (executeBtn) {
+//                    executeBtn.disabled = false;
+//                    executeBtn.innerHTML = '<i class="fas fa-play"></i> Εκτέλεση Αλγορίθμου';
+//                }
+//            });
         }
     }
 
@@ -1130,7 +1150,7 @@
     function executeAlgorithmWithFetch(scheduleId) {
         showAlert('schedules-alert', 'Εκτέλεση αλγορίθμου σε εξέλιξη...', 'info');
 
-        fetch(`/schedule-execution/execute/${scheduleId}`, {
+           fetch(`/schedule-execution/execute/${scheduleId}`, {
             method: 'GET',
             credentials: 'same-origin'
         })
@@ -1145,7 +1165,7 @@
                 return response.text().then(text => {
                     console.log('Response body:', text);
                     // If we get HTML back, it might be the results page
-                    if (text.includes('schedule-execution-result') || text.includes('Επιτυχής Εκτέλεση')) {
+                    if (text.includes('schedule-execution-result') || text.includes('Î•Ï€Î¹Ï„Ï…Ï‡Î®Ï‚ Î•ÎºÏ„Î­Î»ÎµÏƒÎ·')) {
                         // Parse the response and show results
                         document.open();
                         document.write(text);
@@ -1158,34 +1178,34 @@
         })
         .catch(error => {
             console.error('Error executing algorithm:', error);
-            showAlert('schedules-alert', 'Σφάλμα κατά την εκτέλεση του αλγορίθμου: ' + error.message, 'danger');
+            showAlert('schedules-alert', 'Î£Ï†Î¬Î»Î¼Î± ÎºÎ±Ï„Î¬ Ï„Î·Î½ ÎµÎºÏ„Î­Î»ÎµÏƒÎ· Ï„Î¿Ï… Î±Î»Î³Î¿ÏÎ¯Î¸Î¼Î¿Ï…: ' + error.message, 'danger');
 
             // Re-enable the button
             const executeBtn = document.querySelector(`[onclick="executeSchedule(${scheduleId})"]`);
             if (executeBtn) {
                 executeBtn.disabled = false;
-                executeBtn.innerHTML = '<i class="fas fa-play"></i> Εκτέλεση Αλγορίθμου';
+                executeBtn.innerHTML = '<i class="fas fa-play"></i> Î•ÎºÏ„Î­Î»ÎµÏƒÎ· Î‘Î»Î³Î¿ÏÎ¯Î¸Î¼Î¿Ï…';
             }
         });
     }
 
-    // Add this function to manually check a schedule's status
-    function checkScheduleStatus(scheduleId) {
-        fetch(`/schedule-execution/debug-status/${scheduleId}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log('Schedule Status Debug:', data);
-            alert(`Schedule: ${data.scheduleName}
-    Status: ${data.currentStatus}
-    Assignments: ${data.assignmentsCount}
-    Preferences: ${data.preferencesCount}
-    Rooms: ${data.roomsCount}
-    Ready for Execution: ${data.readyForExecution}`);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error checking status: ' + error.message);
-        });
+
+     function checkScheduleStatus(scheduleId) {
+            fetch(`/schedule-execution/debug-status/${scheduleId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Schedule Status Debug:', data);
+                alert(`Schedule: ${data.scheduleName}
+        Status: ${data.currentStatus}
+        Assignments: ${data.assignmentsCount}
+        Preferences: ${data.preferencesCount}
+        Rooms: ${data.roomsCount}
+        Ready for Execution: ${data.readyForExecution}`);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error checking status: ' + error.message);
+            });
     }
     
     function executeAlgorithm(scheduleId) {
@@ -1195,17 +1215,17 @@
         const executeBtn = document.querySelector(`[onclick="executeSchedule(${scheduleId})"]`);
         if (executeBtn) {
             executeBtn.disabled = true;
-            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Εκτέλεση...';
+            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Î•ÎºÏ„Î­Î»ÎµÏƒÎ·...';
         }
 
         console.log('Making request to execute endpoint...');
 
         // Execute the algorithm
         window.location.href = `/schedule-execution/execute/${scheduleId}`;
-    }
+   }
 
     // Update statistics
-    function updateStatistics(data) {
+     function updateStatistics(data) {
         const total = data.length;
         const active = data.filter(s => s.active !== false).length;
         const inProgress = data.filter(s =>
@@ -1224,7 +1244,7 @@
     }
 
     // Get status badge HTML
-    function getStatusBadge(status) {
+     function getStatusBadge(status) {
         const statusConfig = {
             'ASSIGNMENT_PHASE': {class: 'bg-primary', text: 'Ανάθεση Μαθημάτων', icon: 'phase-assignment'},
             'REQUIREMENTS_PHASE': {class: 'bg-warning', text: 'Παροχή Προτιμήσεων', icon: 'phase-requirements'},
@@ -1260,8 +1280,7 @@
         }
     }
 
-    // Show alert function
-    function showAlert(containerId, message, type) {
+     function showAlert(containerId, message, type) {
         const alertContainer = document.getElementById(containerId);
         if (!alertContainer) return;
 
