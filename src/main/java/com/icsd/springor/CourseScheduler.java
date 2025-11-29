@@ -28,7 +28,7 @@ import java.util.TreeMap;
 
 public class CourseScheduler {
 
-    // Static initialization block for OR-Tools
+    //Static initialization block for OR-Tools
     static {
         try {
             System.out.println("Initializing OR-Tools...");
@@ -41,12 +41,12 @@ public class CourseScheduler {
         }
     }
 
-    private static final int SLOTS_PER_DAY = 4; // 4 slots of 3 hours each
-    private static final int DAYS_PER_WEEK = 5;  // Monday to Friday
-    private static final int MAX_SLOTS_PER_YEAR = 3;  //wres gia ti xronia gia mia imera
-    private static final int HOURS_PER_SLOT = 3;  // 
+    private static final int SLOTS_PER_DAY = 4; //4 slots of 3 hours each
+    private static final int DAYS_PER_WEEK = 5;  //Monday to Friday
+    private static final int MAX_HOURS_PER_YEAR = 3;  //ώρες για τη χρονιά για μια ημέρα
+    private static final int HOURS_PER_SLOT = 3;  //
     private static final int TOTAL_SLOTS = SLOTS_PER_DAY * DAYS_PER_WEEK;
-    private static final int PREFERENCE_MULTIPLIER = 100; // Weight for preferences
+    private static final int PREFERENCE_MULTIPLIER = 100; //Weight for preferences
 
     public static class CourseAssignment {
 
@@ -100,14 +100,13 @@ public class CourseScheduler {
             CpModel model = new CpModel();
             System.out.println("CpModel created successfully");
 
-            // Έλεγχος εγκυρότητας εισόδου
             if (courses == null || courses.isEmpty()) {
-                System.out.println("❌ No courses provided");
+                System.out.println("âŒ No courses provided");
                 return new ArrayList<>();
             }
 
             if (rooms == null || rooms.isEmpty()) {
-                System.out.println("❌ No rooms provided");
+                System.out.println("âŒ No rooms provided");
                 return new ArrayList<>();
             }
 
@@ -161,7 +160,7 @@ public class CourseScheduler {
                 }
             }
 
-            // 3.room capacity constraint
+            //3.room capacity constraint
             for (int c = 0; c < courses.size(); c++) {
                 Course course = courses.get(c);
                 for (int r = 0; r < rooms.size(); r++) {
@@ -175,11 +174,10 @@ public class CourseScheduler {
                     }
                 }
             }
-            
 
             //4.new constraint: No courses from the same semester at the same time
             for (int t = 0; t < TOTAL_SLOTS; t++) {
-                // Group courses by semester
+                //Group courses by semester
                 Map<Integer, List<Integer>> courseBySemester = new HashMap<>();
                 for (int c = 0; c < courses.size(); c++) {
                     Course course = courses.get(c);
@@ -199,7 +197,6 @@ public class CourseScheduler {
                         }
                     }
                     if (!timeSlotVars.isEmpty()) {
-                        //μεγιστο 1 μαθημα ιδιου εξαμηνου ταυτοχρονα
                         model.addLessOrEqual(
                                 LinearExpr.sum(timeSlotVars.toArray(new IntVar[0])),
                                 1
@@ -208,7 +205,7 @@ public class CourseScheduler {
                 }
             }
 
-            // ΔΙΟΡΘΩΣΗ: Group courses by year χρησιμοποιώντας indexes
+            
             Map<Integer, List<Integer>> courseIndexesByYear = new HashMap<>();
             for (int c = 0; c < courses.size(); c++) {
                 Course course = courses.get(c);
@@ -223,20 +220,17 @@ public class CourseScheduler {
                 
                 courseIndexesByYear
                         .computeIfAbsent(year, k -> new ArrayList<>())
-                        .add(c); // Προσθέτουμε τον course index, όχι το course object
+                        .add(c); 
             }
 
             //5.maximum hours per year constraint
             for (Map.Entry<Integer, List<Integer>> entry : courseIndexesByYear.entrySet()) {
-                //For each day of week
                 for (int day = 0; day < DAYS_PER_WEEK; day++) {
                     List<IntVar> daySlotVars = new ArrayList<>();
 
-                    for (Integer courseIndex : entry.getValue()) { // Χρησιμοποιούμε άμεσα τον index
-                        // Έλεγχος ασφαλείας για τον course index
+                    for (Integer courseIndex : entry.getValue()) { 
                         if (courseIndex >= 0 && courseIndex < courses.size()) {
                             for (int r = 0; r < rooms.size(); r++) {
-                                //Get only slots for this specific day
                                 for (int t = day * SLOTS_PER_DAY; t < (day + 1) * SLOTS_PER_DAY; t++) {
                                     if (schedule[courseIndex][r][t] != null) {
                                         daySlotVars.add(schedule[courseIndex][r][t]);
@@ -244,14 +238,13 @@ public class CourseScheduler {
                                 }
                             }
                         } else {
-                            System.out.println("⚠️ Invalid course index: " + courseIndex + " (max: " + (courses.size() - 1) + ")");
+                            System.out.println("Invalid course index: " + courseIndex + " (max: " + (courses.size() - 1) + ")");
                         }
                     }
 
                     if (!daySlotVars.isEmpty()) {
-                        int maxSlotsPerDay = MAX_SLOTS_PER_YEAR;
+                        int maxSlotsPerDay = MAX_HOURS_PER_YEAR;
 
-                        //μεχρι 3 μαθηματα ιδιου ετους σε μια ημερα
                         model.addLessOrEqual(LinearExpr.sum(daySlotVars.toArray(new IntVar[0])), maxSlotsPerDay);
 
                         System.out.println("Max slots per day: " + maxSlotsPerDay);
@@ -259,11 +252,8 @@ public class CourseScheduler {
                     }
                 }
             }
-            
-            
-            //6. new constraint: no same teacher at the same slot of the same day...
 
-            // Apply teacher preferences
+            
             applyTeacherPreferences(model, schedule, courses, rooms);
 
             System.out.println("All constraints added, solving...");
@@ -272,15 +262,15 @@ public class CourseScheduler {
             CpSolverStatus status = solver.solve(model);
 
             if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
-                System.out.println("✅ Solution found!");
+                System.out.println("… Solution found!");
                 return extractSolution(solver, schedule, courses, rooms);
             } else {
-                System.out.println("❌ No solution found. Status: " + status);
+                System.out.println(" No solution found. Status: " + status);
                 return null;
             }
 
         } catch (Exception e) {
-            System.out.println("💥 Exception in CourseScheduler: " + e.getMessage());
+            System.out.println(" Exception in CourseScheduler: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to create schedule", e);
         }
@@ -291,62 +281,86 @@ public class CourseScheduler {
             return false;
         }
         
-        // Έλεγχος χωρητικότητας
         if (course.getCapacity() > room.getCapacity()) {
             return false;
         }
         
-        // Έλεγχος τύπου αίθουσας
         Course.TeachingHours.CourseComponent activeComponent = course.getActiveComponent();
         if (activeComponent == Course.TeachingHours.CourseComponent.LABORATORY) {
             return room.getType() == RoomType.LABORATORY;
         }
         
-        return true; // Θεωρία μπορεί να γίνει σε οποιαδήποτε αίθουσα
+        return true; 
     }
 
     private boolean isRoomAvailable(Room room, int timeSlot) {
-        // Απλοποιημένος έλεγχος - υποθέτουμε ότι όλες οι αίθουσες είναι διαθέσιμες
         return true;
     }
 
     private void applyTeacherPreferences(CpModel model, IntVar[][][] schedule, List<Course> courses, List<Room> rooms) {
         System.out.println("Applying teacher preferences...");
 
+        //λίστα με όλες τις μεταβλητές προτίμησης για το objective function
+        List<IntVar> allPreferenceVars = new ArrayList<>();
+        List<Integer> allPreferenceWeights = new ArrayList<>();
+
         for (int c = 0; c < courses.size(); c++) {
             Course course = courses.get(c);
 
-            if (course.hasTimePreference()) {
-                Course.TimePreference pref = course.getTimePreference();
-                DayOfWeek prefDay = pref.getPreferredDay();
-                int prefSlot = pref.getPreferredSlot();
-                int weight = pref.getWeight();
+            if (course.hasTimePreferences()) {
+                List<Course.TimePreference> prefs = course.getTimePreferences();
+                System.out.println("Course " + course.getCode() + " has " + prefs.size() + " preferences");
 
-                // Convert DayOfWeek to day index (0-4 for Monday-Friday)
-                int dayIndex = prefDay.getValue() - 1; // DayOfWeek.MONDAY = 1, we want 0
+                //επεξεργασία όλων των προτιμήσεων για αυτό το μάθημα
+                for (Course.TimePreference pref : prefs) {
+                    DayOfWeek prefDay = pref.getPreferredDay();
+                    int prefSlot = pref.getPreferredSlot();
+                    int weight = pref.getWeight();
 
-                if (dayIndex >= 0 && dayIndex < DAYS_PER_WEEK && prefSlot >= 0 && prefSlot < SLOTS_PER_DAY) {
-                    int timeSlot = dayIndex * SLOTS_PER_DAY + prefSlot;
+                    //μετατροπή DayOfWeek σε day index (0-4 για Monday-Friday)
+                    int dayIndex = prefDay.getValue() - 1;
 
-                    // Create preference variables for this course in the preferred time slot
-                    List<IntVar> preferredVars = new ArrayList<>();
-                    for (int r = 0; r < rooms.size(); r++) {
-                        if (schedule[c][r][timeSlot] != null) {
-                            preferredVars.add(schedule[c][r][timeSlot]);
+                    if (dayIndex >= 0 && dayIndex < DAYS_PER_WEEK && prefSlot >= 0 && prefSlot < SLOTS_PER_DAY) {
+                        int timeSlot = dayIndex * SLOTS_PER_DAY + prefSlot;
+
+                        //δημιουργία μεταβλητών προτίμησης για αυτό το course στο preferred time slot
+                        List<IntVar> preferredVars = new ArrayList<>();
+                        for (int r = 0; r < rooms.size(); r++) {
+                            if (schedule[c][r][timeSlot] != null) {
+                                preferredVars.add(schedule[c][r][timeSlot]);
+                            }
                         }
-                    }
 
-                    if (!preferredVars.isEmpty()) {
-                        // Soft constraint: encourage scheduling in preferred time
-                        IntVar preferenceSum = model.newIntVar(0, preferredVars.size(), "pref_" + c);
-                        model.addEquality(preferenceSum, LinearExpr.sum(preferredVars.toArray(new IntVar[0])));
+                        if (!preferredVars.isEmpty()) {
+                            //soft constraint: ενθάρρυνση προγραμματισμού στον preferred time
+                            IntVar preferenceSum = model.newIntVar(0, preferredVars.size(), 
+                                "pref_" + c + "_" + prefDay + "_" + prefSlot);
+                            model.addEquality(preferenceSum, LinearExpr.sum(preferredVars.toArray(new IntVar[0])));
 
-                        // Add to objective with weight
-                        System.out.println("Applied preference for course " + course.getCode() + 
-                                         " on " + prefDay + " slot " + prefSlot + " (weight: " + weight + ")");
+                            //προσθήκη στις λίστες για το objective function
+                            allPreferenceVars.add(preferenceSum);
+                            allPreferenceWeights.add(weight * PREFERENCE_MULTIPLIER);
+
+                            System.out.println("  Applied preference for course " + course.getCode() + 
+                                             " on " + prefDay + " slot " + prefSlot + " (weight: " + weight + ")");
+                        }
                     }
                 }
             }
+        }
+
+        //προσθήκη του objective function για μεγιστοποίηση της ικανοποίησης των προτιμήσεων
+        if (!allPreferenceVars.isEmpty()) {
+            //δημιουργία weighted sum: Σ(weight_i * preference_i)
+            IntVar[] prefVarsArray = allPreferenceVars.toArray(new IntVar[0]);
+            long[] weightsArray = allPreferenceWeights.stream().mapToLong(Integer::longValue).toArray();
+            
+            LinearExpr objective = LinearExpr.weightedSum(prefVarsArray, weightsArray);
+            model.maximize(objective);
+            
+            System.out.println("✅ Objective function added with " + allPreferenceVars.size() + " preference variables");
+        } else {
+            System.out.println("⚠️ No preferences found, no objective function added");
         }
     }
 
@@ -360,7 +374,7 @@ public class CourseScheduler {
                 for (int t = 0; t < TOTAL_SLOTS; t++) {
                     if (schedule[c][r][t] != null && solver.value(schedule[c][r][t]) == 1) {
                         int day = t / SLOTS_PER_DAY;
-                        DayOfWeek dayOfWeek = DayOfWeek.of(day + 1); // DayOfWeek starts from 1 (Monday)
+                        DayOfWeek dayOfWeek = DayOfWeek.of(day + 1); //DayOfWeek starts from 1 (Monday)
                         assignments.add(new CourseAssignment(course, room, dayOfWeek, t));
                     }
                 }

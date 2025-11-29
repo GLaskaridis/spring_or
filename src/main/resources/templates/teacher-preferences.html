@@ -759,8 +759,15 @@
                                     });
                                 });
 
-                                // Add ripple effect to buttons
                                 addRippleEffect();
+                                
+                                const daySelect = document.getElementById('preferredDay');
+                                const slotSelect = document.getElementById('preferredSlot');
+                                
+                                if (daySelect && slotSelect) {
+                                    daySelect.addEventListener('change', loadAvailableRoomsForDayAndTime);
+                                    slotSelect.addEventListener('change', loadAvailableRoomsForDayAndTime);
+                                }
                             }
 
                             async function loadPageData() {
@@ -908,7 +915,71 @@
                                     populateRoomSelectWithError();
                                 }
                             }
+                            
+                            
+                            async function loadAvailableRoomsForDayAndTime() {
+                                const daySelect = document.getElementById('preferredDay');
+                                const slotSelect = document.getElementById('preferredSlot');
+                                
+                                if (!daySelect || !slotSelect) {
+                                    return;
+                                }
+                                
+                                const day = daySelect.value;
+                                const slot = slotSelect.value;
+                                
+                                //αν δεν έχει επιλεχθεί μέρα ή ώρα, φόρτωσε όλες τις αίθουσες
+                                if (!day || !slot) {
+                                    loadAvailableRooms();
+                                    return;
+                                }
+                                
+                                //μετατροπή slot σε ώρες
+                                const timeSlots = {
+                                    '0': { start: '09:00:00', end: '12:00:00' },
+                                    '1': { start: '12:00:00', end: '15:00:00' },
+                                    '2': { start: '15:00:00', end: '18:00:00' },
+                                    '3': { start: '18:00:00', end: '21:00:00' }
+                                };
+                                
+                                const selectedSlot = timeSlots[slot];
+                                if (!selectedSlot) {
+                                    loadAvailableRooms();
+                                    return;
+                                }
+                                
+                                try {
+                                    //κλήση του νέου endpoint που φιλτράρει τις αίθουσες
+                                    const url = `/rooms/api/available?day=${day}&startTime=${selectedSlot.start}&endTime=${selectedSlot.end}`;
+                                    const response = await fetch(url, {
+                                        headers: {
+                                            'Authorization': 'Bearer ' + userToken,
+                                            'Content-Type': 'application/json'
+                                        }
+                                    });
+                                    
+                                    if (response.ok) {
+                                        availableRooms = await response.json();
+                                        console.log('Loaded available rooms for', day, selectedSlot, ':', availableRooms);
+                                        populateRoomSelect();
+                                        
+                                        //εμφάνιση μηνύματος αν δεν υπάρχουν διαθέσιμες αίθουσες
+                                        if (availableRooms.length === 0) {
+                                            showAlert('Δεν υπάρχουν διαθέσιμες αίθουσες για την επιλεγμένη μέρα και ώρα', 'warning');
+                                        }
+                                    } else {
+                                        console.warn('Failed to load filtered rooms');
+                                        availableRooms = [];
+                                        populateRoomSelectWithError();
+                                    }
+                                } catch (error) {
+                                    console.error('Error loading filtered rooms:', error);
+                                    availableRooms = [];
+                                    populateRoomSelectWithError();
+                                }
+                            }
 
+                            
                             function populateRoomSelect() {
                                 const roomSelect = document.getElementById('preferredRoom');
                                 if (!roomSelect)
@@ -1218,15 +1289,13 @@
                                         return;
                                     }
 
-                                    // Convert FormData to JSON with proper data types
                                     const preferenceData = {};
 
                                     if (assignmentId) {
                                         preferenceData.assignmentId = parseInt(assignmentId);
                                     }
 
-                                    // Handle string fields
-                                    if (formData.get('type'))
+                                   if (formData.get('type'))
                                         preferenceData.type = formData.get('type');
                                     if (formData.get('preferredDay'))
                                         preferenceData.preferredDay = formData.get('preferredDay');
@@ -1235,7 +1304,6 @@
                                     if (formData.get('notes'))
                                         preferenceData.notes = formData.get('notes');
 
-                                    // Handle numeric fields
                                     const preferenceWeight = formData.get('preferenceWeight');
                                     if (preferenceWeight)
                                         preferenceData.preferenceWeight = parseInt(preferenceWeight);
@@ -1261,11 +1329,9 @@
 
                                     let url, method;
                                     if (preferenceId) {
-                                        // Update existing preference
                                         url = `/api/preferences/${preferenceId}`;
                                         method = 'PUT';
                                     } else {
-                                        // Create new preference
                                         url = '/api/preferences';
                                         method = 'POST';
                                     }
@@ -1288,7 +1354,6 @@
                                             return;
                                         }
 
-                                        // Handle specific error messages from server
                                         let errorMessage = 'Σφάλμα κατά την αποθήκευση της προτίμησης';
                                         if (responseData && responseData.message) {
                                             if (responseData.message.includes('requirements phase')) {
@@ -1304,10 +1369,8 @@
                                         return;
                                     }
 
-                                    // Success - close modal and refresh data
                                     bootstrap.Modal.getInstance(document.getElementById('preferenceModal')).hide();
 
-                                    // Reload data
                                     await loadUserPreferences();
                                     renderAssignments();
                                     updateStatistics();
@@ -1343,7 +1406,6 @@
                                         throw new Error('Failed to delete preference');
                                     }
 
-                                    // Reload data
                                     await loadUserPreferences();
                                     renderAssignments();
                                     updateStatistics();
@@ -1470,7 +1532,6 @@
                                 });
                             }
 
-                            // Add CSS for ripple animation
                             const style = document.createElement('style');
                             style.textContent = `
                 @keyframes ripple {

@@ -1,6 +1,8 @@
 package com.icsd.springor.service;
 
 import com.icsd.springor.model.CourseSchedule;
+import static com.icsd.springor.model.CourseSchedule.ScheduleStatus.SOLUTION_APPROVED;
+import static com.icsd.springor.model.CourseSchedule.ScheduleStatus.SOLUTION_FOUND;
 import com.icsd.springor.repository.CourseScheduleRepository;
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,13 +127,14 @@ public class CourseScheduleService {
                 return target == CourseSchedule.ScheduleStatus.SOLUTION_FOUND
                         || target == CourseSchedule.ScheduleStatus.NO_SOLUTION_FOUND;
             case SOLUTION_FOUND:
-                return target == CourseSchedule.ScheduleStatus.SOLUTION_APPROVED
+                return target == CourseSchedule.ScheduleStatus.SOLUTION_APPROVED || target == CourseSchedule.ScheduleStatus.SOLUTION_FOUND
                         || target == CourseSchedule.ScheduleStatus.EXECUTION_PHASE;
             case NO_SOLUTION_FOUND:
                 return target == CourseSchedule.ScheduleStatus.REQUIREMENTS_PHASE
                         || target == CourseSchedule.ScheduleStatus.TERMINATED;
             case SOLUTION_APPROVED:
-                return false;
+                return target == CourseSchedule.ScheduleStatus.SOLUTION_APPROVED
+                        || target == CourseSchedule.ScheduleStatus.SOLUTION_FOUND;
             case TERMINATED:
                 return false;
             default:

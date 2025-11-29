@@ -3,7 +3,10 @@ package com.icsd.springor.service;
 import com.icsd.springor.model.Room;
 import com.icsd.springor.model.RoomType;
 import com.icsd.springor.repository.RoomRepository;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +28,8 @@ public class RoomService {
     }
 
     private boolean isValidRoom(Room room) {
-        // Implement validation logic here
-        return true; // Placeholder
+        //validation logic here
+        return true; 
     }
 
     public Room getRoomById(Long id) {
@@ -36,14 +39,12 @@ public class RoomService {
 
     public Room updateRoom(Long id, Room updatedRoom) {
         Room room = getRoomById(id);
-        // Update the fields
         room.setName(updatedRoom.getName());
         room.setBuilding(updatedRoom.getBuilding());
         room.setCapacity(updatedRoom.getCapacity());
         room.setType(updatedRoom.getType());
         room.setLocation(updatedRoom.getLocation());
         room.setAvailability(updatedRoom.getAvailability());
-        // Save the updated room
         return roomRepository.save(room);
     }
 
@@ -58,6 +59,27 @@ public class RoomService {
 
     public List<Room> getRoomsWithMinCapacity(Integer minCapacity) {
         return roomRepository.findByCapacityGreaterThanEqualAndActiveTrue(minCapacity);
+    }
+    
+    public List<Room> getAvailableRoomsByDayAndTime(DayOfWeek day, LocalTime startTime, LocalTime endTime) {
+        List<Room> allRooms = roomRepository.findAll();
+        
+        return allRooms.stream()
+            .filter(room -> isRoomAvailable(room, day, startTime, endTime))
+            .collect(Collectors.toList());
+    }
+    
+     private boolean isRoomAvailable(Room room, DayOfWeek day, LocalTime startTime, LocalTime endTime) {
+        if (room.getAvailability() == null || room.getAvailability().isEmpty()) {
+            return false;
+        }
+        
+        return room.getAvailability().stream()
+            .anyMatch(avail -> 
+                avail.getDay().equals(day) &&
+                !avail.getStartTime().isAfter(startTime) &&
+                !avail.getEndTime().isBefore(endTime)
+            );
     }
     
     

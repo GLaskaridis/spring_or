@@ -9,6 +9,7 @@ import com.icsd.springor.DTO.RoomDTO;
 import com.icsd.springor.model.Room;
 import com.icsd.springor.model.RoomAvailability;
 import com.icsd.springor.service.RoomService;
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -142,7 +143,7 @@ public class RoomController {
                         roomInfo.put("capacity", room.getCapacity() != null ? room.getCapacity() : 50);
                         roomInfo.put("type", room.getType() != null ? room.getType().toString() : "TEACHING");
                         roomInfo.put("location", room.getLocation() != null ? room.getLocation() : "");
-                        roomInfo.put("active", true); // Assuming all rooms are active
+                        roomInfo.put("active", true); 
                         return roomInfo;
                     })
                     .collect(Collectors.toList());
@@ -154,9 +155,7 @@ public class RoomController {
         }
     }
 
-    /**
-     * API endpoint για λήψη αιθουσών με φίλτρα
-     */
+    
     @GetMapping("/api/filter")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> getFilteredRoomsApi(
@@ -166,7 +165,6 @@ public class RoomController {
         try {
             List<Room> rooms = roomService.getAllRooms();
 
-            // Apply filters
             List<Room> filteredRooms = rooms.stream()
                     .filter(room -> building == null || building.isEmpty()
                     || (room.getBuilding() != null && room.getBuilding().contains(building)))
@@ -195,9 +193,6 @@ public class RoomController {
         }
     }
 
-    /**
-     * API endpoint για λήψη συγκεκριμένης αίθουσας
-     */
     @GetMapping("/api/{id}")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getRoomByIdApi(@PathVariable Long id) {
@@ -229,6 +224,44 @@ public class RoomController {
             return ResponseEntity.ok(roomInfo);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+    
+   
+    @GetMapping("/api/available")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getAvailableRoomsApi(
+            @RequestParam String day,
+            @RequestParam String startTime,
+            @RequestParam String endTime) {
+        try {
+            //μετατροπή string σε DayOfWeek και LocalTime
+            java.time.DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.toUpperCase());
+            LocalTime start = LocalTime.parse(startTime);
+            LocalTime end = LocalTime.parse(endTime);
+            
+            //λήψη διαθέσιμων αιθουσών
+            List<Room> availableRooms = roomService.getAvailableRoomsByDayAndTime(dayOfWeek, start, end);
+            
+            //μετατροπή σε map για json response
+            List<Map<String, Object>> roomData = availableRooms.stream()
+                    .map(room -> {
+                        Map<String, Object> roomInfo = new HashMap<>();
+                        roomInfo.put("id", room.getId());
+                        roomInfo.put("name", room.getName() != null ? room.getName() : "Αίθουσα " + room.getId());
+                        roomInfo.put("building", room.getBuilding() != null ? room.getBuilding() : "Κτήριο A");
+                        roomInfo.put("capacity", room.getCapacity() != null ? room.getCapacity() : 50);
+                        roomInfo.put("type", room.getType() != null ? room.getType().toString() : "TEACHING");
+                        roomInfo.put("location", room.getLocation() != null ? room.getLocation() : "");
+                        roomInfo.put("active", true);
+                        return roomInfo;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(roomData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.ok(new ArrayList<>());
         }
     }
 

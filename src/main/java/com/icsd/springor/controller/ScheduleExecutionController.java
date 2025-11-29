@@ -68,29 +68,31 @@ public class ScheduleExecutionController {
             CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
             System.out.println("Schedule: " + schedule.getName() + " (Status: " + schedule.getStatus() + ")");
 
-            // Status check
-            if (schedule.getStatus() != CourseSchedule.ScheduleStatus.EXECUTION_PHASE) {
-                String errorMsg = "Wrong status: " + schedule.getStatus();
+
+            // Έλεγχος status - επιτρέπουμε execution_phase και solution_found (για επανεκτέλεση)
+            if (schedule.getStatus() != CourseSchedule.ScheduleStatus.EXECUTION_PHASE 
+                && schedule.getStatus() != CourseSchedule.ScheduleStatus.SOLUTION_FOUND) {
+                String errorMsg = "Λάθος status: " + schedule.getStatus() + ". Πρέπει να είναι execution_phase ή solution_found.";
                 System.out.println("ERROR: " + errorMsg);
                 redirectAttributes.addFlashAttribute("error", errorMsg);
                 return "redirect:/schedules";
             }
-            System.out.println("✓ Status check passed");
-
+            System.out.println("✓ status check passed");
+            
             // Get data
             List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
-            System.out.println("✓ Assignments loaded: " + assignments.size());
+            System.out.println(" Assignments loaded: " + assignments.size());
 
             List<TeacherPreferenceDTO> preferences = preferenceService.getPreferencesBySchedule(scheduleId);
-            System.out.println("✓ Preferences loaded: " + preferences.size());
+            System.out.println(" Preferences loaded: " + preferences.size());
 
             List<Room> rooms = roomService.getAllRooms();
-            System.out.println("✓ Rooms loaded: " + rooms.size());
+            System.out.println(" Rooms loaded: " + rooms.size());
 
             // Prepare courses
             System.out.println("?Preparing courses with preferences...");
             List<Course> coursesWithPreferences = prepareCoursesWithPreferences(assignments, preferences);
-            System.out.println("✓ Courses prepared: " + coursesWithPreferences.size());
+            System.out.println(" Courses prepared: " + coursesWithPreferences.size());
 
             // Execute algorithm
             System.out.println("Starting algorithm execution...");
@@ -113,13 +115,20 @@ public class ScheduleExecutionController {
                 System.out.println("SUCCESS: Solution found with " + result.size() + " assignments");
 
                 try {
-                    // Update status
+                    // Ενημέρωση status
                     System.out.println("Updating schedule status to SOLUTION_FOUND...");
                     scheduleService.changeScheduleStatus(scheduleId, CourseSchedule.ScheduleStatus.SOLUTION_FOUND);
                     System.out.println("Status updated");
+                    
+                    // Αποθήκευση αποτελεσμάτων στη βάση
+                    System.out.println("Saving schedule results to database...");
+                    scheduleResultService.saveScheduleResults(schedule, result);
+                    System.out.println("Results saved successfully");
+                    
                 } catch (Exception statusException) {
-                    System.out.println("Warning: Could not update status but solution found: " + statusException.getMessage());
-                    // Continue anyway since we have a solution
+                    System.out.println("Warning: Could not update status or save results: " + statusException.getMessage());
+                    statusException.printStackTrace();
+                    // continue anyway since we have a solution
                 }
 
                 // Prepare model for results page
@@ -142,17 +151,16 @@ public class ScheduleExecutionController {
                     System.out.println("Status updated");
                 } catch (Exception statusException) {
                     System.out.println("Warning: Could not update status: " + statusException.getMessage());
-                    // Continue to show error message to user even if status update fails
                 }
 
                 // Create detailed error message
                 String errorMsg = "⚠️ Δεν βρέθηκε λύση για τον χρονοπρογραμματισμό!\n\n"
-                        + "?Πιθανές αιτίες:\n"
+                        + "❓ Πιθανές αιτίες:\n"
                         + "• Πολύ περιοριστικές προτιμήσεις καθηγητών\n"
                         + "• Ανεπαρκείς αίθουσες για τα μαθήματα\n"
                         + "• Συγκρούσεις στα χρονικά διαστήματα\n"
                         + "• Υπερβολικός φόρτος εργασίας σε συγκεκριμένες μέρες\n\n"
-                        + " Προτεινόμενες ενέργειες:\n"
+                        + "💡 Προτεινόμενες ενέργειες:\n"
                         + "• Ελέγξτε και τροποποιήστε τις προτιμήσεις των καθηγητών\n"
                         + "• Βεβαιωθείτε ότι υπάρχουν αρκετές αίθουσες\n"
                         + "• Μειώστε τον αριθμό των περιοριστικών προτιμήσεων";
@@ -181,94 +189,86 @@ public class ScheduleExecutionController {
         }
     }
 
-    private List<Course> prepareCoursesWithPreferences(List<AssignmentDTO> assignments,
+     private List<Course> prepareCoursesWithPreferences(List<AssignmentDTO> assignments,
             List<TeacherPreferenceDTO> preferences) {
 
-        System.out.println("🔄 Starting prepareCoursesWithPreferences...");
+        System.out.println("ðŸ”„ Starting prepareCoursesWithPreferences...");
 
-        // Group preferences by assignment
+        //Group preferences by assignment
         Map<Long, List<TeacherPreferenceDTO>> preferencesByAssignment = preferences.stream()
                 .collect(Collectors.groupingBy(TeacherPreferenceDTO::getAssignmentId));
 
-        System.out.println("✓ Grouped preferences by assignment: " + preferencesByAssignment.size() + " groups");
+        System.out.println("âœ“ Grouped preferences by assignment: " + preferencesByAssignment.size() + " groups");
 
         return assignments.stream().map(assignment -> {
-            System.out.println("📋 Processing assignment: " + assignment.getId()
+            System.out.println("ðŸ“‹ Processing assignment: " + assignment.getId()
                     + " for course: " + assignment.getCourseName());
 
             Course course = courseService.getCourseById(assignment.getCourseId());
 
-            // Debug course loading
-            System.out.println("  📚 Course loaded: " + course.getName());
-            System.out.println("  🔢 Course ID: " + course.getId());
-            System.out.println("  📅 Year: " + course.getYear());
-            System.out.println("  📆 Semester: " + course.getSemester());
-            System.out.println("  🏷️ Type: " + course.getType());
-            System.out.println("  👥 Capacity: " + course.getCapacity());
-            System.out.println("  ✅ Active: " + course.isActive());
+            //Debug course loading
+            System.out.println("  ðŸ“š Course loaded: " + course.getName());
+            System.out.println("  ðŸ”¢ Course ID: " + course.getId());
+            System.out.println("  ðŸ—“ Year: " + course.getYear());
+            System.out.println("  ðŸ“… Semester: " + course.getSemester());
+            System.out.println("  ðŸ·ï¸ Type: " + course.getType());
+            System.out.println("  ðŸ‘¥ Capacity: " + course.getCapacity());
+            System.out.println("  âœ… Active: " + course.isActive());
 
-            // Check teaching hours
+            //Check teaching hours
             Set<Course.TeachingHours> teachingHours = course.getTeachingHours();
             if (teachingHours == null) {
-                System.out.println("  ❌ WARNING: TeachingHours is NULL for course " + course.getName());
-                // Initialize empty set to prevent NullPointerException
+                System.out.println("  âŒ WARNING: TeachingHours is NULL for course " + course.getName());
+                //Initialize empty set to prevent NullPointerException
                 course.setTeachingHours(new HashSet<>());
             } else if (teachingHours.isEmpty()) {
-                System.out.println("  ⚠️ WARNING: TeachingHours is EMPTY for course " + course.getName());
+                System.out.println("  âš ï¸ WARNING: TeachingHours is EMPTY for course " + course.getName());
             } else {
-                System.out.println("  ✅ TeachingHours found: " + teachingHours.size() + " entries");
+                System.out.println("  âœ… TeachingHours found: " + teachingHours.size() + " entries");
                 for (Course.TeachingHours th : teachingHours) {
                     System.out.println("    - " + th.getComponent() + ": " + th.getHours() + " hours");
                 }
             }
 
-            // Get preferences for this assignment
+            //get preferences for this assignment
             List<TeacherPreferenceDTO> assignmentPrefs = preferencesByAssignment.get(assignment.getId());
 
             if (assignmentPrefs != null && !assignmentPrefs.isEmpty()) {
                 System.out.println("  🎯 Found " + assignmentPrefs.size() + " preferences for this assignment");
 
-                // Apply the strongest preference to the course
-                TeacherPreferenceDTO strongestPref = assignmentPrefs.stream()
-                        .max((p1, p2) -> Integer.compare(
-                        p1.getPreferenceWeight() != null ? p1.getPreferenceWeight() : 5,
-                        p2.getPreferenceWeight() != null ? p2.getPreferenceWeight() : 5
-                ))
-                        .orElse(assignmentPrefs.get(0));
-
-                System.out.println("  🏆 Strongest preference: Day=" + strongestPref.getPreferredDay()
-                        + ", Slot=" + strongestPref.getPreferredSlot()
-                        + ", Weight=" + strongestPref.getPreferenceWeight());
-
-                // Create TimePreference for the course using only day and slot
-                if (strongestPref.getPreferredDay() != null && strongestPref.getPreferredSlot() != null) {
-                    Course.TimePreference timePreference = new Course.TimePreference(
-                            strongestPref.getPreferredDay(),
-                            strongestPref.getPreferredSlot(),
-                            strongestPref.getPreferenceWeight() != null
-                            ? strongestPref.getPreferenceWeight() : 5
-                    );
-                    course.setTimePreference(timePreference);
-                    System.out.println("  ✅ TimePreference set successfully");
-                } else {
-                    System.out.println("  ⚠️ Preference has null day or slot, skipping");
+                //προσθήκη όλων των προτιμήσεων στο course (όχι μόνο της strongest)
+                for (TeacherPreferenceDTO pref : assignmentPrefs) {
+                    if (pref.getPreferredDay() != null && pref.getPreferredSlot() != null) {
+                        Course.TimePreference timePreference = new Course.TimePreference(
+                                pref.getPreferredDay(),
+                                pref.getPreferredSlot(),
+                                pref.getPreferenceWeight() != null ? pref.getPreferenceWeight() : 5
+                        );
+                        course.addTimePreference(timePreference);
+                        System.out.println("    ➕ Added preference: Day=" + pref.getPreferredDay()
+                                + ", Slot=" + pref.getPreferredSlot()
+                                + ", Weight=" + pref.getPreferenceWeight());
+                    } else {
+                        System.out.println("    ⚠️ Skipping preference with null day or slot");
+                    }
                 }
+                System.out.println("  ✅ Total preferences added: " + course.getTimePreferences().size());
             } else {
                 System.out.println("  ℹ️ No preferences found for this assignment");
             }
 
-            // Final validation
+            //Final validation
             if (course.getTeachingHours() == null) {
-                System.out.println("  🔧 Creating empty teachingHours set to prevent NPE");
+                System.out.println("  ðŸ”§ Creating empty teachingHours set to prevent NPE");
                 course.setTeachingHours(new HashSet<>());
             }
 
-            System.out.println("  ✅ Course preparation completed for: " + course.getName());
+            System.out.println("  âœ… Course preparation completed for: " + course.getName());
             return course;
         }).collect(Collectors.toList());
     }
 
-// Add this helper method to diagnose course loading issues
+    // Add this helper method to diagnose course loading issues
     @GetMapping("/debug-course/{courseId}")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> debugCourse(@PathVariable Long courseId) {
@@ -314,212 +314,210 @@ public class ScheduleExecutionController {
         }
     }
 
-    @GetMapping("/test-simple-algorithm")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> testSimpleAlgorithm() {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            System.out.println("\n=== TESTING ALGORITHM WITH COMPLETE SIMPLE DATA ===");
-
-            // Create simple test courses with teaching hours
-            List<Course> testCourses = new ArrayList<>();
-
-            // Course 1 - Theory only
-            Course course1 = new Course();
-            course1.setId(1L);
-            course1.setName("Test Course 1");
-            course1.setCode("TEST1");
-            course1.setYear(1);
-            course1.setSemester(1);
-            course1.setType(Course.CourseType.BASIC);
-            course1.setCapacity(50);
-            course1.setActive(true);
-
-            // Add teaching hours
-            Set<Course.TeachingHours> hours1 = new HashSet<>();
-            Course.TeachingHours theoryHours1 = new Course.TeachingHours();
-            theoryHours1.setComponent(Course.TeachingHours.CourseComponent.THEORY);
-            theoryHours1.setHours(3);
-            hours1.add(theoryHours1);
-            course1.setTeachingHours(hours1);
-
-            testCourses.add(course1);
-
-            // Course 2 - Theory + Lab with preference
-            Course course2 = new Course();
-            course2.setId(2L);
-            course2.setName("Test Course 2");
-            course2.setCode("TEST2");
-            course2.setYear(1);
-            course2.setSemester(1);
-            course2.setType(Course.CourseType.BASIC);
-            course2.setCapacity(30);
-            course2.setActive(true);
-
-            // Add teaching hours
-            Set<Course.TeachingHours> hours2 = new HashSet<>();
-            Course.TeachingHours theoryHours2 = new Course.TeachingHours();
-            theoryHours2.setComponent(Course.TeachingHours.CourseComponent.THEORY);
-            theoryHours2.setHours(2);
-            hours2.add(theoryHours2);
-
-            Course.TeachingHours labHours2 = new Course.TeachingHours();
-            labHours2.setComponent(Course.TeachingHours.CourseComponent.LABORATORY);
-            labHours2.setHours(2);
-            hours2.add(labHours2);
-            course2.setTeachingHours(hours2);
-
-            // Add a simple preference
-            Course.TimePreference pref = new Course.TimePreference(DayOfWeek.MONDAY, 0, 5);
-            course2.setTimePreference(pref);
-            testCourses.add(course2);
-
-            // Course 3 - Lab only with different preference
-            Course course3 = new Course();
-            course3.setId(3L);
-            course3.setName("Test Course 3");
-            course3.setCode("TEST3");
-            course3.setYear(1);
-            course3.setSemester(1);
-            course3.setType(Course.CourseType.ELECTIVE);
-            course3.setCapacity(25);
-            course3.setActive(true);
-
-            // Add teaching hours
-            Set<Course.TeachingHours> hours3 = new HashSet<>();
-            Course.TeachingHours labHours3 = new Course.TeachingHours();
-            labHours3.setComponent(Course.TeachingHours.CourseComponent.LABORATORY);
-            labHours3.setHours(3);
-            hours3.add(labHours3);
-            course3.setTeachingHours(hours3);
-
-            // Add a different preference
-            Course.TimePreference pref2 = new Course.TimePreference(DayOfWeek.TUESDAY, 1, 3);
-            course3.setTimePreference(pref2);
-            testCourses.add(course3);
-
-            System.out.println("Created " + testCourses.size() + " test courses with teaching hours");
-            for (Course c : testCourses) {
-                System.out.println("  " + c.getName() + ": " + c.getTeachingHours().size() + " teaching hour entries");
-                for (Course.TeachingHours th : c.getTeachingHours()) {
-                    System.out.println("    " + th.getComponent() + ": " + th.getHours() + " hours");
-                }
-            }
-
-            // Get real rooms from database
-            List<Room> rooms = roomService.getAllRooms();
-            if (rooms.isEmpty()) {
-                // Create test rooms if none exist
-                Room testRoom1 = new Room();
-                testRoom1.setId(1L);
-                testRoom1.setName("Test Room 1");
-                testRoom1.setCapacity(50);
-                testRoom1.setActive(true);
-                rooms.add(testRoom1);
-
-                Room testRoom2 = new Room();
-                testRoom2.setId(2L);
-                testRoom2.setName("Test Room 2");
-                testRoom2.setCapacity(30);
-                testRoom2.setActive(true);
-                rooms.add(testRoom2);
-            }
-
-            System.out.println("Using " + rooms.size() + " rooms");
-
-            // Test the algorithm
-            CourseScheduler scheduler = new CourseScheduler();
-            long startTime = System.currentTimeMillis();
-            List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(testCourses, rooms);
-            long endTime = System.currentTimeMillis();
-
-            response.put("success", true);
-            response.put("executionTimeMs", endTime - startTime);
-            response.put("coursesInput", testCourses.size());
-            response.put("roomsInput", rooms.size());
-
-            if (result != null) {
-                response.put("resultSize", result.size());
-                response.put("resultEmpty", result.isEmpty());
-                response.put("hasResult", !result.isEmpty());
-
-                System.out.println("Simple test result: " + result.size() + " assignments");
-
-                // Add detailed results
-                List<Map<String, Object>> assignments = new ArrayList<>();
-                for (CourseScheduler.CourseAssignment ca : result) {
-                    Map<String, Object> assignment = new HashMap<>();
-                    assignment.put("course", ca.course.getName());
-                    assignment.put("room", ca.room.getName());
-                    assignment.put("day", ca.day.toString());
-                    assignment.put("slot", ca.slot);
-                    assignment.put("startTime", ca.startTime.toString());
-                    assignment.put("endTime", ca.endTime.toString());
-                    assignments.add(assignment);
-
-                    System.out.println("  " + ca.course.getName() + " -> " + ca.room.getName()
-                            + " on " + ca.day + " at slot " + ca.slot);
-                }
-                response.put("assignments", assignments);
-
-            } else {
-                response.put("resultSize", 0);
-                response.put("resultEmpty", true);
-                response.put("hasResult", false);
-                System.out.println("Simple test failed - no result");
-            }
-
-            // Add course details to response
-            List<Map<String, Object>> courseDetails = new ArrayList<>();
-            for (Course c : testCourses) {
-                Map<String, Object> courseInfo = new HashMap<>();
-                courseInfo.put("name", c.getName());
-                courseInfo.put("id", c.getId());
-                courseInfo.put("year", c.getYear());
-                courseInfo.put("semester", c.getSemester());
-                courseInfo.put("capacity", c.getCapacity());
-                courseInfo.put("type", c.getType().toString());
-
-                // Teaching hours details
-                List<Map<String, Object>> teachingHoursDetails = new ArrayList<>();
-                for (Course.TeachingHours th : c.getTeachingHours()) {
-                    Map<String, Object> thInfo = new HashMap<>();
-                    thInfo.put("component", th.getComponent().toString());
-                    thInfo.put("hours", th.getHours());
-                    teachingHoursDetails.add(thInfo);
-                }
-                courseInfo.put("teachingHours", teachingHoursDetails);
-
-                if (c.getTimePreference() != null) {
-                    Course.TimePreference tp = c.getTimePreference();
-                    courseInfo.put("preference", Map.of(
-                            "day", tp.getPreferredDay().toString(),
-                            "slot", tp.getPreferredSlot(),
-                            "weight", tp.getWeight()
-                    ));
-                } else {
-                    courseInfo.put("preference", null);
-                }
-                courseDetails.add(courseInfo);
-            }
-            response.put("testCourses", courseDetails);
-
-            System.out.println("=== SIMPLE TEST WITH COMPLETE DATA COMPLETE ===\n");
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            System.out.println("Simple test failed with exception: " + e.getMessage());
-            e.printStackTrace();
-
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            response.put("exceptionType", e.getClass().getSimpleName());
-
-            return ResponseEntity.ok(response);
-        }
-    }
+//    @GetMapping("/test-simple-algorithm")
+//    @ResponseBody
+//    public ResponseEntity<Map<String, Object>> testSimpleAlgorithm() {
+//        Map<String, Object> response = new HashMap<>();
+//
+//        try {
+//            System.out.println("\n=== TESTING ALGORITHM WITH COMPLETE SIMPLE DATA ===");
+//
+//            //Create simple test courses with teaching hours
+//            List<Course> testCourses = new ArrayList<>();
+//
+//            //Course 1 - Theory only
+//            Course course1 = new Course();
+//            course1.setId(1L);
+//            course1.setName("Test Course 1");
+//            course1.setCode("TEST1");
+//            course1.setYear(1);
+//            course1.setSemester(1);
+//            course1.setType(Course.CourseType.BASIC);
+//            course1.setCapacity(50);
+//            course1.setActive(true);
+//
+//            //Add teaching hours
+//            Set<Course.TeachingHours> hours1 = new HashSet<>();
+//            Course.TeachingHours theoryHours1 = new Course.TeachingHours();
+//            theoryHours1.setComponent(Course.TeachingHours.CourseComponent.THEORY);
+//            theoryHours1.setHours(3);
+//            hours1.add(theoryHours1);
+//            course1.setTeachingHours(hours1);
+//
+//            testCourses.add(course1);
+//
+//            //Course 2 - Theory + Lab with preference
+//            Course course2 = new Course();
+//            course2.setId(2L);
+//            course2.setName("Test Course 2");
+//            course2.setCode("TEST2");
+//            course2.setYear(1);
+//            course2.setSemester(1);
+//            course2.setType(Course.CourseType.BASIC);
+//            course2.setCapacity(30);
+//            course2.setActive(true);
+//
+//            //Add teaching hours
+//            Set<Course.TeachingHours> hours2 = new HashSet<>();
+//            Course.TeachingHours theoryHours2 = new Course.TeachingHours();
+//            theoryHours2.setComponent(Course.TeachingHours.CourseComponent.THEORY);
+//            theoryHours2.setHours(2);
+//            hours2.add(theoryHours2);
+//
+//            Course.TeachingHours labHours2 = new Course.TeachingHours();
+//            labHours2.setComponent(Course.TeachingHours.CourseComponent.LABORATORY);
+//            labHours2.setHours(2);
+//            hours2.add(labHours2);
+//            course2.setTeachingHours(hours2);
+//
+//            //Add a simple preference
+//            Course.TimePreference pref = new Course.TimePreference(DayOfWeek.MONDAY, 0, 5);
+//            course2.setTimePreference(pref);
+//            testCourses.add(course2);
+//
+//            //Course 3 - Lab only with different preference
+//            Course course3 = new Course();
+//            course3.setId(3L);
+//            course3.setName("Test Course 3");
+//            course3.setCode("TEST3");
+//            course3.setYear(1);
+//            course3.setSemester(1);
+//            course3.setType(Course.CourseType.ELECTIVE);
+//            course3.setCapacity(25);
+//            course3.setActive(true);
+//
+//            Set<Course.TeachingHours> hours3 = new HashSet<>();
+//            Course.TeachingHours labHours3 = new Course.TeachingHours();
+//            labHours3.setComponent(Course.TeachingHours.CourseComponent.LABORATORY);
+//            labHours3.setHours(3);
+//            hours3.add(labHours3);
+//            course3.setTeachingHours(hours3);
+//
+//            Course.TimePreference pref2 = new Course.TimePreference(DayOfWeek.TUESDAY, 1, 3);
+//            course3.setTimePreference(pref2);
+//            testCourses.add(course3);
+//
+//            System.out.println("Created " + testCourses.size() + " test courses with teaching hours");
+//            for (Course c : testCourses) {
+//                System.out.println("  " + c.getName() + ": " + c.getTeachingHours().size() + " teaching hour entries");
+//                for (Course.TeachingHours th : c.getTeachingHours()) {
+//                    System.out.println("    " + th.getComponent() + ": " + th.getHours() + " hours");
+//                }
+//            }
+//
+//            //Anaktisi dwmatiwn apo tin vasi
+//            List<Room> rooms = roomService.getAllRooms();
+//            if (rooms.isEmpty()) {
+//                //Test Rooms
+//                Room testRoom1 = new Room();
+//                testRoom1.setId(1L);
+//                testRoom1.setName("Test Room 1");
+//                testRoom1.setCapacity(50);
+//                testRoom1.setActive(true);
+//                rooms.add(testRoom1);
+//
+//                Room testRoom2 = new Room();
+//                testRoom2.setId(2L);
+//                testRoom2.setName("Test Room 2");
+//                testRoom2.setCapacity(30);
+//                testRoom2.setActive(true);
+//                rooms.add(testRoom2);
+//            }
+//
+//            System.out.println("Using " + rooms.size() + " rooms");
+//
+//            //Test the algorithm
+//            CourseScheduler scheduler = new CourseScheduler();
+//            long startTime = System.currentTimeMillis();
+//            List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(testCourses, rooms);
+//            long endTime = System.currentTimeMillis();
+//
+//            response.put("success", true);
+//            response.put("executionTimeMs", endTime - startTime);
+//            response.put("coursesInput", testCourses.size());
+//            response.put("roomsInput", rooms.size());
+//
+//            if (result != null) {
+//                response.put("resultSize", result.size());
+//                response.put("resultEmpty", result.isEmpty());
+//                response.put("hasResult", !result.isEmpty());
+//
+//                System.out.println("Simple test result: " + result.size() + " assignments");
+//
+//                //Add detailed results
+//                List<Map<String, Object>> assignments = new ArrayList<>();
+//                for (CourseScheduler.CourseAssignment ca : result) {
+//                    Map<String, Object> assignment = new HashMap<>();
+//                    assignment.put("course", ca.course.getName());
+//                    assignment.put("room", ca.room.getName());
+//                    assignment.put("day", ca.day.toString());
+//                    assignment.put("slot", ca.slot);
+//                    assignment.put("startTime", ca.startTime.toString());
+//                    assignment.put("endTime", ca.endTime.toString());
+//                    assignments.add(assignment);
+//
+//                    System.out.println("  " + ca.course.getName() + " -> " + ca.room.getName()
+//                            + " on " + ca.day + " at slot " + ca.slot);
+//                }
+//                response.put("assignments", assignments);
+//
+//            } else {
+//                response.put("resultSize", 0);
+//                response.put("resultEmpty", true);
+//                response.put("hasResult", false);
+//                System.out.println("Simple test failed - no result");
+//            }
+//
+//            //Add course details to response
+//            List<Map<String, Object>> courseDetails = new ArrayList<>();
+//            for (Course c : testCourses) {
+//                Map<String, Object> courseInfo = new HashMap<>();
+//                courseInfo.put("name", c.getName());
+//                courseInfo.put("id", c.getId());
+//                courseInfo.put("year", c.getYear());
+//                courseInfo.put("semester", c.getSemester());
+//                courseInfo.put("capacity", c.getCapacity());
+//                courseInfo.put("type", c.getType().toString());
+//
+//                //Teaching hours details
+//                List<Map<String, Object>> teachingHoursDetails = new ArrayList<>();
+//                for (Course.TeachingHours th : c.getTeachingHours()) {
+//                    Map<String, Object> thInfo = new HashMap<>();
+//                    thInfo.put("component", th.getComponent().toString());
+//                    thInfo.put("hours", th.getHours());
+//                    teachingHoursDetails.add(thInfo);
+//                }
+//                courseInfo.put("teachingHours", teachingHoursDetails);
+//
+//                if (c.getTimePreference() != null) {
+//                    Course.TimePreference tp = c.getTimePreference();
+//                    courseInfo.put("preference", Map.of(
+//                            "day", tp.getPreferredDay().toString(),
+//                            "slot", tp.getPreferredSlot(),
+//                            "weight", tp.getWeight()
+//                    ));
+//                } else {
+//                    courseInfo.put("preference", null);
+//                }
+//                courseDetails.add(courseInfo);
+//            }
+//            response.put("testCourses", courseDetails);
+//
+//            System.out.println("=== SIMPLE TEST WITH COMPLETE DATA COMPLETE ===\n");
+//
+//            return ResponseEntity.ok(response);
+//
+//        } catch (Exception e) {
+//            System.out.println("Simple test failed with exception: " + e.getMessage());
+//            e.printStackTrace();
+//
+//            response.put("success", false);
+//            response.put("error", e.getMessage());
+//            response.put("exceptionType", e.getClass().getSimpleName());
+//
+//            return ResponseEntity.ok(response);
+//        }
+//    }
 
     // Add a new endpoint to retry with relaxed constraints
     @GetMapping("/retry-with-relaxed/{scheduleId}")
@@ -530,7 +528,7 @@ public class ScheduleExecutionController {
             // or ignore some constraints and try again
 
             redirectAttributes.addFlashAttribute("info",
-                    "Επανάληψη με χαλαρότερους περιορισμούς δεν είναι ακόμη υλοποιημένη. "
+                    "Η επανάληψη με χαλαρότερους περιορισμούς δεν είναι ακόμη υλοποιημένη. "
                     + "Παρακαλώ τροποποιήστε τις προτιμήσεις μη αυτόματα.");
 
             return "redirect:/schedules";
@@ -641,140 +639,7 @@ public class ScheduleExecutionController {
         }
     }
 
-    // Add this test endpoint to try with relaxed constraints
-    @GetMapping("/test-relaxed-algorithm")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> testRelaxedAlgorithm() {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            System.out.println("\n=== TESTING WITH RELAXED CONSTRAINTS ===");
-
-            // Create test courses with DIFFERENT semesters to avoid same-semester constraint
-            List<Course> testCourses = new ArrayList<>();
-
-            // Course 1 - Semester 1
-            Course course1 = new Course();
-            course1.setId(1L);
-            course1.setName("Test Course 1");
-            course1.setCode("TEST1");
-            course1.setYear(1);
-            course1.setSemester(1);  // Semester 1
-            course1.setType(Course.CourseType.BASIC);
-            course1.setCapacity(30);  // Smaller capacity
-            course1.setActive(true);
-
-            Set<Course.TeachingHours> hours1 = new HashSet<>();
-            Course.TeachingHours theoryHours1 = new Course.TeachingHours();
-            theoryHours1.setComponent(Course.TeachingHours.CourseComponent.THEORY);
-            theoryHours1.setHours(3);
-            hours1.add(theoryHours1);
-            course1.setTeachingHours(hours1);
-
-            testCourses.add(course1);
-
-            // Course 2 - Semester 2 (different semester!)
-            Course course2 = new Course();
-            course2.setId(2L);
-            course2.setName("Test Course 2");
-            course2.setCode("TEST2");
-            course2.setYear(1);
-            course2.setSemester(2);  // Semester 2
-            course2.setType(Course.CourseType.BASIC);
-            course2.setCapacity(25);
-            course2.setActive(true);
-
-            Set<Course.TeachingHours> hours2 = new HashSet<>();
-            Course.TeachingHours theoryHours2 = new Course.TeachingHours();
-            theoryHours2.setComponent(Course.TeachingHours.CourseComponent.THEORY);
-            theoryHours2.setHours(2);
-            hours2.add(theoryHours2);
-            course2.setTeachingHours(hours2);
-
-            // Weak preference (weight = 1)
-            Course.TimePreference pref = new Course.TimePreference(DayOfWeek.MONDAY, 0, 1);
-            course2.setTimePreference(pref);
-            testCourses.add(course2);
-
-            // Only 2 courses to make it easier
-            System.out.println("Created " + testCourses.size() + " test courses with different semesters");
-            for (Course c : testCourses) {
-                System.out.println("  " + c.getName() + ": Semester " + c.getSemester()
-                        + ", " + c.getTeachingHours().size() + " teaching hour entries");
-            }
-
-            // Get rooms
-            List<Room> rooms = roomService.getAllRooms();
-            if (rooms.isEmpty()) {
-                Room testRoom1 = new Room();
-                testRoom1.setId(1L);
-                testRoom1.setName("Test Room 1");
-                testRoom1.setCapacity(50);
-                testRoom1.setActive(true);
-                rooms.add(testRoom1);
-            }
-
-            // Take only first 3 rooms to make it simpler
-            if (rooms.size() > 3) {
-                rooms = rooms.subList(0, 3);
-            }
-
-            System.out.println("Using " + rooms.size() + " rooms");
-
-            // Test the algorithm
-            CourseScheduler scheduler = new CourseScheduler();
-            long startTime = System.currentTimeMillis();
-            List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(testCourses, rooms);
-            long endTime = System.currentTimeMillis();
-
-            response.put("success", true);
-            response.put("executionTimeMs", endTime - startTime);
-            response.put("coursesInput", testCourses.size());
-            response.put("roomsInput", rooms.size());
-            response.put("testScenario", "Different semesters, weak preferences, fewer courses");
-
-            if (result != null) {
-                response.put("resultSize", result.size());
-                response.put("resultEmpty", result.isEmpty());
-                response.put("hasResult", !result.isEmpty());
-
-                System.out.println("Relaxed test result: " + result.size() + " assignments");
-
-                List<Map<String, Object>> assignments = new ArrayList<>();
-                for (CourseScheduler.CourseAssignment ca : result) {
-                    Map<String, Object> assignment = new HashMap<>();
-                    assignment.put("course", ca.course.getName());
-                    assignment.put("room", ca.room.getName());
-                    assignment.put("day", ca.day.toString());
-                    assignment.put("slot", ca.slot);
-                    assignment.put("startTime", ca.startTime.toString());
-                    assignment.put("endTime", ca.endTime.toString());
-                    assignments.add(assignment);
-
-                    System.out.println("  " + ca.course.getName() + " -> " + ca.room.getName()
-                            + " on " + ca.day + " at slot " + ca.slot);
-                }
-                response.put("assignments", assignments);
-
-            } else {
-                response.put("resultSize", 0);
-                response.put("resultEmpty", true);
-                response.put("hasResult", false);
-                System.out.println("Relaxed test still failed");
-            }
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            System.out.println("Relaxed test failed: " + e.getMessage());
-            e.printStackTrace();
-
-            response.put("success", false);
-            response.put("error", e.getMessage());
-
-            return ResponseEntity.ok(response);
-        }
-    }
+    
 
 // Add a minimal test with just 1 course
     @GetMapping("/test-minimal-algorithm")
@@ -1057,7 +922,6 @@ public class ScheduleExecutionController {
         }
     }
 
-    // Add this debug endpoint to your ScheduleExecutionController
     @GetMapping("/debug-data/{scheduleId}")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> debugScheduleData(@PathVariable Long scheduleId) {
@@ -1119,7 +983,7 @@ public class ScheduleExecutionController {
                             "code", course.getCode(),
                             "year", course.getYear(),
                             "semester", course.getSemester(),
-                            "hasTimePreference", course.getTimePreference() != null
+                            "hasTimePreference", course.getTimePreferences() != null
                     ));
                 } else {
                     assignmentInfo.put("courseLoadError", courseException != null ? courseException.getMessage() : "Unknown error");
@@ -1186,13 +1050,14 @@ public class ScheduleExecutionController {
                     System.out.println("  Code: " + c.getCode());
                     System.out.println("  Year: " + c.getYear());
                     System.out.println("  Semester: " + c.getSemester());
-                    System.out.println("  Has Time Preference: " + (c.getTimePreference() != null));
+                    System.out.println("  Has Time Preference: " + (c.getTimePreferences() != null));
 
-                    if (c.getTimePreference() != null) {
-                        Course.TimePreference tp = c.getTimePreference();
-                        System.out.println("    Preferred Day: " + tp.getPreferredDay());
-                        System.out.println("    Preferred Slot: " + tp.getPreferredSlot());
-                        System.out.println("    Weight: " + tp.getWeight());
+                    if (c.getTimePreferences() != null) {
+                        for (Course.TimePreference tp : c.getTimePreferences()){
+                            System.out.println("    Preferred Day: " + tp.getPreferredDay());
+                            System.out.println("    Preferred Slot: " + tp.getPreferredSlot());
+                            System.out.println("    Weight: " + tp.getWeight());
+                        }
                     }
 
                     Map<String, Object> courseInfo = new HashMap<>();
@@ -1202,13 +1067,15 @@ public class ScheduleExecutionController {
                     courseInfo.put("year", c.getYear());
                     courseInfo.put("semester", c.getSemester());
 
-                    if (c.getTimePreference() != null) {
-                        Course.TimePreference tp = c.getTimePreference();
+                    if (c.getTimePreferences() != null) {
+                        for (Course.TimePreference tp : c.getTimePreferences()){
+                        
                         courseInfo.put("timePreference", Map.of(
                                 "preferredDay", tp.getPreferredDay(),
                                 "preferredSlot", tp.getPreferredSlot(),
                                 "weight", tp.getWeight()
                         ));
+                        }
                     } else {
                         courseInfo.put("timePreference", null);
                     }
@@ -1283,11 +1150,13 @@ public class ScheduleExecutionController {
             if (!courses.isEmpty()) {
                 Course course = courses.get(0);
                 System.out.println("Testing with course: " + course.getName());
-                course.setTimePreference(new Course.TimePreference(
+                ArrayList<Course.TimePreference> list = new ArrayList<>();
+                list.add(new Course.TimePreference(
                         DayOfWeek.FRIDAY, // προτιμώμενη μέρα
                         0, // πρώτο slot (9πμ-12μμ)
                         8 // βάρος προτίμησης (1-10)
                 ));
+                course.setTimePreferences(list);
             }
 
             List<Room> rooms = roomService.getAllRooms();
@@ -1309,7 +1178,7 @@ public class ScheduleExecutionController {
         }
     }
 
-    // Approve a generated schedule
+    // Approve a generated schedule (View based)
     @PostMapping("/approve/{scheduleId}")
     public String approveSchedule(@PathVariable Long scheduleId,
             RedirectAttributes redirectAttributes) {
@@ -1341,29 +1210,24 @@ public class ScheduleExecutionController {
         try {
             CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
 
-            // Check if schedule has results to show
             if (schedule.getStatus() != CourseSchedule.ScheduleStatus.SOLUTION_FOUND
                     && schedule.getStatus() != CourseSchedule.ScheduleStatus.SOLUTION_APPROVED) {
                 model.addAttribute("error", "Δεν υπάρχουν αποτελέσματα για αυτό το χρονοδιάγραμμα");
                 return "error";
             }
 
-            // Get assignments and preferences to re-execute algorithm and get results
             List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
             List<TeacherPreferenceDTO> preferences = preferenceService.getPreferencesBySchedule(scheduleId);
             List<Course> coursesWithPreferences = prepareCoursesWithPreferences(assignments, preferences);
             List<Room> rooms = roomService.getAllRooms();
 
-            // Re-execute algorithm to get results
             CourseScheduler scheduler = new CourseScheduler();
             List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(coursesWithPreferences, rooms);
 
             if (result != null && !result.isEmpty()) {
-                // Create enhanced assignment objects for the template
                 List<Map<String, Object>> enhancedAssignments = new ArrayList<>();
 
                 for (CourseScheduler.CourseAssignment ca : result) {
-                    // Find the original assignment to get teacher info
                     AssignmentDTO originalAssignment = assignments.stream()
                             .filter(a -> a.getCourseId().equals(ca.course.getId()))
                             .findFirst()
@@ -1396,20 +1260,18 @@ public class ScheduleExecutionController {
                 return "schedule-execution-result";
 
             } else {
-                model.addAttribute("error", "Δεν ήταν δυνατή η ανάκτηση των αποτελεσμάτων.");
+                model.addAttribute("error", "Δεν ήταν δυνατή η ανάκτηση αποτελεσμάτων.");
                 return "error";
             }
 
         } catch (Exception e) {
             System.out.println("Error in viewScheduleResults: " + e.getMessage());
             e.printStackTrace();
-            model.addAttribute("error", "Σφάλμα κατά τη φόρτωση των αποτελεσμάτων: " + e.getMessage());
+            model.addAttribute("error", "Σφάλμα κατά τη φόρτωση αποτελεσμάτων: " + e.getMessage());
             return "error";
         }
     }
     
-    
-
     @GetMapping("/debug/{scheduleId}")
     public String debugScheduleExecution(@PathVariable Long scheduleId, Model model) {
         try {
@@ -1421,10 +1283,8 @@ public class ScheduleExecutionController {
             List<Course> courses = courseService.getAllCourses();
             List<Room> rooms = roomService.getAllRooms();
 
-            // Prepare courses with preferences
             List<Course> coursesWithPreferences = prepareCoursesWithPreferences(assignments, preferences);
 
-            // Debug information
             model.addAttribute("schedule", schedule);
             model.addAttribute("assignments", assignments);
             model.addAttribute("preferences", preferences);
@@ -1432,7 +1292,6 @@ public class ScheduleExecutionController {
             model.addAttribute("coursesWithPreferences", coursesWithPreferences);
             model.addAttribute("rooms", rooms);
 
-            // Try to execute algorithm
             try {
                 CourseScheduler scheduler = new CourseScheduler();
                 List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(coursesWithPreferences, rooms);
@@ -1483,17 +1342,15 @@ public class ScheduleExecutionController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
-
+    
     @GetMapping("/results/{scheduleId}")
-    public String viewResults(@PathVariable Long scheduleId, Model model) {
+    public String viewResults(@PathVariable Long scheduleId, Model model, RedirectAttributes redirectAttributes) {
         CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
 
+        // Αν δεν υπάρχουν αποθηκευμένα αποτελέσματα, εκτέλεσε ξανά τον αλγόριθμο
         if (!scheduleResultService.hasScheduleResults(scheduleId)) {
-            model.addAttribute("error", "");
-            model.addAttribute("schedule", schedule);
-            model.addAttribute("assignments", null);  // Πρόσθεσα αυτό
-            model.addAttribute("success", false);
-            return "schedule-execution-result";
+            redirectAttributes.addFlashAttribute("info", "Δεν υπάρχουν αποθηκευμένα αποτελέσματα. Εκτέλεση αλγορίθμου...");
+            return "redirect:/schedule-execution/execute/" + scheduleId;
         }
 
         List<ScheduleResult> results = scheduleResultService.getScheduleResults(scheduleId);
@@ -1502,7 +1359,7 @@ public class ScheduleExecutionController {
         for (ScheduleResult result : results) {
             Map<String, Object> assignmentMap = new HashMap<>();
 
-            //πληροφορίες μαθήματος από το assignment
+            // Πληροφορίες μαθήματος από το assignment
             Assignment assignment = result.getAssignment();
             Course course = assignment.getCourse();
 
@@ -1531,9 +1388,56 @@ public class ScheduleExecutionController {
         model.addAttribute("schedule", schedule);
         model.addAttribute("assignments", assignmentMaps);
         model.addAttribute("success", true);
-        model.addAttribute("message", "βρέθηκε λύση με " + results.size() + " αναθέσεις");
+        model.addAttribute("message", "Βρέθηκε λύση με " + results.size() + " αναθέσεις");
 
         return "schedule-execution-result";
     }
 
+    // CHANGED URL TO Avoid Ambiguous Mapping with the method above
+    @PostMapping("/api/approve/{scheduleId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> approveScheduleJSON(@PathVariable Long scheduleId) {
+        System.out.println("\n=== APPROVE SCHEDULE START ===");
+        System.out.println("Schedule ID: " + scheduleId);
+        
+        try {
+            CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
+            
+            // Έλεγχος αν το πρόγραμμα έχει λύση
+            if (schedule.getStatus() != CourseSchedule.ScheduleStatus.SOLUTION_FOUND) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Το πρόγραμμα δεν έχει έγκυρη λύση. Status: " + schedule.getStatus());
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Έλεγχος αν υπάρχουν ήδη αποθηκευμένα αποτελέσματα
+            if (scheduleResultService.hasScheduleResults(scheduleId)) {
+                System.out.println("Τα αποτελέσματα έχουν ήδη αποθηκευτεί στη βάση");
+                
+                // Αλλαγή status σε approved
+                scheduleService.changeScheduleStatus(scheduleId, CourseSchedule.ScheduleStatus.SOLUTION_APPROVED);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "Το πρόγραμμα εγκρίθηκε επιτυχώς");
+                return ResponseEntity.ok(response);
+            }
+            
+            // Αν δεν υπάρχουν αποθηκευμένα αποτελέσματα
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Δεν υπάρχουν αποτελέσματα προς έγκριση. Παρακαλώ εκτελέστε πρώτα τον αλγόριθμο");
+            return ResponseEntity.badRequest().body(response);
+            
+        } catch (Exception e) {
+            System.out.println("Σφάλμα κατά την έγκριση: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Σφάλμα: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }

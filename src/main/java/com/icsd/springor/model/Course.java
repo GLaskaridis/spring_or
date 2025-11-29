@@ -20,6 +20,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "courses")
@@ -59,13 +61,11 @@ public class Course {
     @Column(nullable = false)
     private boolean active = true;
 
-    // Transient field για το ενεργό component (δεν αποθηκεύεται στη βάση)
     @Transient
     private TeachingHours.CourseComponent activeComponent;
 
-    // Transient field για τις προτιμήσεις χρόνου
-    @Transient
-    private TimePreference timePreference;
+   @Transient
+    private List<TimePreference> timePreferences = new ArrayList<>();
 
     public enum CourseType {
         BASIC, ELECTIVE
@@ -101,7 +101,7 @@ public class Course {
         @Column
         private int weight;
         
-        public TimePreference() {} // JPA requires empty constructor
+        public TimePreference() {} 
         
         public TimePreference(DayOfWeek preferredDay, int preferredSlot, int weight) {
             this.preferredDay = preferredDay;
@@ -166,35 +166,26 @@ public class Course {
         return getLabHours() > 0;
     }
 
-    /**
-     * Επιστρέφει το ενεργό component για χρήση στον αλγόριθμο
-     */
+   
     public TeachingHours.CourseComponent getActiveComponent() {
         if (activeComponent != null) {
             return activeComponent;
         }
         
-        // Default logic: αν έχει θεωρία, επέστρεψε θεωρία, αλλιώς εργαστήριο
         if (hasTheory()) {
             return TeachingHours.CourseComponent.THEORY;
         } else if (hasLab()) {
             return TeachingHours.CourseComponent.LABORATORY;
         }
         
-        // Fallback: θεωρία
         return TeachingHours.CourseComponent.THEORY;
     }
 
-    /**
-     * Ορίζει το ενεργό component
-     */
+    
     public void setActiveComponent(TeachingHours.CourseComponent activeComponent) {
         this.activeComponent = activeComponent;
     }
 
-    /**
-     * Επιστρέφει τις ώρες για το ενεργό component
-     */
     public int getActiveComponentHours() {
         TeachingHours.CourseComponent active = getActiveComponent();
         if (active == TeachingHours.CourseComponent.THEORY) {
@@ -205,16 +196,24 @@ public class Course {
         return 0;
     }
 
-    public TimePreference getTimePreference() {
-        return timePreference;
+    public List<TimePreference> getTimePreferences() {
+        return timePreferences;
+    }
+    
+
+    public void setTimePreferences(List<TimePreference> timePreferences) {
+        this.timePreferences = timePreferences;
+    }
+    
+    public void addTimePreference(TimePreference preference) {
+        if (this.timePreferences == null) {
+            this.timePreferences = new ArrayList<>();
+        }
+        this.timePreferences.add(preference);
     }
 
-    public void setTimePreference(TimePreference timePreference) {
-        this.timePreference = timePreference;
-    }
-
-    public boolean hasTimePreference() {
-        return timePreference != null;
+    public boolean hasTimePreferences() {
+        return timePreferences != null && !timePreferences.isEmpty();
     }
 
 
