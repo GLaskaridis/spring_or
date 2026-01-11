@@ -49,10 +49,10 @@ public class AssignmentService {
                                         Long scheduleId) {
         
         Course course = courseRepository.findById(courseId)
-            .orElseThrow(() -> new RuntimeException("Course not found with id: " + courseId));
+            .orElseThrow(() -> new RuntimeException("Το μάθημα δεν βρέθηκε με id: " + courseId));
         
         User teacher = userRepository.findById(teacherId)
-            .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
+            .orElseThrow(() -> new RuntimeException("Ο διδάσκων δεν βρέθηκε με id: " + teacherId));
         
         CourseSchedule schedule = null;
         if (scheduleId != null) {
@@ -91,9 +91,19 @@ public class AssignmentService {
         return assignmentRepository.findByScheduleId(scheduleId).size();
     }
     
+    // επιστρέφει λίστα με τα ids των μαθημάτων που έχουν ήδη ανατεθεί για συγκεκριμένο χρονοπρογραμματισμό
+    public List<Long> getAssignedCourseIdsBySchedule(Long scheduleId) {
+        if (scheduleId == null) {
+            return List.of();
+        }
+        return assignmentRepository.findByScheduleId(scheduleId).stream()
+            .map(assignment -> assignment.getCourse().getId())
+            .distinct()
+            .collect(Collectors.toList());
+    }
     
     
-   public List<AssignmentDTO> getFilteredAssignments(String search, Long scheduleId, 
+    public List<AssignmentDTO> getFilteredAssignments(String search, Long scheduleId, 
                                                      Long teacherId, Long courseId, 
                                                      String component) {
         List<Assignment> assignments = assignmentRepository.findAll();
@@ -101,7 +111,7 @@ public class AssignmentService {
         // Εφαρμογή φίλτρων
         if (scheduleId != null) {
             assignments = assignments.stream()
-                .filter(a -> a.getSchedule().getId().equals(scheduleId))
+                .filter(a -> a.getSchedule() != null && a.getSchedule().getId().equals(scheduleId))
                 .collect(Collectors.toList());
         }
         
@@ -165,15 +175,16 @@ public class AssignmentService {
     
     public AssignmentDTO updateAssignment(Long assignmentId, Long newTeacherId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
-            .orElseThrow(() -> new RuntimeException("Assignment not found with id: " + assignmentId));
+            .orElseThrow(() -> new RuntimeException("Η ανάθεση δεν βρέθηκε με id: " + assignmentId));
         
-        // Check if schedule allows modifications
-        if (assignment.getSchedule().getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE) {
-            throw new RuntimeException("Cannot modify assignments. Schedule is not in assignment phase.");
+        // έλεγχος αν το schedule επιτρέπει τροποποιήσεις
+        if (assignment.getSchedule() != null && 
+            assignment.getSchedule().getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE) {
+            throw new RuntimeException("Δεν είναι δυνατή η τροποποίηση. Ο χρονοπρογραμματισμός δεν είναι στη φάση ανάθεσης.");
         }
         
         User newTeacher = userRepository.findById(newTeacherId)
-            .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + newTeacherId));
+            .orElseThrow(() -> new RuntimeException("Ο διδάσκων δεν βρέθηκε με id: " + newTeacherId));
         
         assignment.setTeacher(newTeacher);
         Assignment savedAssignment = assignmentRepository.save(assignment);
@@ -190,28 +201,28 @@ public class AssignmentService {
     
     public void deleteAssignment(Long assignmentId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
-            .orElseThrow(() -> new RuntimeException("Assignment not found with id: " + assignmentId));
+            .orElseThrow(() -> new RuntimeException("Η ανάθεση δεν βρέθηκε με id: " + assignmentId));
         
-        // Check if schedule allows modifications
-        if (assignment.getSchedule().getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE) {
-            throw new RuntimeException("Cannot delete assignments. Schedule is not in assignment phase.");
+        // έλεγχος αν το schedule επιτρέπει τροποποιήσεις
+        if (assignment.getSchedule() != null && 
+            assignment.getSchedule().getStatus() != CourseSchedule.ScheduleStatus.ASSIGNMENT_PHASE) {
+            throw new RuntimeException("Δεν είναι δυνατή η διαγραφή. Ο χρονοπρογραμματισμός δεν είναι στη φάση ανάθεσης.");
         }
         
         assignmentRepository.delete(assignment);
     }
     
     
-    
     public boolean areAllCoursesAssigned(Long scheduleId) {
-        // Get all courses that should be assigned
+        // λήψη όλων των μαθημάτων που πρέπει να ανατεθούν
         List<Course> allCourses = courseRepository.findAll();
         List<Assignment> assignments = assignmentRepository.findActiveAssignmentsBySchedule(scheduleId);
         
-        // Check if every course component has an assignment
+        // έλεγχος αν κάθε στοιχείο μαθήματος έχει ανάθεση
         for (Course course : allCourses) {
             if (!course.isActive()) continue;
             
-            // Check if course has theory component and if it's assigned
+            // έλεγχος αν το μάθημα έχει θεωρία και αν έχει ανατεθεί
             boolean hasTheory = course.getTeachingHours().stream()
                 .anyMatch(th -> th.getComponent() == Course.TeachingHours.CourseComponent.THEORY);
             if (hasTheory) {
@@ -221,7 +232,7 @@ public class AssignmentService {
                 if (!theoryAssigned) return false;
             }
             
-            // Check if course has lab component and if it's assigned
+            // έλεγχος αν το μάθημα έχει εργαστήριο και αν έχει ανατεθεί
             boolean hasLab = course.getTeachingHours().stream()
                 .anyMatch(th -> th.getComponent() == Course.TeachingHours.CourseComponent.LABORATORY);
             if (hasLab) {
@@ -234,7 +245,6 @@ public class AssignmentService {
         
         return true;
     }
-    
     
     
     public List<AssignmentDTO> getRecentAssignments(int limit) {
@@ -332,14 +342,13 @@ public class AssignmentService {
         dto.setTeacherId(assignment.getTeacher().getId());
         dto.setTeacherName(assignment.getTeacher().getFullName());
         dto.setCourseComponent(assignment.getCourseComponent());
-        dto.setScheduleId(assignment.getSchedule().getId());
         
         if (assignment.getSchedule() != null) {
+            dto.setScheduleId(assignment.getSchedule().getId());
             dto.setScheduleName(assignment.getSchedule().getName());
             dto.setScheduleStatus(assignment.getSchedule().getStatus().toString());
         }
         
-
         dto.setActive(assignment.isActive());
         
         return dto;

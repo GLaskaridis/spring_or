@@ -1,1129 +1,938 @@
 <!DOCTYPE html>
 <html lang="el" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Διαχείριση Αναθέσεων Μαθημάτων</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
-    <style>
-        :root {
-            --primary-color: #1a365d;
-            --secondary-color: #2d3748;
-            --accent-color: #4299e1;
-            --success-color: #38a169;
-            --warning-color: #ed8936;
-            --danger-color: #e53e3e;
-            --light-bg: #f7fafc;
-            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --admin-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        body {
-            background-color: var(--light-bg);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .navbar {
-            background: var(--admin-gradient);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.6rem;
-        }
-
-        .sidebar {
-            min-height: calc(100vh - 76px);
-            background: white;
-            box-shadow: var(--card-shadow);
-            border-radius: 0.75rem;
-        }
-
-        .sidebar .nav-link {
-            color: var(--secondary-color);
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            margin: 0.25rem;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background: var(--admin-gradient);
-            color: white;
-            transform: translateX(8px);
-        }
-
-        .sidebar .nav-link i {
-            width: 20px;
-            margin-right: 12px;
-        }
-
-        .card {
-            border: none;
-            border-radius: 1rem;
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .card-header {
-            background: var(--admin-gradient);
-            color: white;
-            border-radius: 1rem 1rem 0 0 !important;
-            border: none;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: var(--admin-gradient);
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            border: none;
-            border-radius: 0.5rem;
-        }
-
-        .btn-warning {
-            background: var(--warning-color);
-            border: none;
-            border-radius: 0.5rem;
-        }
-
-        .btn-danger {
-            background: var(--danger-color);
-            border: none;
-            border-radius: 0.5rem;
-        }
-
-        .table-container {
-            border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: var(--card-shadow);
-        }
-
-        .table thead th {
-            background: var(--admin-gradient);
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-
-        .badge-assignment {
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            font-weight: 500;
-        }
-
-        .form-control, .form-select {
-            border-radius: 0.5rem;
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 0.2rem rgba(66, 153, 225, 0.25);
-        }
-
-        .fade-in {
-            animation: fadeIn 0.8s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .assignment-stats {
-            background: var(--admin-gradient);
-            color: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .assignment-stats h3 {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-
-        .assignment-stats p {
-            opacity: 0.9;
-            margin: 0;
-        }
-
-        .dropdown-toggle::after {
-            display: none;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: var(--danger-color);
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                margin-bottom: 2rem;
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Διαχείριση Αναθέσεων Μαθημάτων</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+        <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+        <style>
+            :root {
+                --primary-color: #1a365d;
+                --secondary-color: #2d3748;
+                --accent-color: #4299e1;
+                --success-color: #38a169;
+                --warning-color: #ed8936;
+                --danger-color: #e53e3e;
+                --light-bg: #f7fafc;
+                --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                --admin-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
-        }
-    </style>
-</head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-shield-alt me-2"></i>
-                Διαχείριση Συστήματος
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/dashboard">
-                            <i class="fas fa-home me-1"></i>
-                            Αρχική
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><h6 class="dropdown-header">Ειδοποιήσεις</h6></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-tasks text-success me-2"></i>Νέα ανάθεση ολοκληρώθηκε</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Ανάθεση χρειάζεται επιβεβαίωση</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-check text-info me-2"></i>Μάθημα ανατέθηκε επιτυχώς</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-shield me-1"></i>
-                            Διαχειριστής
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cogs me-2"></i>Ρυθμίσεις</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
 
-    <div class="container-fluid mt-4">
-        <div class="row">
-            
-            <!-- Sidebar -->
-            <div class="col-lg-3 col-md-4 mb-4">
-                <div class="sidebar p-3 fade-in">
-                    <nav class="nav flex-column">
-                        <a class="nav-link active" href="#dashboard">
-                            <i class="fas fa-tachometer-alt"></i>
-                            Επισκόπηση
-                        </a>
-                        <a class="nav-link" href="/teachers/list">
-                            <i class="fas fa-users"></i>
-                            Διαχείριση Χρηστών
-                        </a>
-                        <a class="nav-link" href="/courses/list">
-                            <i class="fas fa-book"></i>
-                            Διαχείριση Μαθημάτων
-                        </a>
-                        <a class="nav-link" href="/rooms/list">
-                            <i class="fas fa-door-open"></i>
-                            Διαχείριση Αιθουσών
-                        </a>
-                        <a class="nav-link" href="/admin/schedules">
-                            <i class="fas fa-calendar-alt"></i>
-                            Χρονοπρογραμματισμός
-                        </a>
-                        <a class="nav-link" href="/admin/assignments">
-                            <i class="fas fa-tasks"></i>
-                            Αναθέσεις Μαθημάτων
-                        </a>
-                        <a class="nav-link" href="#reports">
-                            <i class="fas fa-chart-bar"></i>
-                            Αναφορές & Στατιστικά
-                        </a>
-                        <a class="nav-link" href="#system-settings">
-                            <i class="fas fa-cogs"></i>
-                            Ρυθμίσεις Συστήματος
-                        </a>
-                    </nav>
+            body {
+                background-color: var(--light-bg);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            .navbar {
+                background: var(--admin-gradient);
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+
+            .navbar-brand {
+                font-weight: bold;
+                font-size: 1.6rem;
+            }
+
+            .sidebar {
+                min-height: calc(100vh - 76px);
+                background: white;
+                box-shadow: var(--card-shadow);
+                border-radius: 0.75rem;
+            }
+
+            .sidebar .nav-link {
+                color: var(--secondary-color);
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                margin: 0.25rem;
+                transition: all 0.3s ease;
+                font-weight: 500;
+            }
+
+            .sidebar .nav-link:hover,
+            .sidebar .nav-link.active {
+                background: var(--admin-gradient);
+                color: white;
+                transform: translateX(8px);
+            }
+
+            .sidebar .nav-link i {
+                width: 20px;
+                margin-right: 12px;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Διαχείριση Συστήματος
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/dashboard">
+                                <i class="fas fa-home me-1"></i>
+                                Αρχική
+                            </a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Ειδοποιήσεις</h6></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-tasks text-success me-2"></i>Νέα ανάθεση ολοκληρώθηκε</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Ανάθεση χρειάζεται επιβεβαίωση</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-check text-info me-2"></i>Μάθημα ανατέθηκε επιτυχώς</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-shield me-1"></i>
+                                Διαχειριστής
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cogs me-2"></i>Ρυθμίσεις</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
+                            </ul>
+                        </li>
+
+                    </ul>
                 </div>
             </div>
-            
+        </nav>
+        <div class="container-fluid mt-4">
+            <div class="row">
 
-            <!-- Main Content -->
-            <div class="col-lg-9 col-md-8">
-                <!-- Page Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
-                    <div>
-                        <h1 class="h3 mb-0">Διαχείριση Αναθέσεων Μαθημάτων</h1>
-                        <p class="text-muted">Ανάθεση μαθημάτων σε διδάσκοντες και διαχείριση υπαρχουσών αναθέσεων</p>
-                    </div>
-                    <div>
-                        <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#createScheduleModal">
-                            <i class="fas fa-calendar-plus me-2"></i>
-                            Νέος Χρονοπρογραμματισμός
-                        </button>
-                        <button class="btn btn-primary" id="addAssignmentBtn" data-bs-toggle="modal" data-bs-target="#assignmentModal">
-                            <i class="fas fa-plus me-2"></i>
-                            Νέα Ανάθεση
-                        </button>
+                <!-- Sidebar -->
+                <div class="col-lg-3 col-md-4 mb-4">
+                    <div class="sidebar p-3 fade-in">
+                        <nav class="nav flex-column">
+                            <a class="nav-link active" href="#dashboard">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Επισκόπηση
+                            </a>
+                            <a class="nav-link" href="/teachers/list">
+                                <i class="fas fa-users"></i>
+                                Διαχείριση Χρηστών
+                            </a>
+                            <a class="nav-link" href="/courses/list">
+                                <i class="fas fa-book"></i>
+                                Διαχείριση Μαθημάτων
+                            </a>
+                            <a class="nav-link" href="/rooms/list">
+                                <i class="fas fa-door-open"></i>
+                                Διαχείριση Αιθουσών
+                            </a>
+                            <a class="nav-link" href="/admin/schedules">
+                                <i class="fas fa-calendar-alt"></i>
+                                Χρονοπρογραμματισμός
+                            </a>
+                            <a class="nav-link" href="/admin/assignments">
+                                <i class="fas fa-tasks"></i>
+                                Αναθέσεις Μαθημάτων
+                            </a>
+                        </nav>
                     </div>
                 </div>
 
-                <!-- Statistics Cards -->
-                <div class="row mb-4 fade-in">
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="assignment-stats">
-                            <h3 id="totalAssignments">45</h3>
-                            <p>Συνολικές Αναθέσεις</p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="assignment-stats" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                            <h3 id="activeAssignments">38</h3>
-                            <p>Ενεργές Αναθέσεις</p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="assignment-stats" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                            <h3 id="theoryAssignments">28</h3>
-                            <p>Θεωρία</p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="assignment-stats" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                            <h3 id="labAssignments">17</h3>
-                            <p>Εργαστήρια</p>
-                        </div>
-                    </div>
-                </div>
+                <!-- Main Content -->
+                <div class="col-lg-9 col-md-8">
 
-                <!-- Filters -->
-                <div class="card mb-4 fade-in">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-filter me-2"></i>
-                            Φίλτρα Αναζήτησης
-                        </h5>
+                    <!-- Page Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
+                        <div>
+                            <h1 class="h3 mb-0">Διαχείριση Αναθέσεων Μαθημάτων</h1>
+                            <p class="text-muted">
+                                Ανάθεση μαθημάτων σε διδάσκοντες και διαχείριση υπαρχουσών αναθέσεων
+                            </p>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#createScheduleModal">
+                                <i class="fas fa-calendar-plus me-2"></i>
+                                Νέος Χρονοπρογραμματισμός
+                            </button>
+                            <button class="btn btn-primary" id="addAssignmentBtn" data-bs-toggle="modal" data-bs-target="#assignmentModal">
+                                <i class="fas fa-plus me-2"></i>
+                                Νέα Ανάθεση
+                            </button>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="filterSchedule" class="form-label">Χρονοπρογραμματισμός</label>
-                                <select class="form-select" id="filterSchedule">
-                                    <option value="">Όλοι</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="filterTeacher" class="form-label">Διδάσκων</label>
-                                <select class="form-select" id="filterTeacher">
-                                    <option value="">Όλοι</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="filterCourse" class="form-label">Μάθημα</label>
-                                <select class="form-select" id="filterCourse">
-                                    <option value="">Όλα</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="filterComponent" class="form-label">Είδος</label>
-                                <select class="form-select" id="filterComponent">
-                                    <option value="">Όλα</option>
-                                    <option value="THEORY">Θεωρία</option>
-                                    <option value="LAB">Εργαστήριο</option>
-                                </select>
+
+                    <!-- Statistics Cards -->
+                    <div class="row mb-4 fade-in">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="assignment-stats">
+                                <h3 id="totalAssignments">45</h3>
+                                <p>Συνολικές Αναθέσεις</p>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-12">
-                                <button class="btn btn-primary me-2" onclick="applyFilters()">
-                                    <i class="fas fa-search me-1"></i>
-                                    Εφαρμογή Φίλτρων
-                                </button>
-                                <button class="btn btn-outline-secondary" onclick="clearFilters()">
-                                    <i class="fas fa-times me-1"></i>
-                                    Καθαρισμός
-                                </button>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="assignment-stats" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <h3 id="activeAssignments">38</h3>
+                                <p>Ενεργές Αναθέσεις</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="assignment-stats" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <h3 id="theoryAssignments">28</h3>
+                                <p>Θεωρία</p>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="assignment-stats" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <h3 id="labAssignments">17</h3>
+                                <p>Εργαστήρια</p>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Alerts Container -->
-                <div id="assignments-alert" class="mb-4"></div>
-
-                <!-- Assignments Table -->
-                <div class="card fade-in">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-list me-2"></i>
-                            Λίστα Αναθέσεων
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-container">
-                            <table id="assignmentsTable" class="table table-hover w-100">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Μάθημα</th>
-                                        <th>Είδος</th>
-                                        <th>Διδάσκων</th>
-                                        <th>Χρονοπρογραμματισμός</th>
-                                        <th>Κατάσταση</th>
-                                        <th>Ημερομηνία</th>
-                                        <th>Ενέργειες</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    
-                                </tbody>
-                            </table>
+                    <!-- Filters -->
+                    <div class="card mb-4 fade-in">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-filter me-2"></i>
+                                Φίλτρα Αναζήτησης
+                            </h5>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Assignment Modal -->
-    <div class="modal fade" id="assignmentModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header" style="background: var(--admin-gradient); color: white;">
-                    <h5 class="modal-title" id="assignmentModalTitle">
-                        <i class="fas fa-plus me-2"></i>
-                        Νέα Ανάθεση Μαθήματος
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="assignmentForm">
-                        <input type="hidden" id="assignmentId" name="id">
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="scheduleSelect" class="form-label">Χρονοπρογραμματισμός <span class="text-danger">*</span></label>
-                                <select class="form-select" id="scheduleSelect" name="scheduleId" required>
-                                    <option value="">Φόρτωση χρονοπρογραμματισμών...</option>
-                                </select>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Χρονοπρογραμματισμός</label>
+                                    <select class="form-select" id="filterSchedule">
+                                        <option value="">Όλοι</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Διδάσκων</label>
+                                    <select class="form-select" id="filterTeacher">
+                                        <option value="">Όλοι</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Μάθημα</label>
+                                    <select class="form-select" id="filterCourse">
+                                        <option value="">Όλα</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Είδος</label>
+                                    <select class="form-select" id="filterComponent">
+                                        <option value="">Όλα</option>
+                                        <option value="THEORY">Θεωρία</option>
+                                        <option value="LAB">Εργαστήριο</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="courseSelect" class="form-label">Μάθημα <span class="text-danger">*</span></label>
-                                <select class="form-select" id="courseSelect" name="courseId" required>
-                                    <option value="">Φόρτωση μαθημάτων...</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="componentSelect" class="form-label">Είδος Μαθήματος <span class="text-danger">*</span></label>
-                                <select class="form-select" id="componentSelect" name="courseComponent" required>
-                                    <option value="">Επιλέξτε είδος...</option>
-                                    <option value="THEORY">Θεωρία</option>
-                                    <option value="LAB">Εργαστήριο</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="teacherSelect" class="form-label">Διδάσκων <span class="text-danger">*</span></label>
-                                <select class="form-select" id="teacherSelect" name="teacherId" required>
-                                    <option value="">Φόρτωση διδασκόντων...</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="assignmentNotes" class="form-label">Παρατηρήσεις</label>
-                            <textarea class="form-control" id="assignmentNotes" name="notes" rows="3" placeholder="Προαιρετικές παρατηρήσεις για την ανάθεση..."></textarea>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="activeAssignment" name="active" checked>
-                                    <label class="form-check-label" for="activeAssignment">
-                                        Ενεργή Ανάθεση
-                                    </label>
+                            <!-- Add this row for buttons -->
+                            <div class="row">
+                                <div class="col-12 text-end">
+                                    <button class="btn btn-outline-secondary me-2" onclick="clearFilters()">
+                                        <i class="fas fa-times me-1"></i>
+                                        Καθαρισμός
+                                    </button>
+                                    <button class="btn btn-primary" onclick="applyFilters()">
+                                        <i class="fas fa-search me-1"></i>
+                                        Εφαρμογή Φίλτρων
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Assignments Table -->
+                    <div class="card fade-in">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list me-2"></i>
+                                Λίστα Αναθέσεων
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table id="assignmentsTable" class="table table-hover w-100">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Μάθημα</th>
+                                            <th>Είδος</th>
+                                            <th>Διδάσκων</th>
+                                            <th>Χρονοπρογραμματισμός</th>
+                                            <th>Κατάσταση</th>
+                                            <th>Ημερομηνία</th>
+                                            <th>Ενέργειες</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignment Modal -->
+        <div class="modal fade" id="assignmentModal" tabindex="-1" aria-labelledby="assignmentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="assignmentModalTitle">
+                            <i class="fas fa-plus me-2"></i>Νέα Ανάθεση Μαθήματος
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <form id="assignmentForm">
+                        <div class="modal-body">
+                            <input type="hidden" id="assignmentId" name="assignmentId">
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Χρονοπρογραμματισμός *</label>
+                                    <select class="form-select" id="scheduleSelect" name="scheduleId" required>
+                                        <option value="">Φόρτωση χρονοπρογραμματισμών...</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Μάθημα *</label>
+                                    <select class="form-select" id="courseSelect" name="courseId" required>
+                                        <option value="">Φόρτωση μαθημάτων...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Είδος Μαθήματος *</label>
+                                    <select class="form-select" id="componentSelect" name="courseComponent" required>
+                                        <option value="">Επιλέξτε είδος...</option>
+                                        <option value="THEORY">Θεωρία</option>
+                                        <option value="LAB">Εργαστήριο</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Διδάσκων *</label>
+                                    <select class="form-select" id="teacherSelect" name="teacherId" required>
+                                        <option value="">Φόρτωση διδασκόντων...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Παρατηρήσεις</label>
+                                <textarea class="form-control" name="notes" rows="3"></textarea>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="activeAssignment" name="active" checked>
+                                <label class="form-check-label" for="activeAssignment">Ενεργή Ανάθεση</label>
+                            </div>
+
+                            <!-- Course Info Section -->
+                            <div id="courseInfo" class="alert alert-info d-none">
+                                <h6><i class="fas fa-info-circle me-2"></i>Πληροφορίες Μαθήματος</h6>
+                                <div id="courseDetails"></div>
+                            </div>
+
+                            <!-- Existing Assignment Warning -->
+                            <div id="existingAssignmentWarning" class="alert alert-warning d-none">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Προσοχή!</strong> Υπάρχει ήδη ανάθεση για αυτό το μάθημα και είδος. Επιθυμείτε να συνεχίσετε;
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                            <button type="button" class="btn btn-primary" onclick="saveAssignment()">
+                                <i class="fas fa-save me-1"></i>Αποθήκευση
+                            </button>
+                        </div>
                     </form>
-
-                    <!-- Course Information Panel -->
-                    <div id="courseInfo" class="alert alert-info d-none mt-3">
-                        <h6><i class="fas fa-info-circle me-2"></i>Πληροφορίες Μαθήματος</h6>
-                        <div id="courseDetails"></div>
-                    </div>
-
-                    <!-- Existing Assignments Warning -->
-                    <div id="existingAssignmentWarning" class="alert alert-warning d-none mt-3">
-                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Προσοχή</h6>
-                        <p class="mb-0">Υπάρχει ήδη ανάθεση για αυτό το μάθημα και είδος. Επιθυμείτε να συνεχίσετε;</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>
-                        Ακύρωση
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="saveAssignment()">
-                        <i class="fas fa-save me-1"></i>
-                        Αποθήκευση
-                    </button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Επιβεβαίωση Διαγραφής
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε την ανάθεση;</p>
-                    <div id="deleteDetails" class="alert alert-warning"></div>
-                    <p class="text-muted"><strong>Προσοχή:</strong> Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-                        <i class="fas fa-trash me-1"></i>
-                        Διαγραφή
-                    </button>
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteModalLabel">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Επιβεβαίωση Διαγραφής
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε την ανάθεση;</p>
+
+                        <div id="deleteDetails" class="mb-3"></div>
+
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <strong>Προσοχή:</strong> Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fas fa-trash me-1"></i>Διαγραφή
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Create Schedule Modal -->
-    <div class="modal fade" id="createScheduleModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header" style="background: var(--admin-gradient); color: white;">
-                    <h5 class="modal-title">
-                        <i class="fas fa-calendar-plus me-2"></i>
-                        Δημιουργία Νέου Χρονοπρογραμματισμού
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
+        <!-- Create Schedule Modal -->
+        <div class="modal fade" id="createScheduleModal" tabindex="-1" aria-labelledby="createScheduleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createScheduleModalLabel">
+                            <i class="fas fa-calendar-plus me-2"></i>Δημιουργία Νέου Χρονοπρογραμματισμού
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
                     <form id="scheduleForm">
-                        <div class="mb-3">
-                            <label for="scheduleName" class="form-label">Όνομα Χρονοπρογραμματισμού <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="scheduleName" name="name" required
-                                   placeholder="π.χ. Χειμερινό Εξάμηνο 2024-25">
-                            <div class="form-text">Δώστε ένα περιγραφικό όνομα για τον χρονοπρογραμματισμό</div>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="scheduleSemester" class="form-label">Εξάμηνο <span class="text-danger">*</span></label>
-                                <select class="form-select" id="scheduleSemester" name="semester" required>
-                                    <option value="">Επιλέξτε εξάμηνο...</option>
-                                    <option value="Χειμερινό">Χειμερινό</option>
-                                    <option value="Εαρινό">Εαρινό</option>
-                                    <option value="Θερινό">Θερινό</option>
-                                </select>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Όνομα Χρονοπρογραμματισμού *</label>
+                                <input type="text" class="form-control" name="name" required>
+                                <small class="form-text text-muted">Δώστε ένα περιγραφικό όνομα για τον χρονοπρογραμματισμό</small>
                             </div>
-                            <div class="col-md-6">
-                                <label for="scheduleYear" class="form-label">Ακαδημαϊκό Έτος <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="scheduleYear" name="year" 
-                                       min="2024" max="2030" required
-                                       placeholder="π.χ. 2024">
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Εξάμηνο *</label>
+                                    <select class="form-select" name="semester" required>
+                                        <option value="">Επιλέξτε εξάμηνο...</option>
+                                        <option value="WINTER">Χειμερινό</option>
+                                        <option value="SPRING">Εαρινό</option>
+                                        <option value="SUMMER">Θερινό</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Ακαδημαϊκό Έτος *</label>
+                                    <input type="text" class="form-control" name="academicYear" placeholder="π.χ. 2024-2025" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Περιγραφή</label>
+                                <textarea class="form-control" name="description" rows="3"></textarea>
+                            </div>
+
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Σημείωση:</strong> Μετά τη δημιουργία, ο χρονοπρογραμματισμός θα είναι στη φάση 
+                                "Ανάθεση Μαθημάτων" και θα μπορείτε να προσθέσετε αναθέσεις.
                             </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="scheduleDescription" class="form-label">Περιγραφή</label>
-                            <textarea class="form-control" id="scheduleDescription" name="description" rows="3"
-                                      placeholder="Προαιρετική περιγραφή του χρονοπρογραμματισμού..."></textarea>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Σημείωση:</strong> Μετά τη δημιουργία, ο χρονοπρογραμματισμός θα είναι στη φάση 
-                            "Ανάθεση Μαθημάτων" και θα μπορείτε να προσθέσετε αναθέσεις.
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                            <button type="button" class="btn btn-success" onclick="createSchedule()">
+                                <i class="fas fa-check me-1"></i>Δημιουργία
+                            </button>
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>
-                        Ακύρωση
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="createSchedule()">
-                        <i class="fas fa-save me-1"></i>
-                        Δημιουργία
-                    </button>
-                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+        <!-- Alert Container -->
+        <div id="assignments-alert" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
 
-    <script>
-        let assignmentsTable;
-        let currentAssignmentId = null;
+        <!-- Scripts -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+        <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
-        // Initialize DataTable
-        $(document).ready(function() {
-            assignmentsTable = $('#assignmentsTable').DataTable({
-                responsive: true,
-                pageLength: 10,
-                processing: true,
-                ajax: {
-                    url: '/admin/api/assignments',
-                    type: 'GET'
-                },
-                columns: [
-                    { data: 'id' },
-                    { 
-                        data: null,
-                        render: function(data, type, row) {
-                            return `<div>
-                                <strong>${row.courseName}</strong>
-                                <br><small class="text-muted">${row.courseCode} • ${row.courseYear || ''}ο Έτος</small>
-                            </div>`;
-                        }
-                    },
-                    {
-                        data: 'courseComponent',
-                        render: function(data, type, row) {
-                            const badgeClass = data === 'THEORY' ? 'bg-primary' : 'bg-info';
-                            const text = data === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο';
-                            return `<span class="badge ${badgeClass} badge-assignment">${text}</span>`;
-                        }
-                    },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            return `<div>
-                                <strong>${row.teacherName}</strong>
-                                <br><small class="text-muted">${row.teacherRank || 'Διδάσκων'}</small>
-                            </div>`;
-                        }
-                    },
-                    { data: 'scheduleName' },
-                    {
-                        data: 'active',
-                        render: function(data, type, row) {
-                            const badgeClass = data ? 'bg-success' : 'bg-secondary';
-                            const text = data ? 'Ενεργή' : 'Ανενεργή';
-                            return `<span class="badge ${badgeClass} badge-assignment">${text}</span>`;
-                        }
-                    },
-                    { 
-                        data: 'id', // Placeholder for date
-                        render: function(data, type, row) {
-                            return new Date().toLocaleDateString('el-GR');
-                        }
-                    },
-                    {
-                        data: null,
-                        orderable: false,
-                        render: function(data, type, row) {
-                            return `<div class="btn-group" role="group">
-                                <button class="btn btn-sm btn-warning" onclick="editAssignment(${row.id})" title="Επεξεργασία">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteAssignment(${row.id})" title="Διαγραφή">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>`;
-                        }
-                    }
-                ],
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/el.json'
-                }
-            });
+        <script>
+                                let assignmentsTable;
+                                let currentAssignmentId = null;
 
-            // Load initial data
-            loadTeachers();
-            loadCourses();
-            loadSchedules();
+                                // Initialize DataTable
+                                $(document).ready(function () {
+                                    assignmentsTable = $('#assignmentsTable').DataTable({
+                                        responsive: true,
+                                        pageLength: 10,
+                                        processing: true,
+                                        ajax: {
+                                            url: '/admin/api/assignments',
+                                            type: 'GET'
+                                        },
+                                        columns: [
+                                            {data: 'id'},
+                                            {
+                                                data: null,
+                                                render: function (data, type, row) {
+                                                    return `<div>
+                                 <strong>${row.courseName}</strong>
+                                 <br><small class="text-muted">${row.courseCode} • ${row.courseYear || ''}ο Έτος</small>
+                             </div>`;
+                                                }
+                                            },
+                                            {
+                                                data: 'courseComponent',
+                                                render: function (data, type, row) {
+                                                    const badgeClass = data === 'THEORY' ? 'bg-primary' : 'bg-info';
+                                                    const text = data === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο';
+                                                    return `<span class="badge ${badgeClass} badge-assignment">${text}</span>`;
+                                                }
+                                            },
+                                            {
+                                                data: null,
+                                                render: function (data, type, row) {
+                                                    return `<div>
+                                 <strong>${row.teacherName}</strong>
+                                 <br><small class="text-muted">${row.teacherRank || 'Διδάσκων'}</small>
+                             </div>`;
+                                                }
+                                            },
+                                            {data: 'scheduleName'},
+                                            {
+                                                data: 'active',
+                                                render: function (data, type, row) {
+                                                    const badgeClass = data ? 'bg-success' : 'bg-secondary';
+                                                    const text = data ? 'Ενεργή' : 'Ανενεργή';
+                                                    return `<span class="badge ${badgeClass} badge-assignment">${text}</span>`;
+                                                }
+                                            },
+                                            {
+                                                data: 'id',
+                                                render: function (data, type, row) {
+                                                    return new Date().toLocaleDateString('el-GR');
+                                                }
+                                            },
+                                            {
+                                                data: null,
+                                                orderable: false,
+                                                render: function (data, type, row) {
+                                                    return `<div class="btn-group" role="group">
+                                 <button class="btn btn-sm btn-warning" onclick="editAssignment(${row.id})" title="Επεξεργασία">
+                                     <i class="fas fa-edit"></i>
+                                 </button>
+                                 <button class="btn btn-sm btn-danger" onclick="deleteAssignment(${row.id})" title="Διαγραφή">
+                                     <i class="fas fa-trash"></i>
+                                 </button>
+                             </div>`;
+                                                }
+                                            }
+                                        ],
+                                        language: {
+                                            url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/el.json'
+                                        }
+                                    });
 
-            // Course selection change handler
-            $('#courseSelect').change(function() {
-                const courseId = $(this).val();
-                if (courseId) {
-                    loadCourseInfo(courseId);
-                    checkExistingAssignment();
-                } else {
-                    $('#courseInfo').addClass('d-none');
-                    $('#existingAssignmentWarning').addClass('d-none');
-                }
-            });
+                                    loadTeachers();
+                                    loadCourses();
+                                    loadSchedules();
 
-            // Component selection change handler
-            $('#componentSelect').change(function() {
-                checkExistingAssignment();
-            });
+                                    // Event listener για φιλτράρισμα μαθημάτων
+                                    $('#scheduleSelect').change(function () {
+                                        const scheduleId = $(this).val();
+                                        if (scheduleId) {
+                                            filterCoursesBySchedule(scheduleId);
+                                        } else {
+                                            loadCourses();
+                                        }
+                                    });
 
-            // Load initial statistics
-            updateStatistics();
-        });
+                                    $('#courseSelect').change(function () {
+                                        const courseId = $(this).val();
+                                        if (courseId) {
+                                            loadCourseInfo(courseId);
+                                            checkExistingAssignment();
+                                        } else {
+                                            $('#courseInfo').addClass('d-none');
+                                            $('#existingAssignmentWarning').addClass('d-none');
+                                        }
+                                    });
 
-        // Load data functions
-        function loadTeachers() {
-            fetch('/admin/api/teachers')
-                .then(response => response.json())
-                .then(teachers => {
-                    const teacherSelect = $('#teacherSelect');
-                    teacherSelect.empty();
-                    teacherSelect.append('<option value="">Επιλέξτε διδάσκοντα...</option>');
-                    
-                    teachers.forEach(teacher => {
-                        const rankText = teacher.rank ? ` - ${teacher.rank}` : ' - Διδάσκων';
-                        teacherSelect.append(
-                            `<option value="${teacher.id}">${teacher.name}${rankText}</option>`
-                        );
-                    });
-                    
-                    // Also update filter dropdown
-                    const filterTeacher = $('#filterTeacher');
-                    filterTeacher.empty();
-                    filterTeacher.append('<option value="">Όλοι</option>');
-                    teachers.forEach(teacher => {
-                        filterTeacher.append(
-                            `<option value="${teacher.id}">${teacher.name}</option>`
-                        );
-                    });
-                })
-                .catch(error => {
-                    console.error('Error loading teachers:', error);
-                    $('#teacherSelect').html('<option value="">Σφάλμα φόρτωσης διδασκόντων</option>');
-                });
-        }
+                                    $('#componentSelect').change(function () {
+                                        checkExistingAssignment();
+                                    });
 
-        function loadCourses() {
-            fetch('/admin/api/courses')
-                .then(response => response.json())
-                .then(courses => {
-                    const courseSelect = $('#courseSelect');
-                    courseSelect.empty();
-                    courseSelect.append('<option value="">Επιλέξτε μάθημα...</option>');
-                    
-                    courses.forEach(course => {
-                        courseSelect.append(
-                            `<option value="${course.id}">${course.name} (${course.code})</option>`
-                        );
-                    });
-                    
-                    // Also update filter dropdown
-                    const filterCourse = $('#filterCourse');
-                    filterCourse.empty();
-                    filterCourse.append('<option value="">Όλα</option>');
-                    courses.forEach(course => {
-                        filterCourse.append(
-                            `<option value="${course.id}">${course.name}</option>`
-                        );
-                    });
-                })
-                .catch(error => {
-                    console.error('Error loading courses:', error);
-                    $('#courseSelect').html('<option value="">Σφάλμα φόρτωσης μαθημάτων</option>');
-                });
-        }
+                                    updateStatistics();
+                                });
 
-        function loadSchedules() {
-            fetch('/admin/api/schedules')
-                .then(response => response.json())
-                .then(schedules => {
-                    const scheduleSelect = $('#scheduleSelect');
-                    scheduleSelect.empty();
-                    scheduleSelect.append('<option value="">Επιλέξτε χρονοπρογραμματισμό...</option>');
-                    
-                    schedules.forEach(schedule => {
-                        scheduleSelect.append(
-                            `<option value="${schedule.id}">${schedule.name}</option>`
-                        );
-                    });
-                    
-                    // Also update filter dropdown
-                    const filterSchedule = $('#filterSchedule');
-                    filterSchedule.empty();
-                    filterSchedule.append('<option value="">Όλοι</option>');
-                    schedules.forEach(schedule => {
-                        filterSchedule.append(
-                            `<option value="${schedule.id}">${schedule.name}</option>`
-                        );
-                    });
-                })
-                .catch(error => {
-                    console.error('Error loading schedules:', error);
-                    $('#scheduleSelect').html('<option value="">Σφάλμα φόρτωσης χρονοπρογραμματισμών</option>');
-                });
-        }
+                                function loadTeachers() {
+                                    fetch('/admin/api/teachers')
+                                            .then(response => response.json())
+                                            .then(teachers => {
+                                                const teacherSelect = $('#teacherSelect');
+                                                teacherSelect.empty();
+                                                teacherSelect.append('<option value="">Επιλέξτε διδάσκοντα...</option>');
 
-        // Add new assignment
-        $('#addAssignmentBtn').click(function() {
-            resetForm();
-            $('#assignmentModalTitle').html('<i class="fas fa-plus me-2"></i>Νέα Ανάθεση Μαθήματος');
-            currentAssignmentId = null;
-        });
+                                                teachers.forEach(teacher => {
+                                                    const rankText = teacher.rank ? ` - ${teacher.rank}` : ' - Διδάσκων';
+                                                    teacherSelect.append(`<option value="${teacher.id}">${teacher.name}${rankText}</option>`);
+                                                });
 
-        // Reset form
-        function resetForm() {
-            $('#assignmentForm')[0].reset();
-            $('#assignmentId').val('');
-            $('#courseInfo').addClass('d-none');
-            $('#existingAssignmentWarning').addClass('d-none');
-            currentAssignmentId = null;
-        }
+                                                const filterTeacher = $('#filterTeacher');
+                                                filterTeacher.empty();
+                                                filterTeacher.append('<option value="">Όλοι</option>');
+                                                teachers.forEach(teacher => {
+                                                    filterTeacher.append(`<option value="${teacher.id}">${teacher.name}</option>`);
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error loading teachers:', error);
+                                                $('#teacherSelect').html('<option value="">Σφάλμα φόρτωσης διδασκόντων</option>');
+                                            });
+                                }
 
-        // Load course information
-        function loadCourseInfo(courseId) {
-            fetch(`/admin/api/courses/${courseId}`)
-                .then(response => response.json())
-                .then(course => {
-                    $('#courseDetails').html(`
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Κωδικός:</strong> ${course.code}<br>
-                                <strong>Εξάμηνο:</strong> ${course.semester}<br>
-                                <strong>Έτος:</strong> ${course.year}
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Τύπος:</strong> ${course.isRequired ? 'Υποχρεωτικό' : 'Επιλογής'}<br>
-                                <strong>Χωρητικότητα:</strong> ${course.capacity} άτομα<br>
-                                ${course.teachingHours ? `<strong>Ώρες:</strong> ${course.teachingHours.total} ώρες/εβδομάδα` : ''}
-                            </div>
-                        </div>
-                        ${course.teachingHours && (course.teachingHours.theory > 0 || course.teachingHours.lab > 0) ? `
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <small class="text-muted">
-                                    ${course.teachingHours.theory > 0 ? `Θεωρία: ${course.teachingHours.theory}ω` : ''}
-                                    ${course.teachingHours.theory > 0 && course.teachingHours.lab > 0 ? ' • ' : ''}
-                                    ${course.teachingHours.lab > 0 ? `Εργαστήριο: ${course.teachingHours.lab}ω` : ''}
-                                </small>
-                            </div>
-                        </div>
-                        ` : ''}
-                    `);
-                    $('#courseInfo').removeClass('d-none');
-                })
-                .catch(error => {
-                    console.error('Error loading course info:', error);
-                    $('#courseInfo').addClass('d-none');
-                });
-        }
+                                function loadCourses() {
+                                    fetch('/admin/api/courses')
+                                            .then(response => response.json())
+                                            .then(courses => {
+                                                window.allCourses = courses;
+                                                const courseSelect = $('#courseSelect');
+                                                courseSelect.empty();
+                                                courseSelect.append('<option value="">επιλέξτε μάθημα...</option>');
 
-        // Check for existing assignments
-        function checkExistingAssignment() {
-            const courseId = $('#courseSelect').val();
-            const component = $('#componentSelect').val();
-            const scheduleId = $('#scheduleSelect').val();
-            
-            if (courseId && component && scheduleId) {
-                fetch(`/admin/api/assignments/check?courseId=${courseId}&courseComponent=${component}&scheduleId=${scheduleId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.exists && !currentAssignmentId) {
-                            $('#existingAssignmentWarning').removeClass('d-none');
-                        } else {
-                            $('#existingAssignmentWarning').addClass('d-none');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking existing assignment:', error);
-                        $('#existingAssignmentWarning').addClass('d-none');
-                    });
-            }
-        }
+                                                courses.forEach(course => {
+                                                    courseSelect.append(`<option value="${course.id}">${course.name} (${course.code})</option>`);
+                                                });
 
-        // Save assignment
-        function saveAssignment() {
-            const form = document.getElementById('assignmentForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
+                                                const filterCourse = $('#filterCourse');
+                                                filterCourse.empty();
+                                                filterCourse.append('<option value="">όλα</option>');
+                                                courses.forEach(course => {
+                                                    filterCourse.append(`<option value="${course.id}">${course.name}</option>`);
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error loading courses:', error);
+                                                $('#courseSelect').html('<option value="">σφάλμα φόρτωσης μαθημάτων</option>');
+                                            });
+                                }
 
-            const formData = new FormData(form);
-            const assignmentData = Object.fromEntries(formData.entries());
-            
-            // Add checkbox value
-            assignmentData.active = document.getElementById('activeAssignment').checked;
+                                function filterCoursesBySchedule(scheduleId) {
+                                    if (!scheduleId || !window.allCourses)
+                                        return;
 
-            const isNewAssignment = !currentAssignmentId;
-            const url = isNewAssignment ? '/admin/api/assignments' : `/admin/api/assignments/${currentAssignmentId}`;
-            const method = isNewAssignment ? 'POST' : 'PUT';
+                                    fetch(`/api/assignments/assigned-course-ids?scheduleId=${scheduleId}`)
+                                            .then(response => response.json())
+                                            .then(assignedIds => {
+                                                const courseSelect = $('#courseSelect');
+                                                courseSelect.empty();
+                                                courseSelect.append('<option value="">επιλέξτε μάθημα...</option>');
 
-            fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams(assignmentData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('assignments-alert', data.message, 'success');
-                    
-                    // Close modal and reload table
-                    bootstrap.Modal.getInstance(document.getElementById('assignmentModal')).hide();
-                    
-                    // Reload the table data
-                    loadAssignmentsData();
-                    
-                    // Update statistics
-                    updateStatistics();
-                } else {
-                    showAlert('assignments-alert', data.message, 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('assignments-alert', 'Σφάλμα κατά την αποθήκευση', 'danger');
-            });
-        }
+                                                const availableCourses = window.allCourses.filter(course => !assignedIds.includes(course.id));
 
-        // Edit assignment
-        function editAssignment(id) {
-            currentAssignmentId = id;
-            
-            // Get assignment data from the table
-            const row = assignmentsTable.row($(`tr:has(td:first-child:contains(${id}))`)).data();
-            
-            if (row) {
-                $('#assignmentId').val(id);
-                $('#scheduleSelect').val(row.scheduleId);
-                $('#courseSelect').val(row.courseId);
-                $('#componentSelect').val(row.courseComponent);
-                $('#teacherSelect').val(row.teacherId);
-                $('#activeAssignment').prop('checked', row.active);
-                
-                loadCourseInfo(row.courseId);
-                
-                $('#assignmentModalTitle').html('<i class="fas fa-edit me-2"></i>Επεξεργασία Ανάθεσης');
-                
-                new bootstrap.Modal(document.getElementById('assignmentModal')).show();
-            }
-        }
+                                                if (availableCourses.length === 0) {
+                                                    courseSelect.append('<option value="">όλα τα μαθήματα έχουν ανατεθεί</option>');
+                                                } else {
+                                                    availableCourses.forEach(course => {
+                                                        courseSelect.append(`<option value="${course.id}">${course.name} (${course.code})</option>`);
+                                                    });
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error('Error filtering courses:', error);
+                                            });
+                                }
 
-        // Delete assignment
-        function deleteAssignment(id) {
-            currentAssignmentId = id;
-            
-            // Get assignment details for confirmation
-            const row = assignmentsTable.row($(`tr:has(td:first-child:contains(${id}))`)).data();
-            
-            if (row) {
-                $('#deleteDetails').html(`
-                    <strong>Μάθημα:</strong> ${row.courseName} (${row.courseCode})<br>
-                    <strong>Είδος:</strong> ${row.courseComponent === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο'}<br>
-                    <strong>Διδάσκων:</strong> ${row.teacherName}
-                `);
-                
-                new bootstrap.Modal(document.getElementById('deleteModal')).show();
-            }
-        }
+                                function loadSchedules() {
+                                    fetch('/admin/api/schedules')
+                                            .then(response => response.json())
+                                            .then(schedules => {
+                                                const scheduleSelect = $('#scheduleSelect');
+                                                scheduleSelect.empty();
+                                                scheduleSelect.append('<option value="">Επιλέξτε χρονοπρογραμματισμό...</option>');
 
-        // Confirm delete
-        $('#confirmDeleteBtn').click(function() {
-            if (currentAssignmentId) {
-                fetch(`/admin/api/assignments/${currentAssignmentId}`, {
-                    method: 'DELETE'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showAlert('assignments-alert', data.message, 'success');
-                        
-                        // Close modal
-                        bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-                        
-                        // Reload table
-                        assignmentsTable.ajax.reload();
-                        
-                        // Update statistics
-                        updateStatistics();
-                    } else {
-                        showAlert('assignments-alert', data.message, 'danger');
-                    }
-                    
-                    currentAssignmentId = null;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showAlert('assignments-alert', 'Σφάλμα κατά τη διαγραφή', 'danger');
-                    currentAssignmentId = null;
-                });
-            }
-        });
+                                                schedules.forEach(schedule => {
+                                                    scheduleSelect.append(`<option value="${schedule.id}">${schedule.name}</option>`);
+                                                });
 
-        // Apply filters
-        function applyFilters() {
-            const filters = {
-                schedule: $('#filterSchedule').val(),
-                teacher: $('#filterTeacher').val(),
-                course: $('#filterCourse').val(),
-                component: $('#filterComponent').val()
-            };
-            
-            // Update DataTable AJAX URL with filters
-            const url = new URL('/admin/api/assignments', window.location.origin);
-            Object.keys(filters).forEach(key => {
-                if (filters[key]) {
-                    url.searchParams.append(key + 'Id', filters[key]);
-                }
-            });
-            
-            assignmentsTable.ajax.url(url.toString()).load();
-            showAlert('assignments-alert', 'Τα φίλτρα εφαρμόστηκαν επιτυχώς.', 'info');
-        }
+                                                const filterSchedule = $('#filterSchedule');
+                                                filterSchedule.empty();
+                                                filterSchedule.append('<option value="">Όλοι</option>');
+                                                schedules.forEach(schedule => {
+                                                    filterSchedule.append(`<option value="${schedule.id}">${schedule.name}</option>`);
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error loading schedules:', error);
+                                                $('#scheduleSelect').html('<option value="">Σφάλμα φόρτωσης χρονοπρογραμματισμών</option>');
+                                            });
+                                }
 
-        // Clear filters
-        function clearFilters() {
-            $('#filterSchedule').val('');
-            $('#filterTeacher').val('');
-            $('#filterCourse').val('');
-            $('#filterComponent').val('');
-            
-            assignmentsTable.ajax.url('/admin/api/assignments').load();
-            showAlert('assignments-alert', 'Τα φίλτρα καθαρίστηκαν.', 'info');
-        }
+                                $('#addAssignmentBtn').click(function () {
+                                    resetForm();
+                                    $('#assignmentModalTitle').html('<i class="fas fa-plus me-2"></i>Νέα Ανάθεση Μαθήματος');
+                                    currentAssignmentId = null;
+                                });
 
-        // Load assignments data (for refresh)
-        function loadAssignmentsData() {
-            assignmentsTable.ajax.reload();
-        }
+                                function resetForm() {
+                                    $('#assignmentForm')[0].reset();
+                                    $('#assignmentId').val('');
+                                    $('#courseInfo').addClass('d-none');
+                                    $('#existingAssignmentWarning').addClass('d-none');
+                                    currentAssignmentId = null;
+                                }
 
-        // Update statistics
-        function updateStatistics() {
-            fetch('/admin/api/assignments/statistics')
-                .then(response => response.json())
-                .then(stats => {
-                    $('#totalAssignments').text(stats.total || 0);
-                    $('#activeAssignments').text(stats.active || 0);
-                    $('#theoryAssignments').text(stats.theory || 0);
-                    $('#labAssignments').text(stats.lab || 0);
-                })
-                .catch(error => {
-                    console.error('Error updating statistics:', error);
-                });
-        }
+                                function loadCourseInfo(courseId) {
+                                    fetch(`/admin/api/courses/${courseId}`)
+                                            .then(response => response.json())
+                                            .then(course => {
+                                                $('#courseDetails').html(`
+                         <div class="row">
+                             <div class="col-md-6">
+                                 <strong>Κωδικός:</strong> ${course.code}<br>
+                                 <strong>Εξάμηνο:</strong> ${course.semester}<br>
+                                 <strong>Έτος:</strong> ${course.year}
+                             </div>
+                             <div class="col-md-6">
+                                 <strong>Τύπος:</strong> ${course.isRequired ? 'Υποχρεωτικό' : 'Επιλογής'}<br>
+                                 <strong>Χωρητικότητα:</strong> ${course.capacity} άτομα<br>
+                                 ${course.teachingHours ? `<strong>Ώρες:</strong> ${course.teachingHours.total} ώρες/εβδ.` : ''}
+                             </div>
+                         </div>
+                         ${course.teachingHours && (course.teachingHours.theory > 0 || course.teachingHours.lab > 0) ? `
+                         <div class="row mt-2">
+                             <div class="col-12">
+                                 <small class="text-muted">
+                                     ${course.teachingHours.theory > 0 ? `Θεωρία: ${course.teachingHours.theory}ω` : ''}
+                                     ${course.teachingHours.theory > 0 && course.teachingHours.lab > 0 ? ' • ' : ''}
+                                     ${course.teachingHours.lab > 0 ? `Εργαστήριο: ${course.teachingHours.lab}ω` : ''}
+                                 </small>
+                             </div>
+                         </div>` : ''}
+                     `);
+                                                $('#courseInfo').removeClass('d-none');
+                                            })
+                                            .catch(error => {
+                                                console.error('Error loading course info:', error);
+                                            });
+                                }
 
-        // Create new schedule
-        function createSchedule() {
-            const form = document.getElementById('scheduleForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
+                                function checkExistingAssignment() {
+                                    const courseId = $('#courseSelect').val();
+                                    const component = $('#componentSelect').val();
+                                    const scheduleId = $('#scheduleSelect').val();
 
-            const formData = new FormData(form);
-            const scheduleData = Object.fromEntries(formData.entries());
+                                    if (courseId && component && scheduleId) {
+                                        fetch(`/admin/api/assignments/check?courseId=${courseId}&courseComponent=${component}&scheduleId=${scheduleId}`)
+                                                .then(response => response.json())
+                                                .then(data => {
+                                                    if (data.exists && !currentAssignmentId) {
+                                                        $('#existingAssignmentWarning').removeClass('d-none');
+                                                    } else {
+                                                        $('#existingAssignmentWarning').addClass('d-none');
+                                                    }
+                                                });
+                                    }
+                                }
 
-            fetch('/admin/api/schedules', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams(scheduleData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('assignments-alert', data.message, 'success');
-                    
-                    // Close modal
-                    bootstrap.Modal.getInstance(document.getElementById('createScheduleModal')).hide();
-                    
-                    // Reset form
-                    form.reset();
-                    
-                    // Reload schedules
-                    loadSchedules();
-                    
-                } else {
-                    showAlert('assignments-alert', data.message, 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('assignments-alert', 'Σφάλμα κατά τη δημιουργία χρονοπρογραμματισμού', 'danger');
-            });
-        }
+                                function saveAssignment() {
+                                    const form = document.getElementById('assignmentForm');
+                                    if (!form.checkValidity()) {
+                                        form.reportValidity();
+                                        return;
+                                    }
 
-        // Show alert
-        function showAlert(containerId, message, type) {
-            const alertContainer = document.getElementById(containerId);
-            alertContainer.innerHTML = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-            alertContainer.scrollIntoView({ behavior: 'smooth' });
-            
-            // Auto-close after 5 seconds
-            setTimeout(() => {
-                const alert = alertContainer.querySelector('.alert');
-                if (alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }
-            }, 5000);
-        }
-    </script>
-</body>
+                                    const formData = new FormData(form);
+                                    const assignmentData = Object.fromEntries(formData.entries());
+                                    assignmentData.active = document.getElementById('activeAssignment').checked;
+
+                                    const isNewAssignment = !currentAssignmentId;
+                                    const url = isNewAssignment ? '/admin/api/assignments' : `/admin/api/assignments/${currentAssignmentId}`;
+                                    const method = isNewAssignment ? 'POST' : 'PUT';
+
+                                    fetch(url, {
+                                        method: method,
+                                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                                        body: new URLSearchParams(assignmentData)
+                                    })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                if (data.success) {
+                                                    showAlert('assignments-alert', data.message, 'success');
+                                                    bootstrap.Modal.getInstance(document.getElementById('assignmentModal')).hide();
+                                                    loadAssignmentsData();
+                                                    updateStatistics();
+                                                } else {
+                                                    showAlert('assignments-alert', data.message, 'danger');
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                showAlert('assignments-alert', 'Σφάλμα κατά την αποθήκευση', 'danger');
+                                            });
+                                }
+
+                                function editAssignment(id) {
+                                    currentAssignmentId = id;
+                                    const row = assignmentsTable.row($(`tr:has(td:first-child:contains(${id}))`)).data();
+
+                                    if (row) {
+                                        $('#assignmentId').val(id);
+                                        $('#scheduleSelect').val(row.scheduleId);
+                                        $('#courseSelect').val(row.courseId);
+                                        $('#componentSelect').val(row.courseComponent);
+                                        $('#teacherSelect').val(row.teacherId);
+                                        $('#activeAssignment').prop('checked', row.active);
+                                        loadCourseInfo(row.courseId);
+                                        $('#assignmentModalTitle').html('<i class="fas fa-edit me-2"></i>Επεξεργασία Ανάθεσης');
+                                        new bootstrap.Modal(document.getElementById('assignmentModal')).show();
+                                    }
+                                }
+
+                                function deleteAssignment(id) {
+                                    currentAssignmentId = id;
+                                    const row = assignmentsTable.row($(`tr:has(td:first-child:contains(${id}))`)).data();
+
+                                    if (row) {
+                                        $('#deleteDetails').html(`
+                     <strong>Μάθημα:</strong> ${row.courseName} (${row.courseCode})<br>
+                     <strong>Είδος:</strong> ${row.courseComponent === 'THEORY' ? 'Θεωρία' : 'Εργαστήριο'}<br>
+                     <strong>Διδάσκων:</strong> ${row.teacherName}
+                 `);
+                                        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+                                    }
+                                }
+
+                                $('#confirmDeleteBtn').click(function () {
+                                    if (currentAssignmentId) {
+                                        fetch(`/admin/api/assignments/${currentAssignmentId}`, {method: 'DELETE'})
+                                                .then(response => response.json())
+                                                .then(data => {
+                                                    if (data.success) {
+                                                        showAlert('assignments-alert', data.message, 'success');
+                                                        bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                                                        assignmentsTable.ajax.reload();
+                                                        updateStatistics();
+                                                    } else {
+                                                        showAlert('assignments-alert', data.message, 'danger');
+                                                    }
+                                                    currentAssignmentId = null;
+                                                })
+                                                .catch(error => {
+                                                    console.error('Error:', error);
+                                                    showAlert('assignments-alert', 'Σφάλμα κατά τη διαγραφή', 'danger');
+                                                });
+                                    }
+                                });
+
+                                function applyFilters() {
+                                    const filters = {
+                                        schedule: $('#filterSchedule').val(),
+                                        teacher: $('#filterTeacher').val(),
+                                        course: $('#filterCourse').val(),
+                                        component: $('#filterComponent').val()
+                                    };
+                                    const url = new URL('/admin/api/assignments', window.location.origin);
+                                    Object.keys(filters).forEach(key => {
+                                        if (filters[key])
+                                            url.searchParams.append(key + 'Id', filters[key]);
+                                    });
+                                    assignmentsTable.ajax.url(url.toString()).load();
+                                    showAlert('assignments-alert', 'Τα φίλτρα εφαρμόστηκαν επιτυχώς.', 'info');
+                                }
+
+                                function clearFilters() {
+                                    $('#filterSchedule, #filterTeacher, #filterCourse, #filterComponent').val('');
+                                    assignmentsTable.ajax.url('/admin/api/assignments').load();
+                                    showAlert('assignments-alert', 'Τα φίλτρα καθαρίστηκαν.', 'info');
+                                }
+
+                                function loadAssignmentsData() {
+                                    assignmentsTable.ajax.reload();
+                                }
+
+                                function updateStatistics() {
+                                    fetch('/admin/api/assignments/statistics')
+                                            .then(response => response.json())
+                                            .then(stats => {
+                                                $('#totalAssignments').text(stats.total || 0);
+                                                $('#activeAssignments').text(stats.active || 0);
+                                                $('#theoryAssignments').text(stats.theory || 0);
+                                                $('#labAssignments').text(stats.lab || 0);
+                                            });
+                                }
+
+                                function createSchedule() {
+                                    const form = document.getElementById('scheduleForm');
+                                    if (!form.checkValidity()) {
+                                        form.reportValidity();
+                                        return;
+                                    }
+
+                                    const formData = new FormData(form);
+                                    const scheduleData = Object.fromEntries(formData.entries());
+
+                                    fetch('/admin/api/schedules', {
+                                        method: 'POST',
+                                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                                        body: new URLSearchParams(scheduleData)
+                                    })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                if (data.success) {
+                                                    showAlert('assignments-alert', data.message, 'success');
+                                                    bootstrap.Modal.getInstance(document.getElementById('createScheduleModal')).hide();
+                                                    form.reset();
+                                                    loadSchedules();
+                                                } else {
+                                                    showAlert('assignments-alert', data.message, 'danger');
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                showAlert('assignments-alert', 'Σφάλμα κατά τη δημιουργία χρονοπρογραμματισμού', 'danger');
+                                            });
+                                }
+
+                                function showAlert(containerId, message, type) {
+                                    const alertContainer = document.getElementById(containerId);
+                                    alertContainer.innerHTML = `
+                 <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                     ${message}
+                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                 </div>
+             `;
+                                    alertContainer.scrollIntoView({behavior: 'smooth'});
+                                    setTimeout(() => {
+                                        const alert = alertContainer.querySelector('.alert');
+                                        if (alert) {
+                                            const bsAlert = new bootstrap.Alert(alert);
+                                            bsAlert.close();
+                                        }
+                                    }, 5000);
+                                }
+        </script>
+    </body>
 </html>

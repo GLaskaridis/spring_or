@@ -21,7 +21,7 @@ public class AssignmentController {
     private AssignmentService assignmentService;
 
     /**
-     * GET /api/assignments - Όλες οι αναθέσεις (ADMIN only)
+     * GET /api/assignments - όλες οι αναθέσεις (ADMIN only)
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
@@ -30,7 +30,7 @@ public class AssignmentController {
     }
 
     /**
-     * GET /api/assignments/my - Αναθέσεις του τρέχοντος χρήστη (TEACHER accessible)
+     * GET /api/assignments/my - αναθέσεις του τρέχοντος χρήστη (TEACHER accessible)
      */
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER', 'TEACHER')")
@@ -41,7 +41,7 @@ public class AssignmentController {
             
             System.out.println("🔍 Getting assignments for user: " + username);
             
-            // Για τώρα επιστρέφουμε όλες - μπορείς να το φιλτράρεις μετά
+            //για τώρα επιστρέφουμε όλες - μπορείς να το φιλτράρεις μετά
             List<AssignmentDTO> assignments = assignmentService.getAllAssignments();
             
             System.out.println("📋 Found " + assignments.size() + " assignments");
@@ -50,12 +50,12 @@ public class AssignmentController {
             
         } catch (Exception e) {
             System.out.println("❌ Error getting my assignments: " + e.getMessage());
-            return ResponseEntity.ok(List.of()); // επιστρεφουμε κενη λιστα
+            return ResponseEntity.ok(List.of()); //επιστρεφουμε κενη λιστα
         }
     }
 
     /**
-     * GET /api/assignments/schedule/{scheduleId} - Αναθέσεις για πρόγραμμα (TEACHER accessible για προβολή)
+     * GET /api/assignments/schedule/{scheduleId} - αναθέσεις για πρόγραμμα (TEACHER accessible για προβολή)
      */
     @GetMapping("/schedule/{scheduleId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER', 'TEACHER')")
@@ -71,12 +71,12 @@ public class AssignmentController {
             
         } catch (Exception e) {
             System.out.println("❌ Error getting assignments for schedule " + scheduleId + ": " + e.getMessage());
-            return ResponseEntity.ok(List.of()); // επιστρεφουμε κενη λιστα
+            return ResponseEntity.ok(List.of()); //επιστρεφουμε κενη λιστα
         }
     }
 
     /**
-     * GET /api/assignments/teacher/{teacherId} - Αναθέσεις καθηγητή
+     * GET /api/assignments/teacher/{teacherId} - αναθέσεις καθηγητή
      */
     @GetMapping("/teacher/{teacherId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER', 'TEACHER')")
@@ -92,7 +92,7 @@ public class AssignmentController {
             
         } catch (Exception e) {
             System.out.println("❌ Error getting assignments for teacher " + teacherId + ": " + e.getMessage());
-            return ResponseEntity.ok(List.of()); // επιστρεφουμε κενη λιστα
+            return ResponseEntity.ok(List.of()); //επιστρεφουμε κενη λιστα
         }
     }
 
@@ -120,7 +120,7 @@ public class AssignmentController {
     }
 
     /**
-     * POST /api/assignments - Δημιουργία ανάθεσης (ADMIN only)
+     * POST /api/assignments - δημιουργία ανάθεσης (ADMIN only)
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
@@ -140,7 +140,7 @@ public class AssignmentController {
     }
 
     /**
-     * DELETE /api/assignments/{id} - Διαγραφή ανάθεσης (ADMIN only)
+     * DELETE /api/assignments/{id} - διαγραφή ανάθεσης (ADMIN only)
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
@@ -150,7 +150,7 @@ public class AssignmentController {
     }
 
     /**
-     * GET /api/assignments/recent - Πρόσφατες αναθέσεις (όλοι)
+     * GET /api/assignments/recent - πρόσφατες αναθέσεις (όλοι)
      */
     @GetMapping("/recent")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER', 'TEACHER')")
@@ -166,7 +166,7 @@ public class AssignmentController {
     }
 
     /**
-     * GET /api/assignments/stats/{scheduleId} - Στατιστικά αναθέσεων (όλοι)
+     * GET /api/assignments/stats/{scheduleId} - στατιστικά αναθέσεων (όλοι)
      */
     @GetMapping("/stats/{scheduleId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER', 'TEACHER')")
@@ -181,7 +181,7 @@ public class AssignmentController {
     }
 
     /**
-     * GET /api/assignments/count/{scheduleId} - Μετρητής αναθέσεων (όλοι)
+     * GET /api/assignments/count/{scheduleId} - μετρητής αναθέσεων (όλοι)
      */
     @GetMapping("/count/{scheduleId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER', 'TEACHER')")
@@ -192,6 +192,21 @@ public class AssignmentController {
         } catch (Exception e) {
             System.out.println("❌ Error getting assignment count: " + e.getMessage());
             return ResponseEntity.ok(0L);
+        }
+    }
+    
+    /**
+     * GET /api/assignments/assigned-course-ids - λίστα ids μαθημάτων που έχουν ήδη ανατεθεί για συγκεκριμένο χρονοπρογραμματισμό
+     */
+    @GetMapping("/assigned-course-ids")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROGRAM_MANAGER')")
+    public ResponseEntity<List<Long>> getAssignedCourseIds(@RequestParam(required = false) Long scheduleId) {
+        try {
+            List<Long> assignedIds = assignmentService.getAssignedCourseIdsBySchedule(scheduleId);
+            return ResponseEntity.ok(assignedIds);
+        } catch (Exception e) {
+            System.out.println("❌ Error getting assigned course ids: " + e.getMessage());
+            return ResponseEntity.ok(List.of());
         }
     }
 }

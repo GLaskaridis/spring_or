@@ -122,5 +122,14 @@ public class AssignmentDTO {
     public String getCourseComponentAsString() {
         return courseComponent != null ? courseComponent.name() : null;
     }
+    
+    //getter για courseSemesterType ως String (WINTER ή SPRING)
+    public String getCourseSemesterType() {
+        if (courseSemester == null) {
+            return null;
+        }
+        //μονά εξάμηνα (1,3,5,7) = χειμερινό, ζυγά (2,4,6,8) = εαρινό
+        return (courseSemester % 2 == 1) ? "WINTER" : "SPRING";
+    }
 
 }

@@ -6,6 +6,7 @@
     <title>Πρόγραμμα Μαθημάτων</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         :root {
             --primary-color: #2c5aa0;
@@ -254,58 +255,77 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
+            <a class="navbar-brand" href="/users/user_dashboard">
                 <i class="fas fa-graduation-cap me-2"></i>
                 Σύστημα Χρονοπρογραμματισμού
             </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">
-                    <i class="fas fa-user me-1"></i>
-                    <span id="username-display">Χρήστης</span>
-                </span>
-                <a href="/users/logout" class="btn btn-outline-light btn-sm">
-                    <i class="fas fa-sign-out-alt me-1"></i>Αποσύνδεση
-                </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notificationCount">0</span>
+                        </a>
+                        <ul class="dropdown-menu" id="notificationDropdown">
+                            <li><span class="dropdown-item-text">Δεν υπάρχουν ειδοποιήσεις</span></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span id="username-display">Διδάσκων</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Ρυθμίσεις</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid p-3">
+    <div class="container-fluid mt-4">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-lg-2 mb-3">
-                <div class="sidebar p-3">
+            <div class="col-xl-3 col-lg-3 col-md-4 col-12 mb-4">
+                <div class="sidebar p-3 fade-in">
                     <nav class="nav flex-column">
-                        <a class="nav-link" href="/dashboard">
-                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        <a class="nav-link active" href="/users/user_dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Αρχική Σελίδα
                         </a>
-                        <a class="nav-link" href="/courses">
-                            <i class="fas fa-book"></i>Μαθήματα
+                        <a class="nav-link" href="/users/my-courses">
+                            <i class="fas fa-book"></i>
+                            Τα Μαθήματά μου
                         </a>
-                        <a class="nav-link" href="/rooms">
-                            <i class="fas fa-door-open"></i>Αίθουσες
+                        <a class="nav-link" href="/users/preferences">
+                            <i class="fas fa-sliders-h"></i>
+                            Προτιμήσεις Διδασκαλίας
                         </a>
-                        <a class="nav-link" href="/teachers">
-                            <i class="fas fa-users"></i>Διδάσκοντες
+                        <a class="nav-link" href="/users/schedule">
+                            <i class="fas fa-calendar-alt"></i>
+                            Πρόγραμμα Μαθημάτων
                         </a>
-                        <a class="nav-link" href="/assignments">
-                            <i class="fas fa-tasks"></i>Αναθέσεις
+                        <a class="nav-link" href="/users/rooms">
+                            <i class="fas fa-door-open"></i>
+                            Αίθουσες
                         </a>
-                        <a class="nav-link" href="/schedules">
-                            <i class="fas fa-calendar"></i>Χρονοπρογραμματισμοί
-                        </a>
-                        <a class="nav-link active" href="/schedule">
-                            <i class="fas fa-calendar-week"></i>Πρόγραμμα
-                        </a>
-                        <a class="nav-link" href="/preferences">
-                            <i class="fas fa-cog"></i>Προτιμήσεις
-                        </a>
+<!--                        <a class="nav-link" href="teacher-preferences">
+                            <i class="fas fa-clock"></i>
+                            Διαθεσιμότητα
+                        </a>-->
                     </nav>
                 </div>
             </div>
 
             <!-- Main Content -->
-            <div class="col-lg-10">
+            <div class="col-xl-9 col-lg-9 col-md-8 col-12">
                 <!-- Schedule Controls -->
                 <div class="schedule-controls fade-in">
                     <div class="row align-items-center">
