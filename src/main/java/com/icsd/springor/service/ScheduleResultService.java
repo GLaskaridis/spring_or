@@ -114,11 +114,21 @@ public class ScheduleResultService {
     public List<ScheduleDisplayDTO> getScheduleForDisplay(Long scheduleId) {
         List<ScheduleResult> results = getScheduleResultsWithDetails(scheduleId);
         
+        System.out.println("=== DEBUG SCHEDULE FOR DISPLAY ===");
+        System.out.println("Total results: " + results.size());
+        
         return results.stream().map(result -> {
             ScheduleDisplayDTO dto = new ScheduleDisplayDTO();
             dto.setId(result.getId());
-            dto.setCourseName(result.getAssignment().getCourse().getName());
-            dto.setCourseCode(result.getAssignment().getCourse().getCode());
+            
+            //debug logging για course semester
+            Course course = result.getAssignment().getCourse();
+            System.out.println("Course: " + course.getName() + 
+                             ", DB semester: " + course.getSemester() +
+                             ", Code: " + course.getCode());
+            
+            dto.setCourseName(course.getName());
+            dto.setCourseCode(course.getCode());
             dto.setCourseComponent(result.getAssignment().getCourseComponent().name());
             dto.setTeacherName(result.getAssignment().getTeacher().getFullName());
             dto.setRoomName(result.getRoom().getName());
@@ -127,6 +137,10 @@ public class ScheduleResultService {
             dto.setStartTime(result.getStartTime().toString());
             dto.setEndTime(result.getEndTime().toString());
             dto.setStatus("CONFIRMED");
+            dto.setSemester(course.getSemester());
+            
+            System.out.println("DTO semester set to: " + dto.getSemester());
+            
             return dto;
         }).collect(Collectors.toList());
     }
@@ -153,8 +167,9 @@ public class ScheduleResultService {
         private String startTime;
         private String endTime;
         private String status;
+        private Integer semester;
         
-        // Getters and setters
+        //getters and setters
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
         
@@ -179,6 +194,9 @@ public class ScheduleResultService {
         public Integer getTimeSlot() { return timeSlot; }
         public void setTimeSlot(Integer timeSlot) { this.timeSlot = timeSlot; }
         
+        public Integer getSemester() { return semester; }
+        public void setSemester(Integer semester) { this.semester = semester; }
+        
         public String getStartTime() { return startTime; }
         public void setStartTime(String startTime) { this.startTime = startTime; }
         
@@ -189,9 +207,3 @@ public class ScheduleResultService {
         public void setStatus(String status) { this.status = status; }
     }
 }
-
-
-
-
-
-

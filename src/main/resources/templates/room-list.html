@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Διαχείριση Δωματίων</title>
+    <title>Διαχείριση Αιθουσών</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -29,7 +29,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Navbar Styling */
         .navbar {
             background: var(--admin-gradient);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -40,7 +39,6 @@
             font-size: 1.6rem;
         }
 
-        /* Sidebar Styling */
         .sidebar {
             min-height: calc(100vh - 76px);
             background: white;
@@ -68,7 +66,6 @@
             margin-right: 12px;
         }
 
-        /* Card Styling */
         .card {
             border: none;
             border-radius: 1rem;
@@ -90,7 +87,6 @@
             align-items: center;
         }
 
-        /* Button Styling */
         .btn-admin {
             background: var(--admin-gradient);
             border: none;
@@ -107,7 +103,6 @@
             color: white;
         }
 
-        /* Table Styling */
         .table-responsive {
             border-radius: 1rem;
             overflow: hidden;
@@ -121,20 +116,29 @@
             vertical-align: middle;
         }
         
-        /* Availability Slots Styling */
         .availability-row {
             background-color: #f8f9fa;
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #e9ecef;
             transition: background-color 0.2s;
+            margin-bottom: 8px;
         }
         
         .availability-row:hover {
             background-color: #e9ecef;
         }
+        
+        .availability-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
 
-        /* Animations */
         .fade-in {
             animation: fadeIn 0.8s ease-in;
         }
@@ -174,35 +178,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#systemHealthModal">
-                            <i class="fas fa-heartbeat me-1"></i>
-                            Υγεία Συστήματος
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge">5</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><h6 class="dropdown-header">Ειδοποιήσεις Συστήματος</h6></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-plus text-success me-2"></i>Νέος χρήστης εγγράφηκε</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Σφάλμα χρονοπρογραμματισμού</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-calendar text-info me-2"></i>Νέο πρόγραμμα δημιουργήθηκε</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-center" href="#">Δες όλες τις ειδοποιήσεις</a></li>
-                        </ul>
-                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-shield me-1"></i>
-                            Διαχειριστής
+                            <span id="username-display">Διαχειριστής</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cogs me-2"></i>Ρυθμίσεις Συστήματος</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2"></i>Αναφορές</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
                         </ul>
@@ -218,7 +200,7 @@
             <div class="col-lg-3 col-md-4 mb-4">
                 <div class="sidebar p-3 fade-in">
                     <nav class="nav flex-column">
-                        <a class="nav-link active" href="#dashboard">
+                        <a class="nav-link" href="/users/admin_dashboard">
                             <i class="fas fa-tachometer-alt"></i>
                             Επισκόπηση
                         </a>
@@ -226,11 +208,11 @@
                             <i class="fas fa-users"></i>
                             Διαχείριση Χρηστών
                         </a>
-                        <a class="nav-link" href="/api/courses/list">
+                        <a class="nav-link" href="/courses/list">
                             <i class="fas fa-book"></i>
                             Διαχείριση Μαθημάτων
                         </a>
-                        <a class="nav-link" href="/rooms/list">
+                        <a class="nav-link active" href="/rooms/list">
                             <i class="fas fa-door-open"></i>
                             Διαχείριση Αιθουσών
                         </a>
@@ -253,18 +235,18 @@
                             <div class="card-body p-4">
                                 <div class="row align-items-center">
                                     <div class="col-md-8">
-                                        <h2 class="card-title mb-1">Διαχείριση Δωματίων</h2>
+                                        <h2 class="card-title mb-1">Διαχείριση Αιθουσών</h2>
                                         <nav aria-label="breadcrumb">
                                             <ol class="breadcrumb mb-0">
-                                                <li class="breadcrumb-item"><a href="/admin/dashboard" class="text-decoration-none">Αρχική</a></li>
-                                                <li class="breadcrumb-item active">Δωμάτια</li>
+                                                <li class="breadcrumb-item"><a href="/users/admin_dashboard" class="text-decoration-none">Αρχική</a></li>
+                                                <li class="breadcrumb-item active">Αίθουσες</li>
                                             </ol>
                                         </nav>
                                     </div>
                                     <div class="col-md-4 text-end">
-                                        <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addRoomModal">
-                                            <i class="fas fa-plus-circle me-2"></i> Προσθήκη Δωματίου
-                                        </button>
+                                        <a href="/rooms/add" class="btn btn-admin">
+                                            <i class="fas fa-plus-circle me-2"></i> Προσθήκη Αίθουσας
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -281,7 +263,7 @@
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="fas fa-list me-2"></i>
-                            Λίστα Δωματίων
+                            Λίστα Αιθουσών
                         </h5>
                     </div>
                     <div class="card-body">
@@ -295,6 +277,7 @@
                                         <th>Τοποθεσία</th>
                                         <th>Χωρητικότητα</th>
                                         <th>Τύπος</th>
+                                        <th>Διαθεσιμότητα</th>
                                         <th>Κατάσταση</th>
                                         <th>Ενέργειες</th>
                                     </tr>
@@ -308,16 +291,29 @@
                                         <td th:text="${room.capacity}"></td>
                                         <td th:text="${room.type == T(com.icsd.springor.model.RoomType).TEACHING ? 'Διδασκαλίας' : 'Εργαστήριο'}"></td>
                                         <td>
+                                            <span th:if="${room.availability != null and !room.availability.isEmpty()}" 
+                                                  th:each="avail : ${room.availability}" 
+                                                  class="availability-badge">
+                                                <span th:text="${avail.day.toString().substring(0,3)}"></span>
+                                                <span th:text="${avail.startTime + '-' + avail.endTime}"></span>
+                                            </span>
+                                            <span th:if="${room.availability == null or room.availability.isEmpty()}" class="text-muted">
+                                                Μη ορισμένη
+                                            </span>
+                                        </td>
+                                        <td>
                                             <span class="badge rounded-pill" th:classappend="${room.active} ? 'bg-success' : 'bg-danger'"
                                                   th:text="${room.active} ? 'Ενεργό' : 'Ανενεργό'">
                                             </span>
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-primary edit-room-btn" th:data-room-id="${room.id}">
+                                                <a th:href="@{/rooms/edit/{id}(id=${room.id})}" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger delete-room-btn" th:data-room-id="${room.id}" th:data-room-name="${room.name}">
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger delete-room-btn" 
+                                                        th:data-room-id="${room.id}" 
+                                                        th:data-room-name="${room.name}">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -329,8 +325,8 @@
                         
                         <div id="roomsEmptyState" class="text-center py-5" style="display: none;">
                             <i class="fas fa-door-open fa-4x text-muted mb-3 opacity-50"></i>
-                            <h4 class="text-muted">Δεν υπάρχουν καταχωρημένα δωμάτια</h4>
-                            <p class="text-muted">Κάντε κλικ στο κουμπί "Προσθήκη Δωματίου" για να ξεκινήσετε.</p>
+                            <h4 class="text-muted">Δεν υπάρχουν καταχωρημένες αίθουσες</h4>
+                            <p class="text-muted">Κάντε κλικ στο κουμπί "Προσθήκη Αίθουσας" για να ξεκινήσετε.</p>
                         </div>
                     </div>
                 </div>
@@ -338,129 +334,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addRoomModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header" style="background: var(--admin-gradient); color: white;">
-                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Προσθήκη Νέου Δωματίου</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addRoomForm">
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Όνομα Δωματίου *</label>
-                                <input type="text" class="form-control" id="roomName" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Κτίριο *</label>
-                                <input type="text" class="form-control" id="roomBuilding" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Τοποθεσία</label>
-                                <input type="text" class="form-control" id="roomLocation">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold">Χωρητικότητα *</label>
-                                <input type="number" class="form-control" id="roomCapacity" required min="1">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold">Τύπος *</label>
-                                <select class="form-select" id="roomType" required>
-                                    <option value="TEACHING">Διδασκαλίας</option>
-                                    <option value="LABORATORY">Εργαστήριο</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="roomActive" checked>
-                                    <label class="form-check-label" for="roomActive">Ενεργό Δωμάτιο</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-top pt-3">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="mb-0 text-primary"><i class="fas fa-clock me-2"></i>Διαθεσιμότητα</h6>
-                                <button type="button" class="btn btn-sm btn-outline-success" id="addTimeSlot">
-                                    <i class="fas fa-plus me-1"></i> Προσθήκη Ώρας
-                                </button>
-                            </div>
-                            <div id="availabilityContainer">
-                                </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
-                    <button type="button" class="btn btn-admin" id="saveRoomBtn">Αποθήκευση</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="editRoomModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header" style="background: var(--admin-gradient); color: white;">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Επεξεργασία Δωματίου</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editRoomForm">
-                        <input type="hidden" id="editRoomId">
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Όνομα Δωματίου *</label>
-                                <input type="text" class="form-control" id="editRoomName" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Κτίριο *</label>
-                                <input type="text" class="form-control" id="editRoomBuilding" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Τοποθεσία</label>
-                                <input type="text" class="form-control" id="editRoomLocation">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold">Χωρητικότητα *</label>
-                                <input type="number" class="form-control" id="editRoomCapacity" required min="1">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold">Τύπος *</label>
-                                <select class="form-select" id="editRoomType" required>
-                                    <option value="TEACHING">Διδασκαλίας</option>
-                                    <option value="LABORATORY">Εργαστήριο</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="editRoomActive">
-                                    <label class="form-check-label" for="editRoomActive">Ενεργό Δωμάτιο</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-top pt-3">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="mb-0 text-primary"><i class="fas fa-clock me-2"></i>Διαθεσιμότητα</h6>
-                                <button type="button" class="btn btn-sm btn-outline-success" id="editAddTimeSlot">
-                                    <i class="fas fa-plus me-1"></i> Προσθήκη Ώρας
-                                </button>
-                            </div>
-                            <div id="editAvailabilityContainer">
-                                </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
-                    <button type="button" class="btn btn-admin" id="updateRoomBtn">Ενημέρωση</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteRoomModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -469,7 +343,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε το δωμάτιο <strong id="deleteRoomName"></strong>;</p>
+                    <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε την αίθουσα <strong id="deleteRoomName"></strong>;</p>
                     <p class="text-danger small mb-0">Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.</p>
                     <input type="hidden" id="deleteRoomId">
                 </div>
@@ -483,278 +357,65 @@
 
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 
     <script th:inline="javascript">
-        // Global variables
         let roomsTable;
+        let deleteModal;
 
         document.addEventListener('DOMContentLoaded', function () {
-            // Check auth (Mock)
-            const username = localStorage.getItem('username');
-            if (username) document.getElementById('username-display').textContent = username;
-
-            // Initialize DataTable
+            //αρχικοποίηση datatable
             roomsTable = new DataTable('#roomsTable', {
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/el.json'
                 },
                 responsive: true,
                 columnDefs: [
-                    { orderable: false, targets: 7 } // Disable sorting on Actions
+                    { orderable: false, targets: 8 }
                 ]
             });
 
-            // Initial Load (Uses Thymeleaf if available, otherwise fetch)
-            const hasThymeleafData = /*[[${rooms != null && !rooms.empty}]]*/ false;
-            if (!hasThymeleafData) {
-                loadRooms();
-            }
-
+            //αρχικοποίηση modal διαγραφής
+            deleteModal = new bootstrap.Modal(document.getElementById('deleteRoomModal'));
+            
             setupEventListeners();
+            
+            //έλεγχος αν υπάρχουν δεδομένα
+            const hasData = /*[[${rooms != null && !rooms.isEmpty()}]]*/ false;
+            if (!hasData) {
+                document.getElementById('roomsEmptyState').style.display = 'block';
+            }
         });
 
         function setupEventListeners() {
-            // Add Time Slot Buttons
-            document.getElementById('addTimeSlot')?.addEventListener('click', () => addNewTimeSlot('availabilityContainer'));
-            document.getElementById('editAddTimeSlot')?.addEventListener('click', () => addNewTimeSlot('editAvailabilityContainer'));
-
-            // Remove Time Slot (Delegation)
-            document.addEventListener('click', function (e) {
-                const btn = e.target.closest('.remove-time');
-                if (btn) {
-                    const row = btn.closest('.availability-row');
-                    const container = row.parentElement;
-                    if (container.querySelectorAll('.availability-row').length > 1) {
-                        row.remove();
-                    } else {
-                        alert('Πρέπει να υπάρχει τουλάχιστον ένα χρονικό διάστημα διαθεσιμότητας.');
-                    }
-                }
-            });
-
-            // Save & Update Buttons
-            document.getElementById('saveRoomBtn')?.addEventListener('click', saveRoom);
-            document.getElementById('updateRoomBtn')?.addEventListener('click', updateRoom);
-            document.getElementById('confirmDeleteRoomBtn')?.addEventListener('click', deleteRoom);
-
-            // Modal Events
-            const addRoomModal = document.getElementById('addRoomModal');
-            if (addRoomModal) {
-                addRoomModal.addEventListener('hidden.bs.modal', function () {
-                    document.getElementById('addRoomForm').reset();
-                    document.getElementById('availabilityContainer').innerHTML = '';
-                    addNewTimeSlot('availabilityContainer');
-                });
-                // Initialize with one slot
-                addRoomModal.addEventListener('show.bs.modal', function() {
-                     if(document.getElementById('availabilityContainer').children.length === 0) {
-                         addNewTimeSlot('availabilityContainer');
-                     }
-                });
-            }
-            
-            // Edit/Delete button delegation for dynamically loaded rows
+            //διαγραφή αίθουσας με delegation
             document.querySelector('#roomsTableBody').addEventListener('click', function(e) {
-                const editBtn = e.target.closest('.edit-room-btn');
                 const deleteBtn = e.target.closest('.delete-room-btn');
-                
-                if (editBtn) {
-                    const id = editBtn.getAttribute('data-room-id');
-                    openEditRoomModal(id);
-                }
                 
                 if (deleteBtn) {
                     const id = deleteBtn.getAttribute('data-room-id');
                     const name = deleteBtn.getAttribute('data-room-name');
-                    openDeleteRoomModal(id, name);
+                    openDeleteModal(id, name);
                 }
             });
-        }
-
-        // --- Core Functions ---
-
-        function loadRooms() {
-            // Mock Fetch implementation for Demo purposes
-            // In production, uncomment the fetch logic
             
-            /* fetch('/api/rooms')
-                .then(response => response.json())
-                .then(rooms => renderRoomsTable(rooms))
-                .catch(error => console.error(error)); 
-            */
-
-            // Dummy Data for UI demonstration if no backend
-            const dummyRooms = [
-                {id: 1, name: 'Αίθουσα 101', building: 'Κτήριο Α', location: '1ος Όροφος', capacity: 40, type: 'TEACHING', active: true},
-                {id: 2, name: 'Εργαστήριο Η/Υ', building: 'Κτήριο Β', location: 'Ισόγειο', capacity: 25, type: 'LABORATORY', active: true},
-                {id: 3, name: 'Αμφιθέατρο Α', building: 'Κεντρικό', location: '2ος Όροφος', capacity: 150, type: 'TEACHING', active: false}
-            ];
-            
-            // Only render dummy data if table is empty (no Thymeleaf render)
-            if (!roomsTable.data().any()) {
-                 renderRoomsTable(dummyRooms);
-            }
-        }
-
-        function renderRoomsTable(rooms) {
-            roomsTable.clear();
-            
-            if (rooms.length === 0) {
-                document.getElementById('roomsEmptyState').style.display = 'block';
-                return;
-            } else {
-                document.getElementById('roomsEmptyState').style.display = 'none';
-            }
-
-            rooms.forEach(room => {
-                const typeText = room.type === 'TEACHING' ? 'Διδασκαλίας' : 'Εργαστήριο';
-                const activeBadge = room.active 
-                    ? '<span class="badge bg-success rounded-pill">Ενεργό</span>' 
-                    : '<span class="badge bg-danger rounded-pill">Ανενεργό</span>';
-                
-                roomsTable.row.add([
-                    room.id,
-                    room.name,
-                    room.building,
-                    room.location || '-',
-                    room.capacity,
-                    typeText,
-                    activeBadge,
-                    `<div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-outline-primary edit-room-btn" data-room-id="${room.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger delete-room-btn" data-room-id="${room.id}" data-room-name="${room.name}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>`
-                ]);
+            //επιβεβαίωση διαγραφής
+            document.getElementById('confirmDeleteRoomBtn').addEventListener('click', function() {
+                const id = document.getElementById('deleteRoomId').value;
+                deleteRoom(id);
             });
-            
-            roomsTable.draw();
         }
 
-        function addNewTimeSlot(containerId) {
-            const container = document.getElementById(containerId);
-            const row = document.createElement('div');
-            row.className = 'availability-row row mb-2 align-items-center';
-            row.innerHTML = `
-                <div class="col-md-3">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text"><i class="fas fa-calendar-day"></i></span>
-                        <select class="form-select day-select">
-                            <option value="MONDAY">Δευτέρα</option>
-                            <option value="TUESDAY">Τρίτη</option>
-                            <option value="WEDNESDAY">Τετάρτη</option>
-                            <option value="THURSDAY">Πέμπτη</option>
-                            <option value="FRIDAY">Παρασκευή</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text">Από</span>
-                        <input type="time" class="form-control start-time" value="08:00">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text">Έως</span>
-                        <input type="time" class="form-control end-time" value="20:00">
-                    </div>
-                </div>
-                <div class="col-md-1 text-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm remove-time border-0">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(row);
-        }
-
-        function collectAvailabilityData(containerId) {
-            const container = document.getElementById(containerId);
-            const rows = container.querySelectorAll('.availability-row');
-            const data = [];
-            rows.forEach(row => {
-                data.push({
-                    dayOfWeek: row.querySelector('.day-select').value,
-                    startTime: row.querySelector('.start-time').value,
-                    endTime: row.querySelector('.end-time').value
-                });
-            });
-            return data;
-        }
-
-        function saveRoom() {
-            const form = document.getElementById('addRoomForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const roomData = {
-                name: document.getElementById('roomName').value,
-                building: document.getElementById('roomBuilding').value,
-                location: document.getElementById('roomLocation').value,
-                capacity: document.getElementById('roomCapacity').value,
-                type: document.getElementById('roomType').value,
-                active: document.getElementById('roomActive').checked,
-                availability: collectAvailabilityData('availabilityContainer')
-            };
-
-            // Fetch Logic Here
-            console.log("Saving room:", roomData);
-            
-            // Close modal & reload (Mock)
-            bootstrap.Modal.getInstance(document.getElementById('addRoomModal')).hide();
-            showAlert('Το δωμάτιο προστέθηκε επιτυχώς (UI Demo).', 'success');
-            loadRooms(); 
-        }
-
-        function openEditRoomModal(id) {
-            // Mock data fetching
-            // fetch(`/api/rooms/${id}`)...
-            
-            // Dummy logic to populate form
-            document.getElementById('editRoomId').value = id;
-            document.getElementById('editRoomName').value = "Αίθουσα " + id;
-            document.getElementById('editRoomBuilding').value = "Κτήριο Α";
-            document.getElementById('editRoomCapacity').value = 40;
-            document.getElementById('editRoomType').value = "TEACHING";
-            document.getElementById('editRoomActive').checked = true;
-            
-            // Clear and add dummy availability
-            const container = document.getElementById('editAvailabilityContainer');
-            container.innerHTML = '';
-            addNewTimeSlot('editAvailabilityContainer'); // Just adding one for demo
-            
-            new bootstrap.Modal(document.getElementById('editRoomModal')).show();
-        }
-
-        function updateRoom() {
-            // Similar to saveRoom but PUT request
-            bootstrap.Modal.getInstance(document.getElementById('editRoomModal')).hide();
-            showAlert('Το δωμάτιο ενημερώθηκε επιτυχώς.', 'success');
-            loadRooms();
-        }
-
-        function openDeleteRoomModal(id, name) {
+        function openDeleteModal(id, name) {
             document.getElementById('deleteRoomId').value = id;
             document.getElementById('deleteRoomName').textContent = name;
-            new bootstrap.Modal(document.getElementById('deleteRoomModal')).show();
+            deleteModal.show();
         }
 
-        function deleteRoom() {
-            const id = document.getElementById('deleteRoomId').value;
-            // fetch delete...
-            
-            bootstrap.Modal.getInstance(document.getElementById('deleteRoomModal')).hide();
-            showAlert('Το δωμάτιο διαγράφηκε.', 'danger');
-            loadRooms();
+        function deleteRoom(id) {
+            //μετάβαση στο delete endpoint
+            window.location.href = '/rooms/delete/' + id;
         }
 
         function showAlert(message, type) {
@@ -769,11 +430,6 @@
                 const alert = document.querySelector('.alert');
                 if(alert) new bootstrap.Alert(alert).close();
             }, 5000);
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = '/login?logout=success';
         }
     </script>
 </body>

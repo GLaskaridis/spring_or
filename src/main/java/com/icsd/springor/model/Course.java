@@ -1,6 +1,7 @@
 package com.icsd.springor.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -29,6 +30,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Course {
 
     @Id
@@ -64,7 +66,7 @@ public class Course {
     @Transient
     private TeachingHours.CourseComponent activeComponent;
 
-   @Transient
+    @Transient
     private List<TimePreference> timePreferences = new ArrayList<>();
 
     public enum CourseType {

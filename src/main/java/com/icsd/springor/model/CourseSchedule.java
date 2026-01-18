@@ -5,6 +5,7 @@
 
 package com.icsd.springor.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -61,6 +62,7 @@ public class CourseSchedule {
     private Double maxDistanceKm = 1.0;
     
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore //αποφυγή serialization των lazy-loaded assignments
     private Set<Assignment> assignments;
     
     public enum ScheduleStatus {

@@ -163,7 +163,6 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
@@ -215,7 +214,6 @@
 
     <div class="container-fluid mt-4">
         <div class="row">
-            <!-- Sidebar -->
             <div class="col-lg-3 col-md-4 mb-4">
                 <div class="sidebar p-3 fade-in">
                     <nav class="nav flex-column">
@@ -227,7 +225,7 @@
                             <i class="fas fa-users"></i>
                             Διαχείριση Χρηστών
                         </a>
-                        <a class="nav-link" href="/api/courses/list">
+                        <a class="nav-link" href="/courses/list">
                             <i class="fas fa-book"></i>
                             Διαχείριση Μαθημάτων
                         </a>
@@ -421,7 +419,10 @@
             
             // Εμφάνιση username
             if (username) {
-                document.getElementById('username-display').textContent = username;
+                const usernameEl = document.getElementById('username-display');
+                if (usernameEl) {
+                    usernameEl.textContent = username;
+                }
             }
             
             // Event listener για το κουμπί προσθήκης
@@ -460,22 +461,26 @@
             try {
                 document.getElementById('teachersTableContainer').classList.add('loading');
                 
-                // Εδώ κανονικά θα γινόταν fetch
-                // const response = await fetch('/users/api/teachers', { ... });
+                //φόρτωση δεδομένων από το API
+                const response = await fetch('/users/api/teachers', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? 'Bearer ' + token : ''
+                    }
+                });
                 
-                // Για επίδειξη του στυλ, χρησιμοποιούμε dummy data αν δεν υπάρχει backend
-                const dummyTeachers = [
-                    { id: 1, fullName: 'Γιώργος Παπαδόπουλος', teacherType: 'DEP', teacherRank: 'Καθηγητής', email: 'gpap@uni.gr', active: true },
-                    { id: 2, fullName: 'Μαρία Νικολάου', teacherType: 'EDIP', teacherRank: '-', email: 'maria@uni.gr', active: true },
-                    { id: 3, fullName: 'Δημήτρης Γεωργίου', teacherType: 'DEP', teacherRank: 'Επίκουρος', email: 'dim@uni.gr', active: false }
-                ];
+                if (!response.ok) {
+                    throw new Error('Failed to fetch teachers: ' + response.status);
+                }
                 
-                // Αν το API αποτύχει ή δεν υπάρχει, εμφανίζουμε τα dummy data για να φανεί το UI
-                renderTeachersTable(dummyTeachers); 
+                const teachers = await response.json();
+                console.log('Loaded teachers:', teachers);
+                renderTeachersTable(teachers);
 
             } catch (error) {
                 console.error('Error fetching teachers:', error);
-                showAlert('teachers-alert', 'Σφάλμα σύνδεσης με τον server.', 'danger');
+                showAlert('teachers-alert', 'Σφάλμα σύνδεσης με τον server: ' + error.message, 'danger');
             } finally {
                 document.getElementById('teachersTableContainer').classList.remove('loading');
             }
@@ -518,7 +523,7 @@
         }
         
         function editTeacher(id) {
-            // Mock logic για επίδειξη UI - Στην πραγματικότητα θα έκανε fetch
+            // Mock logic για επίδειξη UI
             const rowData = teachersDataTable.row((idx, data) => data[0] == id).data();
             
             if (rowData) {
@@ -546,20 +551,16 @@
         }
         
         function deleteTeacher() {
-            // Mock delete logic
             const modal = bootstrap.Modal.getInstance(document.getElementById('deleteTeacherModal'));
             modal.hide();
             showAlert('teachers-alert', 'Ο καθηγητής διαγράφηκε επιτυχώς (UI Demo).', 'success');
-            // Reload data...
         }
         
         function saveTeacher(event) {
             event.preventDefault();
-            // Mock save logic
             const modal = bootstrap.Modal.getInstance(document.getElementById('teacherModal'));
             modal.hide();
             showAlert('teachers-alert', 'Οι αλλαγές αποθηκεύτηκαν (UI Demo).', 'success');
-            // Reload data...
         }
         
         function showAlert(containerId, message, type) {

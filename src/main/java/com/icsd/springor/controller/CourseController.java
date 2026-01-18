@@ -1,6 +1,7 @@
 package com.icsd.springor.controller;
 
 import com.icsd.springor.model.Course;
+import com.icsd.springor.model.Room;
 import com.icsd.springor.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -8,10 +9,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 
-@RestController
-@RequestMapping("/api/courses")
+@Controller
+@RequestMapping("/courses")
 public class CourseController {
 
     @Autowired
@@ -63,6 +65,7 @@ public class CourseController {
         List<Course> courses = courseService.getAllCourses();
         model.addAttribute("courses", courses);
         return "course-list";
+       
     }
 
     @PutMapping("/{id}/deactivate")

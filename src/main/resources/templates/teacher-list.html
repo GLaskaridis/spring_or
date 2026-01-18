@@ -1,152 +1,469 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="el" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Διαχείριση Διδασκόντων</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Διαχείριση Διδασκόντων</title>
     
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
     
-    <!-- Custom CSS -->
     <style>
         :root {
-            --primary-color: #3d4785;
-            --secondary-color: #f1f7fe;
-            --accent-color: #4e5db2;
-            --text-color: #333;
-            --light-text: #6c757d;
+            --primary-color: #1a365d;
+            --secondary-color: #2d3748;
+            --accent-color: #4299e1;
+            --success-color: #38a169;
+            --warning-color: #ed8936;
+            --danger-color: #e53e3e;
+            --light-bg: #f7fafc;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --admin-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        
+
         body {
+            background-color: var(--light-bg);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
-            color: var(--text-color);
         }
-        
+
+        .navbar {
+            background: var(--admin-gradient);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.6rem;
+        }
+
+        .sidebar {
+            min-height: calc(100vh - 76px);
+            background: white;
+            box-shadow: var(--card-shadow);
+            border-radius: 0.75rem;
+        }
+
+        .sidebar .nav-link {
+            color: var(--secondary-color);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: var(--admin-gradient);
+            color: white;
+            transform: translateX(8px);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 12px;
+        }
+
         .card {
             border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-radius: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            background: white;
             margin-bottom: 1.5rem;
         }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-        
-        .table-container {
-            background-color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-        
-        .empty-state {
+
+        .card-header {
+            background: var(--admin-gradient);
+            color: white;
+            border-radius: 1rem 1rem 0 0 !important;
+            border: none;
+            font-weight: 600;
+            padding: 1rem 1.5rem;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-admin {
+            background: var(--admin-gradient);
+            border: none;
+            color: white;
+            border-radius: 0.75rem;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .table-responsive {
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: var(--admin-gradient) !important;
+            color: white !important;
+            border: none;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+
+        .teacher-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--admin-gradient);
+            display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .type-dep { background: #e3f2fd; color: #1565c0; }
+        .type-edip { background: #f3e5f5; color: #7b1fa2; }
+        .type-etep { background: #e8f5e9; color: #2e7d32; }
+        .type-other { background: #fff3e0; color: #ef6c00; }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .empty-state {
             text-align: center;
             padding: 3rem;
-            color: var(--light-text);
         }
-        
+
         .empty-state i {
             font-size: 4rem;
-            margin-bottom: 1rem;
             color: #d1d3e2;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="h3 mb-4">Διαχείριση Διδασκόντων</h1>
-        
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="card-title">Λίστα Διδασκόντων</h5>
-                    <a th:href="@{/teachers/add}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i> Προσθήκη Διδάσκοντα
-                    </a>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                Διαχείριση Συστήματος
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-shield me-1"></i>
+                            <span id="username-display">Διαχειριστής</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Προφίλ</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/users/logout"><i class="fas fa-sign-out-alt me-2"></i>Αποσύνδεση</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <div class="sidebar p-3 fade-in">
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="/users/admin_dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Επισκόπηση
+                        </a>
+                        <a class="nav-link" href="/users/manage_users">
+                            <i class="fas fa-users"></i>
+                            Διαχείριση Χρηστών
+                        </a>
+                        <a class="nav-link active" href="/teachers/list">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            Διαχείριση Διδασκόντων
+                        </a>
+                        <a class="nav-link" href="/courses/list">
+                            <i class="fas fa-book"></i>
+                            Διαχείριση Μαθημάτων
+                        </a>
+                        <a class="nav-link" href="/rooms/list">
+                            <i class="fas fa-door-open"></i>
+                            Διαχείριση Αιθουσών
+                        </a>
+                        <a class="nav-link" href="/admin/schedules">
+                            <i class="fas fa-calendar-alt"></i>
+                            Χρονοπρογραμματισμός
+                        </a>
+                        <a class="nav-link" href="/admin/assignments">
+                            <i class="fas fa-tasks"></i>
+                            Αναθέσεις Μαθημάτων
+                        </a>
+                    </nav>
                 </div>
-                
-                <div class="alert alert-success alert-dismissible fade show" th:if="${message}" role="alert">
-                    <span th:text="${message}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="col-lg-9 col-md-8">
+                <!-- Header Card -->
+                <div class="row mb-4 fade-in">
+                    <div class="col-12">
+                        <div class="card border-0">
+                            <div class="card-body p-4">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h2 class="card-title mb-1">
+                                            <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>
+                                            Διαχείριση Διδασκόντων
+                                        </h2>
+                                        <nav aria-label="breadcrumb">
+                                            <ol class="breadcrumb mb-0">
+                                                <li class="breadcrumb-item"><a href="/users/admin_dashboard" class="text-decoration-none">Αρχική</a></li>
+                                                <li class="breadcrumb-item active">Διδάσκοντες</li>
+                                            </ol>
+                                        </nav>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <a href="/teachers/add" class="btn btn-admin">
+                                            <i class="fas fa-plus-circle me-2"></i> Προσθήκη Διδάσκοντα
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Ονοματεπώνυμο</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Τύπος</th>
-                                <th>Βαθμίδα</th>
-                                <th>Κατάσταση</th>
-                                <th>Ενέργειες</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="teacher : ${teachers}" th:if="${teachers != null && !teachers.empty}">
-                                <td th:text="${teacher.id}"></td>
-                                <td th:text="${teacher.fullName}"></td>
-                                <td th:text="${teacher.username}"></td>
-                                <td th:text="${teacher.email}"></td>
-                                <td th:text="${teacher.teacherType == T(com.icsd.springor.DTO.TeacherType).DEP ? 'ΔΕΠ' : 
-                                             teacher.teacherType == T(com.icsd.springor.DTO.TeacherType).EDIP ? 'ΕΔΙΠ' : 
-                                             teacher.teacherType == T(com.icsd.springor.DTO.TeacherType).ETEP ? 'ΕΤΕΠ' : 'Άλλο'}"></td>
-                                <td th:text="${teacher.teacherRank}"></td>
-                                <td>
-                                    <span class="badge" th:classappend="${teacher.active} ? 'bg-success' : 'bg-danger'"
-                                          th:text="${teacher.active} ? 'Ενεργός' : 'Ανενεργός'">
-                                    </span>
-                                </td>
-                                <td>
-                                    <a th:href="@{/teachers/edit/{id}(id=${teacher.id})}" class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a th:href="@{/teachers/delete/{id}(id=${teacher.id})}" class="btn btn-sm btn-outline-danger"
-                                       onclick="return confirm('Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτόν τον διδάσκοντα;')">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+                <!-- Alert Messages -->
+                <div id="alertContainer">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${message}">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span th:text="${message}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${error}">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
                 </div>
-                
-                <div th:if="${teachers == null || teachers.empty}" class="empty-state">
-                    <i class="bi bi-person"></i>
-                    <h4>Δεν υπάρχουν καταχωρημένοι διδάσκοντες</h4>
-                    <p>Κάντε κλικ στο κουμπί "Προσθήκη Διδάσκοντα" για να προσθέσετε έναν νέο διδάσκοντα.</p>
+
+                <!-- Teachers Table Card -->
+                <div class="card fade-in" style="animation-delay: 0.2s;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Λίστα Διδασκόντων
+                        </h5>
+                        <span class="badge bg-light text-dark" th:if="${teachers}" th:text="${#lists.size(teachers)} + ' διδάσκοντες'"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" th:if="${teachers != null && !teachers.isEmpty()}">
+                            <table id="teachersTable" class="table table-hover w-100">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Διδάσκων</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Τύπος</th>
+                                        <th>Βαθμίδα</th>
+                                        <th>Κατάσταση</th>
+                                        <th>Ενέργειες</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teachersTableBody">
+                                    <tr th:each="teacher : ${teachers}">
+                                        <td th:text="${teacher.id}"></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="teacher-avatar me-2">
+                                                    <span th:text="${teacher.fullName != null and !teacher.fullName.isEmpty()} ? ${#strings.substring(teacher.fullName, 0, 1)} : '?'"></span>
+                                                </div>
+                                                <span th:text="${teacher.fullName ?: 'Χωρίς όνομα'}"></span>
+                                            </div>
+                                        </td>
+                                        <td th:text="${teacher.username}"></td>
+                                        <td>
+                                            <a th:href="'mailto:' + ${teacher.email}" class="text-decoration-none">
+                                                <i class="fas fa-envelope me-1 text-muted"></i>
+                                                <span th:text="${teacher.email}"></span>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="type-badge type-dep" 
+                                                  th:if="${teacher.teacherType != null and teacher.teacherType.name() == 'DEP'}">ΔΕΠ</span>
+                                            <span class="type-badge type-edip" 
+                                                  th:if="${teacher.teacherType != null and teacher.teacherType.name() == 'EDIP'}">ΕΔΙΠ</span>
+                                            <span class="type-badge type-etep" 
+                                                  th:if="${teacher.teacherType != null and teacher.teacherType.name() == 'ETEP'}">ΕΤΕΠ</span>
+                                            <span class="type-badge type-other" 
+                                                  th:if="${teacher.teacherType != null and teacher.teacherType.name() == 'OTHER'}">Άλλο</span>
+                                            <span class="text-muted" 
+                                                  th:if="${teacher.teacherType == null}">-</span>
+                                        </td>
+                                        <td th:text="${teacher.teacherRank ?: '-'}"></td>
+                                        <td>
+                                            <span class="badge rounded-pill" 
+                                                  th:classappend="${teacher.active} ? 'bg-success' : 'bg-danger'"
+                                                  th:text="${teacher.active} ? 'Ενεργός' : 'Ανενεργός'">
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a th:href="@{/teachers/edit/{id}(id=${teacher.id})}" 
+                                                   class="btn btn-sm btn-outline-primary" title="Επεξεργασία">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger delete-teacher-btn" 
+                                                        th:data-teacher-id="${teacher.id}" 
+                                                        th:data-teacher-name="${teacher.fullName}"
+                                                        title="Διαγραφή">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div th:if="${teachers == null || teachers.isEmpty()}" class="empty-state">
+                            <i class="fas fa-user-graduate"></i>
+                            <h4 class="text-muted">Δεν υπάρχουν καταχωρημένοι διδάσκοντες</h4>
+                            <p class="text-muted">Κάντε κλικ στο κουμπί "Προσθήκη Διδάσκοντα" για να ξεκινήσετε.</p>
+                            <a href="/teachers/add" class="btn btn-admin mt-3">
+                                <i class="fas fa-plus-circle me-2"></i> Προσθήκη Διδάσκοντα
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                
+
+                <!-- Back to Dashboard -->
                 <div class="mt-3">
-                    <a th:href="@{/}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left me-1"></i> Επιστροφή στο Dashboard
+                    <a href="/users/admin_dashboard" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Επιστροφή στο Dashboard
                     </a>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteTeacherModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Επιβεβαίωση Διαγραφής</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Είστε βέβαιοι ότι θέλετε να διαγράψετε τον διδάσκοντα <strong id="deleteTeacherName"></strong>;</p>
+                    <p class="text-danger small mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Αυτή η ενέργεια δεν μπορεί να αναιρεθεί. Τυχόν αναθέσεις μαθημάτων θα διαγραφούν επίσης.
+                    </p>
+                    <input type="hidden" id="deleteTeacherId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ακύρωση</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteTeacherBtn">
+                        <i class="fas fa-trash me-1"></i> Διαγραφή
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        let teachersTable;
+        let deleteModal;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            //αρχικοποίηση datatable
+            if (document.getElementById('teachersTable')) {
+                teachersTable = new DataTable('#teachersTable', {
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/el.json'
+                    },
+                    responsive: true,
+                    columnDefs: [
+                        { orderable: false, targets: 7 }
+                    ],
+                    order: [[0, 'asc']]
+                });
+            }
+
+            //αρχικοποίηση modal διαγραφής
+            deleteModal = new bootstrap.Modal(document.getElementById('deleteTeacherModal'));
+            
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            //διαγραφή διδάσκοντα με delegation
+            const tableBody = document.querySelector('#teachersTableBody');
+            if (tableBody) {
+                tableBody.addEventListener('click', function(e) {
+                    const deleteBtn = e.target.closest('.delete-teacher-btn');
+                    
+                    if (deleteBtn) {
+                        const id = deleteBtn.getAttribute('data-teacher-id');
+                        const name = deleteBtn.getAttribute('data-teacher-name');
+                        openDeleteModal(id, name);
+                    }
+                });
+            }
+            
+            //επιβεβαίωση διαγραφής
+            document.getElementById('confirmDeleteTeacherBtn').addEventListener('click', function() {
+                const id = document.getElementById('deleteTeacherId').value;
+                deleteTeacher(id);
+            });
+        }
+
+        function openDeleteModal(id, name) {
+            document.getElementById('deleteTeacherId').value = id;
+            document.getElementById('deleteTeacherName').textContent = name;
+            deleteModal.show();
+        }
+
+        function deleteTeacher(id) {
+            //μετάβαση στο delete endpoint
+            window.location.href = '/teachers/delete/' + id;
+        }
+    </script>
 </body>
 </html>

@@ -111,27 +111,21 @@ public class ScheduleExecutionController {
                 System.out.println("  - Result isEmpty: " + result.isEmpty());
             }
 
-            if (result != null && !result.isEmpty()) {
+             if (result != null && !result.isEmpty()) {
                 System.out.println("SUCCESS: Solution found with " + result.size() + " assignments");
 
                 try {
-                    // Ενημέρωση status
+                    //ενημέρωση status σε SOLUTION_FOUND (χωρίς αποθήκευση αποτελεσμάτων ακόμα)
                     System.out.println("Updating schedule status to SOLUTION_FOUND...");
                     scheduleService.changeScheduleStatus(scheduleId, CourseSchedule.ScheduleStatus.SOLUTION_FOUND);
                     System.out.println("Status updated");
                     
-                    // Αποθήκευση αποτελεσμάτων στη βάση
-                    System.out.println("Saving schedule results to database...");
-                    scheduleResultService.saveScheduleResults(schedule, result);
-                    System.out.println("Results saved successfully");
-                    
                 } catch (Exception statusException) {
-                    System.out.println("Warning: Could not update status or save results: " + statusException.getMessage());
+                    System.out.println("Warning: Could not update status: " + statusException.getMessage());
                     statusException.printStackTrace();
-                    // continue anyway since we have a solution
                 }
 
-                // Prepare model for results page
+                //prepare model for results page
                 model.addAttribute("schedule", schedule);
                 model.addAttribute("assignments", result);
                 model.addAttribute("coursesData", coursesWithPreferences);
@@ -570,6 +564,7 @@ public class ScheduleExecutionController {
                 details.put("teacherId", a.getTeacherId());
                 details.put("component", a.getCourseComponent());
                 assignmentDetails.add(details);
+               
             }
 
             // Prepare courses
@@ -1343,57 +1338,159 @@ public class ScheduleExecutionController {
         }
     }
     
+//     @GetMapping("/results/{scheduleId}")
+//    public String viewResults(@PathVariable Long scheduleId, Model model, RedirectAttributes redirectAttributes) {
+//        System.out.println("\n=== VIEW RESULTS START ===");
+//        System.out.println("Schedule ID: " + scheduleId);
+//        
+//        try {
+//            CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
+//            System.out.println("Schedule found: " + schedule.getName() + ", Status: " + schedule.getStatus());
+//
+//            //αν δεν υπάρχουν αποθηκευμένα αποτελέσματα, εκτέλεσε ξανά τον αλγόριθμο
+//            if (!scheduleResultService.hasScheduleResults(scheduleId)) {
+//                System.out.println("No stored results found, redirecting to execute...");
+//                redirectAttributes.addFlashAttribute("info", "Δεν υπάρχουν αποθηκευμένα αποτελέσματα. Εκτέλεση αλγορίθμου...");
+//                return "redirect:/schedule-execution/execute/" + scheduleId;
+//            }
+//
+//            List<ScheduleResult> results = scheduleResultService.getScheduleResultsWithDetails(scheduleId);
+//            System.out.println("Found " + results.size() + " stored results");
+//            
+//            List<Map<String, Object>> assignmentMaps = new ArrayList<>();
+//
+//            for (ScheduleResult result : results) {
+//                Map<String, Object> assignmentMap = new HashMap<>();
+//
+//                //πληροφορίες μαθήματος από το assignment
+//                Assignment assignment = result.getAssignment();
+//                Course course = assignment.getCourse();
+//                
+//                System.out.println("Processing result for course: " + course.getName() + 
+//                    ", Semester: " + course.getSemester() + ", Year: " + course.getYear());
+//
+//                //δημιουργία course map με ΟΛΑ τα απαραίτητα πεδία
+//                Map<String, Object> courseMap = new HashMap<>();
+//                courseMap.put("id", course.getId());
+//                courseMap.put("name", course.getName());
+//                courseMap.put("code", course.getCode());
+//                courseMap.put("semester", course.getSemester());
+//                courseMap.put("year", course.getYear());
+//                courseMap.put("type", course.getType() != null ? course.getType().name() : "BASIC");
+//                //παίρνουμε το component από το course
+//                courseMap.put("activeComponent", course.getActiveComponent() != null ? 
+//                    course.getActiveComponent().name() : "THEORY");
+//                
+//                assignmentMap.put("course", courseMap);
+//
+//                //πληροφορίες αίθουσας
+//                Map<String, Object> roomMap = new HashMap<>();
+//                roomMap.put("id", result.getRoom().getId());
+//                roomMap.put("name", result.getRoom().getName());
+//                roomMap.put("building", result.getRoom().getBuilding() != null ? 
+//                    result.getRoom().getBuilding() : "");
+//                roomMap.put("capacity", result.getRoom().getCapacity());
+//                
+//                assignmentMap.put("room", roomMap);
+//
+//                //χρονικά στοιχεία
+//                assignmentMap.put("day", result.getDayOfWeek().name());
+//                assignmentMap.put("slot", result.getSlotNumber());
+//                assignmentMap.put("timeSlot", result.getSlotNumber());
+//                assignmentMap.put("startTime", result.getStartTime().toString());
+//                assignmentMap.put("endTime", result.getEndTime().toString());
+//
+//                
+//                //assignmentMaps.add(assignmentMap);
+//            }
+//            
+//            System.out.println("Total assignments prepared: " + assignmentMaps.size());
+//
+//            model.addAttribute("schedule", schedule);
+//            model.addAttribute("assignments", assignmentMaps);
+//            model.addAttribute("success", true);
+//            model.addAttribute("message", "Βρέθηκε λύση με " + results.size() + " αναθέσεις");
+//
+//            System.out.println("=== VIEW RESULTS END ===\n");
+//            return "schedule-execution-result";
+//            
+//        } catch (Exception e) {
+//            System.out.println("Error in viewResults: " + e.getMessage());
+//            e.printStackTrace();
+//            redirectAttributes.addFlashAttribute("error", "Σφάλμα κατά την ανάκτηση αποτελεσμάτων: " + e.getMessage());
+//            return "redirect:/admin/schedules";
+//        }
+//    }
+    
     @GetMapping("/results/{scheduleId}")
-    public String viewResults(@PathVariable Long scheduleId, Model model, RedirectAttributes redirectAttributes) {
-        CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
-
-        // Αν δεν υπάρχουν αποθηκευμένα αποτελέσματα, εκτέλεσε ξανά τον αλγόριθμο
-        if (!scheduleResultService.hasScheduleResults(scheduleId)) {
-            redirectAttributes.addFlashAttribute("info", "Δεν υπάρχουν αποθηκευμένα αποτελέσματα. Εκτέλεση αλγορίθμου...");
-            return "redirect:/schedule-execution/execute/" + scheduleId;
+    public String showResults(@PathVariable Long scheduleId, Model model, RedirectAttributes redirectAttributes) {
+        System.out.println("\n=== SHOW RESULTS START ===");
+        System.out.println("Schedule ID: " + scheduleId);
+        
+        try {
+            //αναζητηση του χρονοπρογραμματισμου
+            CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
+            System.out.println("Schedule: " + schedule.getName() + " (Status: " + schedule.getStatus() + ")");
+            
+            //ανακτηση αποτελεσματων απο τη βαση με EAGER fetch
+            List<ScheduleResult> results = scheduleResultService.getScheduleResultsWithDetails(scheduleId);
+            System.out.println("Found " + results.size() + " stored results");
+            
+            if (results.isEmpty()) {
+                model.addAttribute("error", "Δεν βρέθηκαν αποτελέσματα για αυτόν τον χρονοπρογραμματισμό.");
+                model.addAttribute("schedule", schedule);
+                return "schedule-execution-result";
+            }
+            
+            //μετατροπη σε CourseAssignment objects που χρησιμοποιει το template
+            List<CourseAssignment> assignments = new ArrayList<>();
+            
+            for (ScheduleResult result : results) {
+                //τα relationships ειναι ηδη loaded απο το JOIN FETCH
+                Assignment assignment = result.getAssignment();
+                Course course = assignment.getCourse();
+                Room room = result.getRoom();
+                
+                System.out.println("Processing: " + course.getName() + " in room " + room.getName());
+                
+                //δημιουργια CourseAssignment object με constructor
+                int slotNumber = result.getSlotNumber();
+                
+                CourseAssignment ca = new CourseAssignment(
+                    course,
+                    room,
+                    result.getDayOfWeek(),
+                    slotNumber
+                );
+                
+                assignments.add(ca);
+            }
+            
+            System.out.println("Total assignments prepared: " + assignments.size());
+            
+            model.addAttribute("schedule", schedule);
+            model.addAttribute("assignments", assignments);
+            model.addAttribute("success", true);
+            
+            //προσθηκη μηνυματος αναλογα με το status
+//            if (schedule.isApproved()) {
+//                model.addAttribute("message", "Εγκεκριμένο πρόγραμμα με " + results.size() + " αναθέσεις");
+//            } else {
+//                model.addAttribute("message", "Βρέθηκε λύση με " + results.size() + " αναθέσεις");
+//            }
+            
+            System.out.println("=== SHOW RESULTS END ===\n");
+            return "schedule-execution-result";
+            
+        } catch (Exception e) {
+            System.out.println("Error in showResults: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("error", "Σφάλμα κατά την ανάκτηση αποτελεσμάτων: " + e.getMessage());
+            return "schedule-execution-result";
         }
-
-        List<ScheduleResult> results = scheduleResultService.getScheduleResults(scheduleId);
-        List<Map<String, Object>> assignmentMaps = new ArrayList<>();
-
-        for (ScheduleResult result : results) {
-            Map<String, Object> assignmentMap = new HashMap<>();
-
-            // Πληροφορίες μαθήματος από το assignment
-            Assignment assignment = result.getAssignment();
-            Course course = assignment.getCourse();
-
-            assignmentMap.put("course", Map.of(
-                    "id", course.getId(),
-                    "name", course.getName(),
-                    "code", course.getCode()
-            ));
-
-            assignmentMap.put("room", Map.of(
-                    "id", result.getRoom().getId(),
-                    "name", result.getRoom().getName(),
-                    "building", result.getRoom().getBuilding() != null ? result.getRoom().getBuilding() : "",
-                    "capacity", result.getRoom().getCapacity()
-            ));
-
-            assignmentMap.put("day", result.getDayOfWeek().name());
-            assignmentMap.put("slot", result.getSlotNumber());
-            assignmentMap.put("timeSlot", result.getSlotNumber());
-            assignmentMap.put("startTime", result.getStartTime().toString());
-            assignmentMap.put("endTime", result.getEndTime().toString());
-
-            assignmentMaps.add(assignmentMap);
-        }
-
-        model.addAttribute("schedule", schedule);
-        model.addAttribute("assignments", assignmentMaps);
-        model.addAttribute("success", true);
-        model.addAttribute("message", "Βρέθηκε λύση με " + results.size() + " αναθέσεις");
-
-        return "schedule-execution-result";
     }
+    
 
-    // CHANGED URL TO Avoid Ambiguous Mapping with the method above
     @PostMapping("/api/approve/{scheduleId}")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> approveScheduleJSON(@PathVariable Long scheduleId) {
@@ -1403,7 +1500,7 @@ public class ScheduleExecutionController {
         try {
             CourseSchedule schedule = scheduleService.getScheduleById(scheduleId);
             
-            // Έλεγχος αν το πρόγραμμα έχει λύση
+            //έλεγχος αν το πρόγραμμα έχει λύση
             if (schedule.getStatus() != CourseSchedule.ScheduleStatus.SOLUTION_FOUND) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
@@ -1411,11 +1508,11 @@ public class ScheduleExecutionController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // Έλεγχος αν υπάρχουν ήδη αποθηκευμένα αποτελέσματα
+            //έλεγχος αν υπάρχουν ήδη αποθηκευμένα αποτελέσματα
             if (scheduleResultService.hasScheduleResults(scheduleId)) {
                 System.out.println("Τα αποτελέσματα έχουν ήδη αποθηκευτεί στη βάση");
                 
-                // Αλλαγή status σε approved
+                //αλλαγή status σε approved
                 scheduleService.changeScheduleStatus(scheduleId, CourseSchedule.ScheduleStatus.SOLUTION_APPROVED);
                 
                 Map<String, Object> response = new HashMap<>();
@@ -1424,11 +1521,41 @@ public class ScheduleExecutionController {
                 return ResponseEntity.ok(response);
             }
             
-            // Αν δεν υπάρχουν αποθηκευμένα αποτελέσματα
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Δεν υπάρχουν αποτελέσματα προς έγκριση. Παρακαλώ εκτελέστε πρώτα τον αλγόριθμο");
-            return ResponseEntity.badRequest().body(response);
+            //αν δεν υπάρχουν αποτελέσματα, πρέπει να τρέξουμε ξανά τον αλγόριθμο και να τα αποθηκεύσουμε
+            System.out.println("Δεν υπάρχουν αποθηκευμένα αποτελέσματα - εκτέλεση αλγορίθμου...");
+            
+            //λήψη δεδομένων
+            List<AssignmentDTO> assignments = assignmentService.getAssignmentsBySchedule(scheduleId);
+            List<TeacherPreferenceDTO> preferences = preferenceService.getPreferencesBySchedule(scheduleId);
+            List<Room> rooms = roomService.getAllRooms();
+            
+            //προετοιμασία μαθημάτων
+            List<Course> coursesWithPreferences = prepareCoursesWithPreferences(assignments, preferences);
+            
+            //εκτέλεση αλγορίθμου
+            CourseScheduler scheduler = new CourseScheduler();
+            List<CourseScheduler.CourseAssignment> result = scheduler.createSchedule(coursesWithPreferences, rooms);
+            
+            if (result != null && !result.isEmpty()) {
+                //αποθήκευση αποτελεσμάτων στη βάση
+                System.out.println("Αποθήκευση " + result.size() + " αποτελεσμάτων στη βάση...");
+                scheduleResultService.saveScheduleResults(schedule, result);
+                System.out.println("Αποτελέσματα αποθηκεύτηκαν επιτυχώς");
+                
+                //αλλαγή status σε approved
+                scheduleService.changeScheduleStatus(scheduleId, CourseSchedule.ScheduleStatus.SOLUTION_APPROVED);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "Το πρόγραμμα εγκρίθηκε και αποθηκεύτηκε επιτυχώς");
+                response.put("resultsCount", result.size());
+                return ResponseEntity.ok(response);
+            } else {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Δεν βρέθηκε λύση κατά την έγκριση");
+                return ResponseEntity.badRequest().body(response);
+            }
             
         } catch (Exception e) {
             System.out.println("Σφάλμα κατά την έγκριση: " + e.getMessage());

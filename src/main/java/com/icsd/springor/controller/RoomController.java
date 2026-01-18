@@ -1,10 +1,5 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.icsd.springor.controller;
 
-import static com.google.protobuf.JavaFeaturesProto.java;
 import com.icsd.springor.DTO.RoomDTO;
 import com.icsd.springor.model.Room;
 import com.icsd.springor.model.RoomAvailability;
@@ -33,17 +28,9 @@ public class RoomController {
     @Autowired
     private RoomService roomService;
 
-    @PostMapping("/edit/{id}")
-    public String updateRoom(@PathVariable Long id, @ModelAttribute RoomDTO roomDTO) {
-        Room room = roomDTO.toEntity();
-        room.setId(id); // Make sure to set the ID
-        roomService.updateRoom(id, room);
-        return "redirect:/rooms/list";
-    }
-
     @GetMapping("/add")
     public String showAddRoomForm(Model model) {
-        model.addAttribute("room", new Room());
+        model.addAttribute("room", new RoomDTO());
         return "add_room";
     }
 
@@ -51,12 +38,14 @@ public class RoomController {
     public String addRoom(@ModelAttribute RoomDTO roomDTO, RedirectAttributes redirectAttributes) {
         try {
             Room room = roomDTO.toEntity();
-            System.out.println(room);
+            System.out.println("Αποθήκευση αίθουσας: " + room);
+            System.out.println("Διαθεσιμότητα: " + room.getAvailability());
             roomService.addRoom(room);
-            redirectAttributes.addFlashAttribute("message", "Room added successfully");
+            redirectAttributes.addFlashAttribute("message", "Η αίθουσα προστέθηκε επιτυχώς!");
             return "redirect:/rooms/list";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error adding room: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Σφάλμα κατά την προσθήκη αίθουσας: " + e.getMessage());
             return "redirect:/rooms/add";
         }
     }
@@ -65,67 +54,64 @@ public class RoomController {
     public String listRooms(Model model) {
         List<Room> rooms = roomService.getAllRooms();
         model.addAttribute("rooms", rooms);
-        //
         return "room-list";
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        Room room = roomService.getRoomById(id);
-        RoomDTO roomDTO = convertToDTO(room);
-        model.addAttribute("room", roomDTO);
-        return "edit-room";
+    public String showEditForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            Room room = roomService.getRoomById(id);
+            RoomDTO roomDTO = RoomDTO.fromEntity(room);
+            roomDTO.setId(id);
+            model.addAttribute("room", roomDTO);
+            return "edit-room";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Η αίθουσα δεν βρέθηκε: " + e.getMessage());
+            return "redirect:/rooms/list";
+        }
     }
 
-//    @PostMapping("/edit/{id}")
-//    public String updateRoom(@PathVariable Long id, @ModelAttribute Room room) {
-//        roomService.updateRoom(id, room);
-//        return "redirect:/rooms/list";
-//    }
+    @PostMapping("/edit/{id}")
+    public String updateRoom(@PathVariable Long id, @ModelAttribute RoomDTO roomDTO, RedirectAttributes redirectAttributes) {
+        try {
+            Room room = roomDTO.toEntity();
+            room.setId(id);
+            roomService.updateRoom(id, room);
+            redirectAttributes.addFlashAttribute("message", "Η αίθουσα ενημερώθηκε επιτυχώς!");
+            return "redirect:/rooms/list";
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Σφάλμα κατά την ενημέρωση: " + e.getMessage());
+            return "redirect:/rooms/edit/" + id;
+        }
+    }
+
     @GetMapping("/delete/{id}")
-    public String deleteRoom(@PathVariable Long id) {
-        roomService.deleteRoom(id);
+    public String deleteRoom(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            roomService.deleteRoom(id);
+            redirectAttributes.addFlashAttribute("message", "Η αίθουσα διαγράφηκε επιτυχώς!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Σφάλμα κατά τη διαγραφή: " + e.getMessage());
+        }
         return "redirect:/rooms/list";
     }
-
-    private RoomDTO convertToDTO(Room room) {
-        RoomDTO dto = new RoomDTO();
-        dto.setName(room.getName());
-        dto.setBuilding(room.getBuilding());
-        dto.setCapacity(room.getCapacity());
-        dto.setType(room.getType());
-        dto.setLocation(room.getLocation());
-
-        Set<String> availabilitySlots = new HashSet<>();
-        if (room.getAvailability() != null) {
-            for (RoomAvailability avail : room.getAvailability()) {
-                String day = avail.getDay().toString();
-                LocalTime start = avail.getStartTime();
-
-                // Determine which slot this is
-                int slotNum = 0;
-                if (start.equals(LocalTime.of(9, 0))
-                        || (start.isAfter(LocalTime.of(8, 30)) && start.isBefore(LocalTime.of(9, 30)))) {
-                    slotNum = 1;
-                } else if (start.equals(LocalTime.of(12, 0))
-                        || (start.isAfter(LocalTime.of(11, 30)) && start.isBefore(LocalTime.of(12, 30)))) {
-                    slotNum = 2;
-                } else if (start.equals(LocalTime.of(15, 0))
-                        || (start.isAfter(LocalTime.of(14, 30)) && start.isBefore(LocalTime.of(15, 30)))) {
-                    slotNum = 3;
-                } else if (start.equals(LocalTime.of(18, 0))
-                        || (start.isAfter(LocalTime.of(17, 30)) && start.isBefore(LocalTime.of(18, 30)))) {
-                    slotNum = 4;
-                }
-
-                if (slotNum > 0) {
-                    availabilitySlots.add(day + "_SLOT" + slotNum);
-                }
-            }
+    
+    //api endpoint για διαγραφή (για ajax calls)
+    @DeleteMapping("/api/delete/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteRoomApi(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            roomService.deleteRoom(id);
+            response.put("success", true);
+            response.put("message", "Η αίθουσα διαγράφηκε επιτυχώς!");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Σφάλμα: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
-
-        dto.setAvailability(availabilitySlots);
-        return dto;
     }
 
     @GetMapping("/api/all")
@@ -143,7 +129,22 @@ public class RoomController {
                         roomInfo.put("capacity", room.getCapacity() != null ? room.getCapacity() : 50);
                         roomInfo.put("type", room.getType() != null ? room.getType().toString() : "TEACHING");
                         roomInfo.put("location", room.getLocation() != null ? room.getLocation() : "");
-                        roomInfo.put("active", true); 
+                        roomInfo.put("active", room.isActive());
+                        
+                        //προσθήκη διαθεσιμότητας
+                        if (room.getAvailability() != null) {
+                            List<Map<String, String>> availability = room.getAvailability().stream()
+                                .map(avail -> {
+                                    Map<String, String> availInfo = new HashMap<>();
+                                    availInfo.put("day", avail.getDay().toString());
+                                    availInfo.put("startTime", avail.getStartTime().toString());
+                                    availInfo.put("endTime", avail.getEndTime().toString());
+                                    return availInfo;
+                                })
+                                .collect(Collectors.toList());
+                            roomInfo.put("availability", availability);
+                        }
+                        
                         return roomInfo;
                     })
                     .collect(Collectors.toList());
@@ -155,7 +156,6 @@ public class RoomController {
         }
     }
 
-    
     @GetMapping("/api/filter")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> getFilteredRoomsApi(
@@ -206,8 +206,9 @@ public class RoomController {
             roomInfo.put("capacity", room.getCapacity());
             roomInfo.put("type", room.getType().toString());
             roomInfo.put("location", room.getLocation());
+            roomInfo.put("active", room.isActive());
 
-            // Add availability info if needed
+            //προσθήκη διαθεσιμότητας
             if (room.getAvailability() != null) {
                 List<Map<String, Object>> availability = room.getAvailability().stream()
                         .map(avail -> {
@@ -227,7 +228,6 @@ public class RoomController {
         }
     }
     
-   
     @GetMapping("/api/available")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> getAvailableRoomsApi(
@@ -236,7 +236,7 @@ public class RoomController {
             @RequestParam String endTime) {
         try {
             //μετατροπή string σε DayOfWeek και LocalTime
-            java.time.DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.toUpperCase());
+            DayOfWeek dayOfWeek = DayOfWeek.valueOf(day.toUpperCase());
             LocalTime start = LocalTime.parse(startTime);
             LocalTime end = LocalTime.parse(endTime);
             
@@ -253,7 +253,7 @@ public class RoomController {
                         roomInfo.put("capacity", room.getCapacity() != null ? room.getCapacity() : 50);
                         roomInfo.put("type", room.getType() != null ? room.getType().toString() : "TEACHING");
                         roomInfo.put("location", room.getLocation() != null ? room.getLocation() : "");
-                        roomInfo.put("active", true);
+                        roomInfo.put("active", room.isActive());
                         return roomInfo;
                     })
                     .collect(Collectors.toList());
@@ -264,6 +264,4 @@ public class RoomController {
             return ResponseEntity.ok(new ArrayList<>());
         }
     }
-
-
 }
