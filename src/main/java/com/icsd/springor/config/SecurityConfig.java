@@ -44,7 +44,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/users/login", "/users/register", "/logout", "/login", 
-                                "/css/**", "/js/**", "/images/**", "/error").permitAll()
+                                "/css/**", "/js/**", "/images/**", "/error","/api/schedules/public/**", "/public-schedule").permitAll()
 
                 // API endpoints for teachers
                 .requestMatchers("/api/assignments/teacher/**").hasAnyRole("TEACHER", "ADMIN", "PROGRAM_MANAGER")

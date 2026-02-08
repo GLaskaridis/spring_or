@@ -215,7 +215,6 @@
         </style>
     </head>
     <body>
-        <!-- Navigation -->
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">
@@ -263,7 +262,6 @@
 
         <div class="container-fluid mt-4">
             <div class="row">
-                <!-- Sidebar -->
                 <div class="col-lg-3 col-md-4 mb-4">
                     <div class="sidebar p-3 fade-in">
                         <nav class="nav flex-column">
@@ -295,9 +293,7 @@
                     </div>
                 </div>
 
-                <!-- Main Content -->
                 <div class="col-lg-9 col-md-8">
-                    <!-- Page Header -->
                     <div class="d-flex justify-content-between align-items-center mb-4 fade-in">
                         <div>
                             <h1 class="h3 mb-0">Διαχείριση Χρονοπρογραμματισμών</h1>
@@ -309,7 +305,6 @@
                         </button>
                     </div>
 
-                    <!-- Statistics Cards -->
                     <div class="row mb-4 fade-in">
                         <div class="col-lg-3 col-md-6 mb-3">
                             <div class="schedule-stats">
@@ -337,10 +332,8 @@
                         </div>
                     </div>
 
-                    <!-- Alerts Container -->
                     <div id="schedules-alert" class="mb-4"></div>
 
-                    <!-- Schedules Table -->
                     <div class="card fade-in">
                         <div class="card-header">
                             <h5 class="mb-0">
@@ -363,8 +356,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <!-- Δυναμικό περιεχόμενο -->
-                                    </tbody>
+                                        </tbody>
                                 </table>
                             </div>
                         </div>
@@ -373,7 +365,6 @@
             </div>
         </div>
 
-        <!-- Schedule Modal -->
         <div class="modal fade" id="scheduleModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -420,7 +411,6 @@
                                           placeholder="Προαιρετική περιγραφή του χρονοπρογραμματισμού..."></textarea>
                             </div>
 
-                            <!-- Advanced Settings -->
                             <div class="card border-0 bg-light">
                                 <div class="card-header bg-transparent border-0">
                                     <h6 class="mb-0">
@@ -483,7 +473,6 @@
             </div>
         </div>
 
-        <!-- Delete Confirmation Modal -->
         <div class="modal fade" id="deleteScheduleModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -517,7 +506,6 @@
             </div>
         </div>
 
-        <!-- Status Change Modal -->
         <div class="modal fade" id="statusChangeModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -530,9 +518,9 @@
                     </div>
                     <div class="modal-body">
                         <p>Επιλέξτε τη νέα κατάσταση για τον χρονοπρογραμματισμό:</p>
-                            
+                         
                         <input type="hidden" id="statusScheduleId">
-                        
+                         
                         <div class="mb-3">
                             <label class="form-label">Χρονοπρογραμματισμός</label>
                             <div class="alert alert-secondary">
@@ -540,22 +528,20 @@
                             </div>
                         </div>
 
-                        <!-- Εμφάνιση τρέχουσας κατάστασης -->
                         <div class="mb-3">
                             <label class="form-label">Τρέχουσα Κατάσταση</label>
                             <div class="alert alert-info">
                                 <span id="currentStatus"></span>
                             </div>
                         </div>
-                        
+                         
                         <div class="mb-3">
                             <label for="newStatus" class="form-label">Νέα Κατάσταση</label>
                             <select class="form-select" id="newStatus">
                                 <option value="">Επιλέξτε κατάσταση...</option>
                                 <option value="ASSIGNMENT_PHASE">Φάση Ανάθεσης Μαθημάτων</option>
                                 <option value="REQUIREMENTS_PHASE">Φάση Παροχής Απαιτήσεων</option>
-                                <option value="EXECUTION_PHASE">Εκτέλεση Αλγορίθμου</option> <!-- ΔΙΟΡΘΩΣΗ -->
-                                <option value="SOLUTION_FOUND">Λύση Βρέθηκε</option>
+                                <option value="EXECUTION_PHASE">Εκτέλεση Αλγορίθμου</option> <option value="SOLUTION_FOUND">Λύση Βρέθηκε</option>
                                 <option value="SOLUTION_APPROVED">Λύση Εγκρίθηκε</option>
                                 <option value="TERMINATED">Ολοκληρώθηκε</option>
                             </select>
@@ -577,7 +563,6 @@
             </div>
         </div>
 
-        <!-- Scripts -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -639,8 +624,14 @@
                                 <i class="fas fa-play"></i>
                             </button>`;
                         }
-                        
+                         
                         let resultsButton = '';
+                        let exportButton = '';
+                        if (row.status === 'SOLUTION_FOUND' || row.status === 'SOLUTION_APPROVED') {
+                            exportButton = `<button class="btn btn-sm btn-primary me-1" onclick="exportToExcel(${row.id})" title="Εξαγωγή σε Excel">
+                                <i class="fas fa-file-excel"></i>
+                            </button>`;
+                        }
                         if (row.status === 'SOLUTION_FOUND' || row.status === 'SOLUTION_APPROVED') {
                             resultsButton = `<button class="btn btn-sm btn-success me-1" onclick="viewResults(${row.id})" title="Προβολή Αποτελεσμάτων">
                                 <i class="fas fa-chart-bar"></i>
@@ -659,6 +650,7 @@
                             </button>
                             ${executeButton}
                             ${resultsButton}
+                            ${exportButton}
                             <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${row.id})" title="Διαγραφή">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -807,16 +799,16 @@
 
     function executeSchedule(scheduleId) {
     console.log('executeSchedule called with ID:', scheduleId);
-    
+     
     if (confirm('Είστε σίγουροι ότι θέλετε να εκτελέσετε τον αλγόριθμο χρονοπρογραμματισμού για αυτό το χρονοδιάγραμμα;')) {
-        
+         
         // First, check the schedule status
         console.log('Checking schedule status...');
         fetch(`/schedule-execution/debug-status/${scheduleId}`)
         .then(response => response.json())
         .then(data => {
             console.log('Schedule status:', data);
-            
+             
             if (!data.readyForExecution) {
                 showAlert('schedules-alert', 
                     `Το χρονοδιάγραμμα δεν είναι έτοιμο για εκτέλεση. Τρέχουσα κατάσταση: ${data.currentStatus}. ` +
@@ -824,17 +816,17 @@
                     'warning');
                 return;
             }
-            
+             
             if (data.assignmentsCount === 0) {
                 showAlert('schedules-alert', 'Δεν υπάρχουν αναθέσεις μαθημάτων. Παρακαλώ προσθέστε αναθέσεις πρώτα.', 'warning');
                 return;
             }
-            
+             
             if (data.roomsCount === 0) {
                 showAlert('schedules-alert', 'Δεν υπάρχουν διαθέσιμες αίθουσες. Παρακαλώ προσθέστε αίθουσες πρώτα.', 'warning');
                 return;
             }
-            
+             
             // Status is OK, proceed with execution
             console.log('Status check passed, executing algorithm...');
             executeAlgorithm(scheduleId);
@@ -850,6 +842,12 @@
     // View algorithm results
     function viewResults(scheduleId) {
         window.location.href = `/schedule-execution/results/${scheduleId}`;
+    }
+
+    //εξαγωγή προγράμματος σε excel
+    function exportToExcel(scheduleId) {
+        window.open('/api/schedules/' + scheduleId + '/export/excel', '_blank');
+
     }
 
     // Change schedule status function
@@ -937,7 +935,7 @@
             });
         }
     });
-    
+     
     function showAlert(elementId, message, type, persistent = false) {
         const alertContainer = document.getElementById(elementId);
 
@@ -993,7 +991,7 @@
             // Add timeout protection
             const timeoutId = setTimeout(() => {
                 showAlert('schedules-alert', 
-                    '⏱️ Η εκτέλεση διαρκεί περισσότερο από το αναμενόμενο...<br>' +
+                    '⏳ Η εκτέλεση διαρκεί περισσότερο από το αναμενόμενο...<br>' +
                     '<small>Παρακαλώ περιμένετε ή ανανεώστε τη σελίδα αν δεν υπάρχει απόκριση</small>', 
                     'warning');
             }, 10000); // 10 seconds warning
@@ -1138,7 +1136,7 @@
             }
         }
     });
-    
+     
     function executeAlgorithmWithFetch(scheduleId) {
         showAlert('schedules-alert', 'Εκτέλεση αλγορίθμου σε εξέλιξη...', 'info');
 
@@ -1157,7 +1155,7 @@
                 return response.text().then(text => {
                     console.log('Response body:', text);
                     // If we get HTML back, it might be the results page
-                    if (text.includes('schedule-execution-result') || text.includes('Î•Ï€Î¹Ï„Ï…Ï‡Î®Ï‚ Î•ÎºÏ„Î­Î»ÎµÏƒÎ·')) {
+                    if (text.includes('schedule-execution-result') || text.includes('Επιτυχής Εκτέλεση')) {
                         // Parse the response and show results
                         document.open();
                         document.write(text);
@@ -1170,13 +1168,13 @@
         })
         .catch(error => {
             console.error('Error executing algorithm:', error);
-            showAlert('schedules-alert', 'Î£Ï†Î¬Î»Î¼Î± ÎºÎ±Ï„Î¬ Ï„Î·Î½ ÎµÎºÏ„Î­Î»ÎµÏƒÎ· Ï„Î¿Ï… Î±Î»Î³Î¿ÏÎ¯Î¸Î¼Î¿Ï…: ' + error.message, 'danger');
+            showAlert('schedules-alert', 'Σφάλμα κατά την εκτέλεση του αλγορίθμου: ' + error.message, 'danger');
 
             // Re-enable the button
             const executeBtn = document.querySelector(`[onclick="executeSchedule(${scheduleId})"]`);
             if (executeBtn) {
                 executeBtn.disabled = false;
-                executeBtn.innerHTML = '<i class="fas fa-play"></i> Î•ÎºÏ„Î­Î»ÎµÏƒÎ· Î‘Î»Î³Î¿ÏÎ¯Î¸Î¼Î¿Ï…';
+                executeBtn.innerHTML = '<i class="fas fa-play"></i> Εκτέλεση Αλγορίθμου';
             }
         });
     }
@@ -1199,7 +1197,7 @@
                 alert('Error checking status: ' + error.message);
             });
     }
-    
+     
     function executeAlgorithm(scheduleId) {
         showAlert('schedules-alert', 'Εκτέλεση αλγορίθμου σε εξέλιξη...', 'info');
 
@@ -1207,7 +1205,7 @@
         const executeBtn = document.querySelector(`[onclick="executeSchedule(${scheduleId})"]`);
         if (executeBtn) {
             executeBtn.disabled = true;
-            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Î•ÎºÏ„Î­Î»ÎµÏƒÎ·...';
+            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Εκτέλεση...';
         }
 
         console.log('Making request to execute endpoint...');
@@ -1303,3 +1301,5 @@
         }, 5000);
     }
 </script>
+    </body>
+</html>
